@@ -1,0 +1,50 @@
+{
+  "include": [
+    "vite.config.*",
+    "src/**/*",
+    "src/**/*.vue",
+    "src/**/**/*.vue",
+    "themeConfig.js"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/@iconify/*"
+  ],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "preserve",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@themeConfig": [
+        "src/themeConfig.js"
+      ],
+      "@layouts/*": [
+        "src/@layouts/*"
+      ],
+      "@layouts": [
+        "src/@layouts"
+      ],
+      "@core/*": [
+        "src/@core/*"
+      ],
+      "@core": [
+        "src/@core"
+      ],
+      "@validators": [
+        "src/@core/utils/validators"
+      ]
+    },
+    "types": [
+      "vite/client",
+      "vite-plugin-pages/client",
+      "vite-plugin-vue-layouts/client",
+      "unplugin-vue-define-options/macros-global"
+    ]
+  }
+}
