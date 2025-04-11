@@ -183,15 +183,20 @@ export default defineConfig({
     },
   },
   build: {
-    lib: {
-      entry: ["src/main.js"],
-      name: "lib-name",
-      fileName: (format, entryName) => {
-        return `${entryName}.js`;
+    // lib: {
+    //   name: "myApp",
+    //   entry: ["src/main.js"],
+    // },
+    rollupOptions: {
+      output: {
+        entryFileNames: `[name].js`,
+        chunkFileNames: `[name].js`,
+        assetFileNames: `[name].[ext]`,
       },
     },
     chunkSizeWarningLimit: 5000,
   },
+  server: {},
   optimizeDeps: {
     exclude: ["vuetify"],
     entries: ["./src/**/*.vue"],
