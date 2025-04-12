@@ -6,15 +6,22 @@ import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import DefineOptions from "unplugin-vue-define-options/vite"; // @ts-expect-error Known error: https://github.com/sxzz/unplugin-vue-macros/issues/257#issuecomment-1410752890
 import { defineConfig } from "vite";
+import { dynamicBase } from "vite-plugin-dynamic-base";
 import Pages from "vite-plugin-pages";
 import Layouts from "vite-plugin-vue-layouts";
 import vuetify from "vite-plugin-vuetify";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
   plugins: [
     vue(),
     vueJsx(),
+
+    dynamicBase({
+      publicPath: "window.__dynamic_base__",
+      transformIndexHtml: true,
+    }),
 
     vuetify({
       styles: {
@@ -183,10 +190,10 @@ export default defineConfig({
     },
   },
   build: {
-    // lib: {
-    //   name: "myApp",
-    //   entry: ["src/main.js"],
-    // },
+    lib: {
+      name: "myApp",
+      entry: ["src/main.js"],
+    },
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,

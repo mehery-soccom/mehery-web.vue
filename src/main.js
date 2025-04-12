@@ -1,4 +1,4 @@
-// __vite_public_path__ = window.CONST.CDN_URL;
+window.__dynamic_base__ = window.CONST.CDN_URL;
 
 /* eslint-disable import/order */
 import "@/@fake-db/db";

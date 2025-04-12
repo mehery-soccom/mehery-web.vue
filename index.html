@@ -9,8 +9,11 @@
       window.CONST = {
         APP: "pushapp",
         APP_CONTEXT: "/pushapp",
-        APP_TITLE: "",
-        CDN_URL: "http://localhost:5173",
+        APP_TITLE: "PushApp",
+        CDN_URL:
+          location.hostname === "localhost"
+            ? "http://localhost:5173"
+            : "https://mehery-web-vue.pages.dev",
         CDN_VERSION: "1",
         SERVER_URL: "",
       };
@@ -39,21 +42,7 @@
           window.CONST.CDN_URL;
       }
 
-      var isLocal = window.CONST.CDN_URL.startsWith("http://localhost");
-
       var head = document.getElementsByTagName("head")[0];
-
-      if (!isLocal) {
-        var js = document.createElement("script");
-        js.type = "text/javascript";
-        js.src = `${window.CONST.CDN_URL}/index.js`;
-        head.appendChild(js);
-
-        var css = document.createElement("link");
-        css.rel = "stylesheet";
-        css.href = `${window.CONST.CDN_URL}/index.css`;
-        head.appendChild(css);
-      }
 
       var loader_css = document.createElement("link");
       loader_css.rel = "stylesheet";
