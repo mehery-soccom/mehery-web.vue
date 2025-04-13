@@ -38,7 +38,7 @@
           localConfig.SERVER_URL ||
           window.CONST.SERVER_URL;
       }
-      var CONTEXT = "/pushapp";
+      var CONTEXT = location.hostname === "localhost" ? "/pushapp" : "";
       // var CONTEXT = "/__dynamic_base__";
       window.__dynamic_base__ = window.CONST.CDN_URL + CONTEXT;
     </script>
