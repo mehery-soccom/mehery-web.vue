@@ -11,9 +11,13 @@ import Pages from "vite-plugin-pages";
 import Layouts from "vite-plugin-vue-layouts";
 import vuetify from "vite-plugin-vuetify";
 
+var CONTEXT = "/pushapp";
+// var CONTEXT = "/__dynamic_base__";
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
+  // base: process.env.NODE_ENV === "production" ? `${CONTEXT}/` : "/",
+  base: `${CONTEXT}/`,
   plugins: [
     vue(),
     vueJsx(),
@@ -190,10 +194,10 @@ export default defineConfig({
     },
   },
   build: {
-    lib: {
-      name: "myApp",
-      entry: ["src/main.js"],
-    },
+    // lib: {
+    //   name: "myApp",
+    //   entry: ["src/main.js"],
+    // },
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,

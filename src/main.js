@@ -1,5 +1,3 @@
-window.__dynamic_base__ = window.CONST.CDN_URL;
-
 /* eslint-disable import/order */
 import "@/@fake-db/db";
 import "@/@iconify/icons-bundle";
