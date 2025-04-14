@@ -1,0 +1,20 @@
+<script setup>
+import * as demoCode from '@app/views/demos/forms/form-layout/demoCodeFormLayout'
+</script>
+
+<template>
+  <div>
+    <VRow>
+      <VCol cols="12">
+        <!-- 👉 Form with Tabs -->
+        <AppCardCode
+          title="Form with Tabs"
+          no-padding
+          :code="demoCode.formWithTabs"
+        >
+          <DemoFormLayoutFormWithTabs />
+        </AppCardCode>
+      </VCol>
+    </VRow>
+  </div>
+</template>

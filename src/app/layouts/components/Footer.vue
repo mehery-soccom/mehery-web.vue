@@ -12,24 +12,24 @@
         class="mx-1"
       />
       By <a
-        href="https://pixinvent.com"
+        href="https://mehery.com"
         target="_blank"
         rel="noopener noreferrer"
         class="text-primary ms-1"
-      >Pixinvent</a>
+      >Mehery</a>
     </span>
     <!-- 👉 Footer: right content -->
     <span class="d-md-flex gap-x-4 text-primary d-none">
       <a
-        href="https://themeforest.net/licenses/standard"
+        href="#"
         target="noopener noreferrer"
       >License</a>
-      <a
-        href="https://1.envato.market/pixinvent_portfolio"
+      <!-- <a
+        href="#"
         target="noopener noreferrer"
-      >More Themes</a>
+      >More Themes</a> -->
       <a
-        href="https://demos.pixinvent.com/vuexy-vuejs-admin-template/documentation/"
+        href="#"
         target="noopener noreferrer"
       >Documentation</a>
     </span>
