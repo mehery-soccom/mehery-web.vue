@@ -1,16 +1,36 @@
 <script setup>
 import ChannelEditable from "@app/views/admin/channels/ChannelEditable.vue";
 
+import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
+
+const channelsStore = useChannelsStore();
+const route = useRoute();
 const channelData = ref({
   platforms: [{}],
 });
+const paramId = route.params.id;
+if (paramId) {
+  console.log("paramId", paramId);
+  channelsStore
+    .fetchChannel({ id: paramId })
+    .then((response) => {
+      console.log(response);
+      channelData.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      // show error
+    });
+} else {
+  // show error
+}
 
 const onCancel = () => {
   console.log("Cancelled");
 };
 
-const onCreate = () => {
-  console.log("Created");
+const onUpdate = () => {
+  console.log("Updated");
 };
 </script>
 
@@ -33,7 +53,7 @@ const onCreate = () => {
             >
               Cancel
             </VBtn>
-            <VBtn @click="onCreate"> Create </VBtn>
+            <VBtn @click="onUpdate"> Update </VBtn>
           </div>
         </VCol>
       </VRow>
