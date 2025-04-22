@@ -64,6 +64,10 @@
                     </VCol>
 
                     <VCol cols="12" md="12">
+                      <AppTextField v-model="form.logo_url" label="Logo URL" />
+                    </VCol>
+
+                    <VCol cols="12" md="12">
                       <AppTextField
                         v-model="form.image_url"
                         label="Image URL"
@@ -74,7 +78,7 @@
                       <AppSelect
                         v-model="form.buttonGroup"
                         :items="ButtonGroupList"
-                        label="CTA Buttons"
+                        label="CTA Group"
                         placeholder="Select Button Group"
                         item-title="label"
                         item-value="value"
@@ -113,10 +117,16 @@
     <!-- Preview Column -->
     <VCol cols="12" md="5">
       <VRow>
-        <v-col cols="12" class="d-flex justify-center">
+        <v-col cols="6" class="d-flex justify-center">
           <v-btn-toggle v-model="platform" mandatory density="compact">
             <v-btn value="ios">iOS</v-btn>
             <v-btn value="android">Android</v-btn>
+          </v-btn-toggle>
+        </v-col>
+        <v-col cols="6">
+          <v-btn-toggle v-model="view" mandatory density="compact">
+            <v-btn value="collapse">Collapse</v-btn>
+            <v-btn value="expand">Expand</v-btn>
           </v-btn-toggle>
         </v-col>
       </VRow>
@@ -124,6 +134,7 @@
         <v-col cols="12" class="d-flex justify-center">
           <NotificationPreview
             :platform="platform"
+            :view="view"
             :form="form"
             :buttonGroupFields="buttonGroupFields"
           />
@@ -137,7 +148,8 @@
 import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
 import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
 
-const DEFAULT_IMAGE_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
+const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg9Iw/feedshare-shrink_800/B4DZX.a7mYH4Ag-/0/1743730228531?e=1748476800&v=beta&t=836J66x0qjuiwEVD7ZgCUCxLm8z7QI5JI3qD6y_4ROY`;
+const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
 
 const form = reactive({
   app_id: null,
@@ -146,10 +158,12 @@ const form = reactive({
   title: "",
   message: "",
   image_url: DEFAULT_IMAGE_URL,
+  logo_url: DEFAULT_LOGO_URL,
   buttonGroup: null,
   buttonGroupValue: {},
 });
 const platform = ref("ios");
+const view = ref("collapse");
 const tab = ref("tab-basic-details");
 
 const ChannelList = [
@@ -187,6 +201,10 @@ const buttonGroupFields = computed(() => {
 // watch(form, (newValue) => {
 //   console.log("watch : form", newValue);
 // });
+
+watch(platform, (newValue) => {
+  view.value = "collapse";
+});
 </script>
 
 <style scoped lang="scss"></style>

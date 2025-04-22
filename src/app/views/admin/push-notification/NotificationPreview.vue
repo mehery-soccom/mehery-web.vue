@@ -39,9 +39,9 @@
         <div :class="[platform + '-content']">
           <div class="notification-header">
             <img
-              v-if="form.image_url"
+              v-if="form.logo_url"
               class="notification-image"
-              :src="form.image_url"
+              :src="form.logo_url"
               alt="icon"
             />
             <div class="notification-text">
@@ -53,20 +53,39 @@
                 <div class="notification-time">now</div>
               </div>
               <div class="notification-message-previ">
-                <div class="message" :title="form.message">
+                <div
+                  class="message"
+                  :title="form.message"
+                  :style="view === 'collapse' ? 'max-width:205px' : ''"
+                >
                   {{ (form.message || "Your message comes here").slice(0, 90)
                   }}{{ (form.message || "").length > 90 ? "..." : "" }}
                 </div>
-                <div class="notification-previ"></div>
+
+                <div class="notification-previ">
+                  <img
+                    v-if="form.image_url && view === 'collapse'"
+                    class="notification-previ-image"
+                    :src="form.image_url"
+                    alt="icon"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- Long preview -->
+          <div v-if="view === 'expand'" class="long-preview mt-4">
+            <img
+              v-if="form.image_url"
+              class=""
+              :src="form.image_url"
+              alt="icon"
+            />
+          </div>
+
           <!-- Expanded content for Android -->
-          <div
-            v-if="platform === 'android' && buttonGroupFields.length"
-            class="expanded-content"
-          >
+          <div v-if="buttonGroupFields.length" class="expanded-content">
             <div class="expanded-actions">
               <button
                 v-for="item in buttonGroupFields"
@@ -97,6 +116,10 @@ const props = defineProps({
   platform: {
     type: String,
     default: "ios",
+  },
+  view: {
+    type: String,
+    default: "collapse",
   },
   buttonGroupFields: {
     type: Array,
@@ -131,7 +154,15 @@ watch(
   () => props.platform,
   () => {
     showNotification.value = false;
-    setTimeout(() => (showNotification.value = true), 300);
+    setTimeout(() => (showNotification.value = true), 100);
+  }
+);
+
+watch(
+  () => props.view,
+  () => {
+    showNotification.value = false;
+    setTimeout(() => (showNotification.value = true), 100);
   }
 );
 </script>
@@ -255,12 +286,23 @@ watch(
 .notification-header {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .notification-image {
   width: 44px;
   height: 44px;
+  border-radius: 12px;
+}
+
+.notification-previ {
+  height: 30px;
+  // min-width: 30px;
+}
+
+.notification-previ-image {
+  width: 30px;
+  height: 30px;
   border-radius: 12px;
 }
 
@@ -272,13 +314,13 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  // margin-bottom: 4px;
 }
 .notification-message-previ {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  // margin-bottom: 4px;
 }
 
 .notification-text .title {
@@ -287,7 +329,7 @@ watch(
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  max-width: 205px;
 }
 
 .notification-text .message {
@@ -295,32 +337,35 @@ watch(
   color: #ddd;
   line-height: 1.3;
   display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 243px;
+  // max-width: 205px;
 }
 
 .notification-time {
-  font-size: 10px;
+  font-size: 12px;
   color: #aaa;
   white-space: nowrap;
+  width: 30px;
+  height: 22.5px;
+  text-align: center;
 }
 
 .expanded-content {
   margin-top: 12px;
-  display: flex;
-  justify-content: flex-start;
 }
 
 .expanded-actions {
   display: flex;
   gap: 12px;
+  justify-content: space-between;
 }
 
 .cta-button {
+  width: 100%;
   padding: 6px 12px;
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
@@ -328,6 +373,13 @@ watch(
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
+}
+
+.long-preview {
+  img {
+    width: 100%;
+    height: 150px;
+  }
 }
 
 .bottom-icons {
