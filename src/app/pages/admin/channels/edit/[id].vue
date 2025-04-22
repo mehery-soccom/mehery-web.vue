@@ -45,6 +45,7 @@ const onUpdate = () => {
       <VRow>
         <VCol cols="12" class="text-right">
           <div class="px-6">
+            <VBtn @click="onUpdate"> Update </VBtn>
             <VBtn
               class="mr-3"
               variant="tonal"
@@ -53,7 +54,6 @@ const onUpdate = () => {
             >
               Cancel
             </VBtn>
-            <VBtn @click="onUpdate"> Update </VBtn>
           </div>
         </VCol>
       </VRow>

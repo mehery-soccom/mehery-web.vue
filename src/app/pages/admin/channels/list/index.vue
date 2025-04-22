@@ -21,6 +21,21 @@ const currentPage = ref(1);
 
 currentPage.value = options.value.page;
 
+const colors = {
+  android: {
+    color: "info",
+    text: "Android",
+  },
+  ios: {
+    color: "success",
+    text: "IOS",
+  },
+  huawei: {
+    color: "primary",
+    text: "Huawei",
+  },
+};
+
 // 👉 headers
 const headers = [
   {
@@ -170,13 +185,26 @@ watchEffect(() => {
       </template>
 
       <!-- platforms -->
-      <template #item.platforms="{ item }">
+      <!-- <template #item.platforms="{ item }">
         <div class="d-flex align-center">
           <div class="d-flex flex-column">
             <h6 class="text-body-1 font-weight-medium mb-0">
               {{ item.raw.platforms.map((p) => p.platform_type).join(", ") }}
             </h6>
           </div>
+        </div>
+      </template> -->
+      <template #item.platforms="{ item }">
+        <div class="d-flex gap-2">
+          <VChip
+            v-for="p in item.raw.platforms"
+            :key="p.platform_type"
+            label
+            :color="colors[p.platform_type].color"
+            class="font-weight-medium"
+          >
+            {{ colors[p.platform_type].text }}
+          </VChip>
         </div>
       </template>
 

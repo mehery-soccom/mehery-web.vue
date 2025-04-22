@@ -25,6 +25,7 @@ const onCreate = () => {
       <VRow>
         <VCol cols="12" class="text-right">
           <div class="px-6">
+            <VBtn @click="onCreate"> Create </VBtn>
             <VBtn
               class="mr-3"
               variant="tonal"
@@ -33,7 +34,6 @@ const onCreate = () => {
             >
               Cancel
             </VBtn>
-            <VBtn @click="onCreate"> Create </VBtn>
           </div>
         </VCol>
       </VRow>
