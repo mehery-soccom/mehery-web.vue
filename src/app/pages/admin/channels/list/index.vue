@@ -88,7 +88,7 @@ const fetchChannels = (query, currentStatus, firstDate, lastDate, option) => {
     });
 };
 
-const deleteChannel = (id) => {
+const deleteChannel = (id, dialogCloseRef) => {
   isLoading.value = true;
   channelsStore
     .deleteChannel({ id })
@@ -100,6 +100,8 @@ const deleteChannel = (id) => {
         dateRange.value?.split("to")[1],
         options.value
       );
+
+      dialogCloseRef.value = false;
     })
     .catch((error) => {
       console.log(error);
@@ -210,8 +212,31 @@ watchEffect(() => {
 
       <!-- Actions -->
       <template #item.actions="{ item }">
-        <IconBtn @click="deleteChannel(item.raw.app_id)">
+        <IconBtn>
           <VIcon icon="tabler-trash" />
+          <v-dialog activator="parent" max-width="340">
+            <template v-slot:default="{ isActive }">
+              <v-card
+                class=""
+                prepend-icon="mdi-alert"
+                text="Are you certain, you want to delete ?"
+                title="Confirm"
+              >
+                <template v-slot:actions>
+                  <v-btn
+                    class="ml-auto"
+                    text="Yes"
+                    @click="deleteChannel(item.raw.app_id, isActive)"
+                  ></v-btn>
+                  <v-btn
+                    class="ml-auto"
+                    text="No"
+                    @click="isActive.value = false"
+                  ></v-btn>
+                </template>
+              </v-card>
+            </template>
+          </v-dialog>
         </IconBtn>
 
         <IconBtn

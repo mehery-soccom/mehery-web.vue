@@ -1,3 +1,4 @@
+import axios from "@app/plugins/axios";
 import { defineStore } from "pinia";
 
 export const useChannelsStore = defineStore("ChannelsStore", {
@@ -68,17 +69,17 @@ export const useChannelsStore = defineStore("ChannelsStore", {
       let res = {
         data: this.channels.find((c) => c.app_id === id),
       };
+      if (!res.data) return Promise.reject(res);
       return Promise.resolve(res);
     },
 
     // 👉 Create Channel
     createChannel(params) {
-      //   return axios.post(`/apps/channels`, { params });
-      this.channels.push({ params });
-      let res = {
-        success: true,
-      };
-      return Promise.resolve(res);
+      return axios.post("/pushapp/api/channel", params, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
     },
 
     // 👉 Update Channel

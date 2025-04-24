@@ -93,9 +93,9 @@
                       v-for="b in buttonGroupFields"
                     >
                       <AppTextField
-                        v-model="form.buttonGroupValue[b.label]"
-                        :label="b.label"
-                        placeholder="Enter Value"
+                        v-model="form.buttonGroupValue[b.text]"
+                        :label="'Button > ' + b.text"
+                        placeholder="Enter URL"
                       />
                     </VCol>
                   </VRow>
@@ -107,8 +107,10 @@
           <VDivider />
 
           <VCardText class="d-flex gap-4">
-            <VBtn>Send Now</VBtn>
-            <VBtn color="secondary" variant="tonal"> Cancel </VBtn>
+            <VBtn @click="onSend" :disabled="isLoading">{{
+              isLoading ? "loading..." : "Send Now"
+            }}</VBtn>
+            <!-- <VBtn color="secondary" variant="tonal"> Cancel </VBtn> -->
           </VCardText>
         </VCard>
       </v-card>
@@ -146,7 +148,13 @@
 
 <script setup>
 import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
+import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
+import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
+const pushNotificationStore = usePushNotificationStore();
+const channelsStore = useChannelsStore();
+const { show } = inject("snackbar");
+const isLoading = ref(false);
 
 const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg9Iw/feedshare-shrink_800/B4DZX.a7mYH4Ag-/0/1743730228531?e=1748476800&v=beta&t=836J66x0qjuiwEVD7ZgCUCxLm8z7QI5JI3qD6y_4ROY`;
 const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
@@ -154,7 +162,6 @@ const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-conte
 const form = reactive({
   app_id: null,
   platforms: [],
-  filter: {},
   title: "",
   message: "",
   image_url: DEFAULT_IMAGE_URL,
@@ -165,27 +172,41 @@ const form = reactive({
 const platform = ref("ios");
 const view = ref("collapse");
 const tab = ref("tab-basic-details");
+const ChannelList = ref([]);
 
-const ChannelList = [
-  { label: "agent app", value: "app_id_1" },
-  { label: "oa app", value: "app_id_2" },
-];
+onMounted(async () => {
+  // Code that needs to run after the component is mounted
+  console.log("Component mounted");
+
+  let res = await channelsStore.fetchChannels();
+  ChannelList.value = res.results.map((c) => ({
+    label: c.app_name || c.app_id,
+    value: c.app_id,
+  }));
+});
 
 const PlatformList = [
   { label: "IOS", value: "ios" },
   { label: "Android", value: "android" },
+  { label: "Huawei", value: "huawei" },
 ];
 
 const ButtonGroupList = [
   {
     label: "Yes | No",
-    value: "yes",
-    fields: [{ label: "Yes" }, { label: "No" }],
+    value: "BULK_NOTIFICATION",
+    fields: [
+      { text: "Yes", id: "YES_BTN" },
+      { text: "No", id: "NO_BTN" },
+    ],
   },
   {
     label: "Subscribe | Unsubscribe",
-    value: "subscribe",
-    fields: [{ label: "Subscribe" }, { label: "Unsubscribe" }],
+    value: "BULK_NOTIFICATION",
+    fields: [
+      { text: "Subscribe", id: "SUBSCRIBE_BTN" },
+      { text: "Unsubscribe", id: "UNSUBSCRIBE_BTN" },
+    ],
   },
 ];
 
@@ -197,6 +218,39 @@ const buttonGroupFields = computed(() => {
   }
   return [];
 });
+
+const onSend = async () => {
+  try {
+    isLoading.value = true;
+
+    let payload = {
+      title: form.title,
+      message: form.message,
+      channel_id: form.app_id,
+      image_url: form.image_url,
+      category: form.buttonGroup,
+      buttons: buttonGroupFields.value.map((b) => ({
+        button_id: b.id,
+        button_text: b.text,
+        button_url: form.buttonGroupValue[b.text],
+      })),
+      filter: {
+        platform: form.platforms.join(" "),
+        session_type: "all",
+      },
+    };
+
+    await pushNotificationStore.sendBulk(payload);
+
+    show({ message: "Notification sent successfully", color: "success" });
+  } catch (error) {
+    console.error(error);
+
+    show({ message: "Something went wrong. try again", color: "error" });
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // watch(form, (newValue) => {
 //   console.log("watch : form", newValue);

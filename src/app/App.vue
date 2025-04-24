@@ -1,30 +1,37 @@
 <script setup>
-import { useTheme } from 'vuetify'
-import ScrollToTop from '@core/components/ScrollToTop.vue'
-import { useThemeConfig } from '@core/composable/useThemeConfig'
-import { hexToRgb } from '@layouts/utils'
+import SnackbarProvider from "@app/components/SnackbarProvider.vue";
+import ScrollToTop from "@core/components/ScrollToTop.vue";
+import { useThemeConfig } from "@core/composable/useThemeConfig";
+import { hexToRgb } from "@layouts/utils";
+import { useTheme } from "vuetify";
 
 const {
   syncInitialLoaderTheme,
   syncVuetifyThemeWithTheme: syncConfigThemeWithVuetifyTheme,
   isAppRtl,
   handleSkinChanges,
-} = useThemeConfig()
+} = useThemeConfig();
 
-const { global } = useTheme()
+const { global } = useTheme();
 
 // ℹ️ Sync current theme with initial loader theme
-syncInitialLoaderTheme()
-syncConfigThemeWithVuetifyTheme()
-handleSkinChanges()
+syncInitialLoaderTheme();
+syncConfigThemeWithVuetifyTheme();
+handleSkinChanges();
 </script>
 
 <template>
   <VLocaleProvider :rtl="isAppRtl">
     <!-- ℹ️ This is required to set the background color of active nav link based on currently active global theme's primary -->
-    <VApp :style="`--v-global-theme-primary: ${hexToRgb(global.current.value.colors.primary)}`">
-      <RouterView />
-      <ScrollToTop />
-    </VApp>
+    <SnackbarProvider>
+      <VApp
+        :style="`--v-global-theme-primary: ${hexToRgb(
+          global.current.value.colors.primary
+        )}`"
+      >
+        <RouterView />
+        <ScrollToTop />
+      </VApp>
+    </SnackbarProvider>
   </VLocaleProvider>
 </template>

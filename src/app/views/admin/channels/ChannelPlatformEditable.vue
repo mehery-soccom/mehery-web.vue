@@ -1,34 +1,32 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <script setup>
 const props = defineProps({
+  index: {
+    type: Number,
+    required: true,
+  },
   data: {
     type: Object,
     required: true,
     default: () => ({}),
   },
+  itemsOptions: {
+    type: Array,
+    required: true,
+    default: () => [],
+  },
 });
 
-const emit = defineEmits(["removePlatform"]);
-
-const itemsOptions = [
-  {
-    label: "Android",
-    value: "android",
-  },
-  {
-    label: "IOS",
-    value: "ios",
-  },
-  {
-    label: "Huawei",
-    value: "huawei",
-  },
-];
+const emit = defineEmits(["removePlatform", "fileUpload"]);
 
 const localData = ref(structuredClone(toRaw(props.data)));
 
+const handleFileUpload = (event) => {
+  emit("fileUpload", event.target.files[0], props.index);
+};
+
 const removePlatform = () => {
-  emit("removePlatform", this.data.platform_id);
+  emit("removePlatform", props.index);
 };
 </script>
 
@@ -50,17 +48,27 @@ const removePlatform = () => {
         </VCol>
 
         <VCol cols="12" md="6">
-          <AppTextField v-model="data.bundle_id" label="Bundle ID" />
+          <AppTextField
+            v-model="data.bundle_id"
+            label="Bundle ID"
+            placeholder="Enter Bundle ID"
+          />
         </VCol>
       </VRow>
 
-      <VRow class="mt-0">
+      <VRow class="mt-0" v-if="data.platform_type === 'ios'">
         <VCol cols="12" md="6">
-          <AppTextField v-model="data.team_id" label="Team ID"
+          <AppTextField
+            v-model="data.team_id"
+            label="Team ID"
+            placeholder="Enter Team ID"
         /></VCol>
 
         <VCol cols="12" md="6">
-          <AppTextField v-model="data.key_id" label="Key ID"
+          <AppTextField
+            v-model="data.key_id"
+            label="Key ID"
+            placeholder="Enter Key ID"
         /></VCol>
       </VRow>
 
@@ -73,6 +81,8 @@ const removePlatform = () => {
             prepend-icon
             append-inner-icon="$file"
             label="Certificate"
+            @change="handleFileUpload"
+            accept="application/JSON, .p8"
           />
         </VCol>
       </VRow>

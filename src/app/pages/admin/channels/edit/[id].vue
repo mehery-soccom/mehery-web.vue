@@ -3,34 +3,72 @@ import ChannelEditable from "@app/views/admin/channels/ChannelEditable.vue";
 
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 
+const { show } = inject("snackbar");
+const isLoading = ref(false);
+
 const channelsStore = useChannelsStore();
+
+const router = useRouter();
 const route = useRoute();
-const channelData = ref({
-  platforms: [{}],
-});
 const paramId = route.params.id;
 if (paramId) {
-  console.log("paramId", paramId);
   channelsStore
     .fetchChannel({ id: paramId })
     .then((response) => {
-      console.log(response);
-      channelData.value = response.data;
+      channelData.value = response.data; // TODO
     })
     .catch((error) => {
       console.log(error);
-      // show error
+      show({ message: "Something went wrong", color: "error" });
     });
 } else {
-  // show error
+  show({ message: "Channel ID missing", color: "error" });
 }
 
+const channelData = ref({
+  app_name: "",
+  company_id: "",
+  company_name: "",
+  platforms: [{}],
+});
+
 const onCancel = () => {
-  console.log("Cancelled");
+  router.push({ name: "admin-channels-list" });
 };
 
-const onUpdate = () => {
-  console.log("Updated");
+// const onCreate = async () => {
+//   try {
+//     isLoading.value = true;
+
+//     const formData = new FormData();
+//     formData.append("app_name", channelData.value.app_name);
+//     formData.append("company_id", channelData.value.company_id);
+//     formData.append("company_name", channelData.value.company_name);
+//     channelData.value.platforms.map((p) => {
+//       formData.append(`${p.platform_type}_file`, p.file);
+//       formData.append(`${p.platform_type}_bundle_id`, p.bundle_id);
+//       if (p.platform_type === "ios") {
+//         formData.append(`key_id`, p.key_id);
+//         formData.append(`team_id`, p.team_id);
+//       }
+//     });
+
+//     await channelsStore.createChannel(formData);
+
+//     show({ message: "Channel created successfully", color: "success" });
+
+//     router.push({ name: "admin-channels-list" });
+//   } catch (error) {
+//     console.error(error);
+
+//     show({ message: "Something went wrong", color: "error" });
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
+
+const onUpdate = async () => {
+  // TODO
 };
 </script>
 
@@ -45,13 +83,11 @@ const onUpdate = () => {
       <VRow>
         <VCol cols="12" class="text-right">
           <div class="px-6">
-            <VBtn @click="onUpdate"> Update </VBtn>
-            <VBtn
-              class="mr-3"
-              variant="tonal"
-              color="secondary"
-              @click="onCancel"
-            >
+            <!-- <VBtn @click="onCreate" class="mr-3"> Create </VBtn> -->
+            <VBtn @click="onUpdate" class="mr-3" :disabled="isLoading">{{
+              isLoading ? "loading..." : "Update"
+            }}</VBtn>
+            <VBtn variant="tonal" color="secondary" @click="onCancel">
               Cancel
             </VBtn>
           </div>

@@ -85,14 +85,21 @@
           </div>
 
           <!-- Expanded content for Android -->
-          <div v-if="buttonGroupFields.length" class="expanded-content">
+          <div
+            v-if="
+              ((platform === 'ios' && view === 'expand') ||
+                platform === 'android') &&
+              buttonGroupFields.length
+            "
+            class="expanded-content"
+          >
             <div class="expanded-actions">
               <button
                 v-for="item in buttonGroupFields"
-                :key="item.label"
+                :key="item.text"
                 class="cta-button"
               >
-                {{ item.label }}
+                {{ item.text }}
               </button>
             </div>
           </div>

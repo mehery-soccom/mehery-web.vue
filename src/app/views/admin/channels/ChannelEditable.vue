@@ -9,14 +9,39 @@ const props = defineProps({
   },
 });
 
-// 👉 Add item function
-const addItem = () => {
+const emit = defineEmits(["fileUpload"]);
+
+const itemsOptions = (platform) => {
+  return [
+    {
+      label: "Android",
+      value: "android",
+    },
+    {
+      label: "IOS",
+      value: "ios",
+    },
+    {
+      label: "Huawei",
+      value: "huawei",
+    },
+  ].filter(
+    (i) =>
+      i.value === platform.platform_type ||
+      !props.data.platforms.find((p) => i.value === p.platform_type)
+  );
+};
+
+const addPlatform = () => {
   props.data.platforms.push({});
 };
 
-const removePlatform = (id) => {
-  // eslint-disable-next-line vue/no-mutating-props
-  props.data.platforms.splice(id, 1);
+const removePlatform = (index) => {
+  props.data.platforms.splice(index, 1); // TODO
+};
+
+const handleFileUpload = (file, index) => {
+  props.data.platforms[index].file = file;
 };
 </script>
 
@@ -59,7 +84,7 @@ const removePlatform = (id) => {
 
     <v-card-item>
       <template #append>
-        <VBtn size="38" @click="addItem">
+        <VBtn size="38" @click="addPlatform">
           <VIcon size="22" icon="tabler-plus" />
         </VBtn>
       </template>
@@ -72,8 +97,11 @@ const removePlatform = (id) => {
         :key="'platform.' + index"
       >
         <ChannelPlatformEditable
+          :index="index"
+          :itemsOptions="itemsOptions(platform)"
           :data="platform"
           @remove-platform="removePlatform"
+          @fileUpload="handleFileUpload"
         />
       </div>
     </VCardText>
