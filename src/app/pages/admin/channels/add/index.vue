@@ -34,10 +34,6 @@ const channelData = ref({
   platforms: [{}],
 });
 
-const onCancel = () => {
-  router.push({ name: "admin-channels-list" });
-};
-
 const onCreate = async () => {
   try {
     isLoading.value = true;
@@ -89,7 +85,11 @@ const onCreate = async () => {
               isLoading ? "loading..." : "Create"
             }}</VBtn>
             <!-- <VBtn @click="onUpdate" class="mr-3"> Update </VBtn> -->
-            <VBtn variant="tonal" color="secondary" @click="onCancel">
+            <VBtn
+              variant="tonal"
+              color="secondary"
+              :to="{ name: 'admin-channels-list' }"
+            >
               Cancel
             </VBtn>
           </div>

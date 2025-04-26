@@ -64,17 +64,21 @@ const headers = [
   },
 ];
 
+onMounted(async () => {
+  fetchChannels();
+});
+
 // 👉 Fetch Channels
 const fetchChannels = (query, currentStatus, firstDate, lastDate, option) => {
   isLoading.value = true;
   channelsStore
-    .fetchChannels({
-      q: query,
-      status: currentStatus,
-      startDate: firstDate,
-      endDate: lastDate,
-      options: option,
-    })
+    .fetchChannels
+    // q: query,
+    // status: currentStatus,
+    // startDate: firstDate,
+    // endDate: lastDate,
+    // options: option,
+    ()
     .then((response) => {
       channels.value = response.results;
       totalChannels.value = response.data.total;
@@ -93,13 +97,12 @@ const deleteChannel = (id, dialogCloseRef) => {
   channelsStore
     .deleteChannel({ id })
     .then(() => {
-      fetchChannels(
-        searchQuery.value,
-        selectedStatus.value,
-        dateRange.value?.split("to")[0],
-        dateRange.value?.split("to")[1],
-        options.value
-      );
+      fetchChannels();
+      // searchQuery.value,
+      // selectedStatus.value,
+      // dateRange.value?.split("to")[0],
+      // dateRange.value?.split("to")[1],
+      // options.value
 
       dialogCloseRef.value = false;
     })
@@ -112,17 +115,16 @@ const deleteChannel = (id, dialogCloseRef) => {
 };
 
 // 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
-watchEffect(() => {
-  const [start, end] = dateRange.value ? dateRange.value.split("to") : "";
-
-  fetchChannels(
-    searchQuery.value,
-    selectedStatus.value,
-    start,
-    end,
-    options.value
-  );
-});
+// watchEffect(() => {
+// const [start, end] = dateRange.value ? dateRange.value.split("to") : "";
+// fetchChannels(
+// searchQuery.value,
+// selectedStatus.value,
+// start,
+// end,
+// options.value
+// );
+// });
 </script>
 
 <template>

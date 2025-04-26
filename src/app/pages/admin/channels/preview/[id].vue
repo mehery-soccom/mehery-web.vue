@@ -32,10 +32,6 @@ const channelData = ref({
   platforms: [{}],
 });
 
-const onCancel = () => {
-  router.push({ name: "admin-channels-list" });
-};
-
 // const onCreate = async () => {
 //   try {
 //     const formData = new FormData();
@@ -79,7 +75,11 @@ const onCancel = () => {
           <div class="px-6">
             <!-- <VBtn @click="onCreate" class="mr-3"> Create </VBtn>
             <VBtn @click="onUpdate" class="mr-3"> Update </VBtn> -->
-            <VBtn variant="tonal" color="secondary" @click="onCancel">
+            <VBtn
+              variant="tonal"
+              color="secondary"
+              :to="{ name: 'admin-channels-list' }"
+            >
               Back
             </VBtn>
           </div>

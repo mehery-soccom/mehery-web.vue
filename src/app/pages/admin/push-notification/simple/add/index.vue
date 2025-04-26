@@ -12,13 +12,14 @@
         </v-card-item>
 
         <VTabs v-model="tab">
-          <VTab value="tab-basic-details"> Basic Details </VTab>
+          <VTab value="tab-details"> Details </VTab>
+          <VTab value="tab-segments"> Segments </VTab>
         </VTabs>
 
         <VCard flat>
           <VCardText>
             <VWindow v-model="tab" class="disable-tab-transition">
-              <VWindowItem value="tab-basic-details">
+              <VWindowItem value="tab-details">
                 <VForm>
                   <VRow>
                     <VCol cols="12" md="6">
@@ -101,6 +102,8 @@
                   </VRow>
                 </VForm>
               </VWindowItem>
+
+              <VWindowItem value="tab-segments"></VWindowItem>
             </VWindow>
           </VCardText>
 
@@ -110,7 +113,13 @@
             <VBtn @click="onSend" :disabled="isLoading">{{
               isLoading ? "loading..." : "Send Now"
             }}</VBtn>
-            <!-- <VBtn color="secondary" variant="tonal"> Cancel </VBtn> -->
+            <VBtn
+              variant="tonal"
+              color="secondary"
+              :to="{ name: 'admin-push-notification-simple-list' }"
+            >
+              Cancel
+            </VBtn>
           </VCardText>
         </VCard>
       </v-card>
@@ -171,7 +180,7 @@ const form = reactive({
 });
 const platform = ref("ios");
 const view = ref("collapse");
-const tab = ref("tab-basic-details");
+const tab = ref("tab-details");
 const ChannelList = ref([]);
 
 onMounted(async () => {
@@ -202,7 +211,7 @@ const ButtonGroupList = [
   },
   {
     label: "Subscribe | Unsubscribe",
-    value: "BULK_NOTIFICATION",
+    value: "BULK_NOTIFICATION_2",
     fields: [
       { text: "Subscribe", id: "SUBSCRIBE_BTN" },
       { text: "Unsubscribe", id: "UNSUBSCRIBE_BTN" },

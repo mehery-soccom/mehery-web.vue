@@ -51,16 +51,20 @@ export const useChannelsStore = defineStore("ChannelsStore", {
   },
   actions: {
     // 👉 Fetch all Channels
-    fetchChannels(params) {
-      //   return axios.get("apps/channels", { params });
+    async fetchChannels() {
+      let apiRes = await axios.get("/pushapp/api/channels");
+      // this.channels = apiRes.data.channels;
       let res = {
         results: this.channels,
+        // results: apiRes.data.channels,
         data: {
           total: this.channelsCount,
+          // total: apiRes.data.total_channels,
           page: 1,
         },
       };
-      return Promise.resolve(res);
+      console.log(res);
+      return res;
     },
 
     // 👉 Fetch single Channel

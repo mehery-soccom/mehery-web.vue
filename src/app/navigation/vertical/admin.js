@@ -12,7 +12,7 @@ export default [
     title: "Push Notification",
     icon: { icon: "tabler-bell-ringing" },
     children: [
-      { title: "Simple", to: "admin-push-notification-simple" },
+      { title: "Simple", to: "admin-push-notification-simple-list" },
       {
         title: "Styled",
         // to: { name: "apps-user-view-id", params: { id: 21 } },
