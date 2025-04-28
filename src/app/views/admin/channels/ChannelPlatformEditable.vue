@@ -5,6 +5,11 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  mode: {
+    type: String,
+    required: true,
+    default: "ADD",
+  },
   data: {
     type: Object,
     required: true,
@@ -37,6 +42,7 @@ const removePlatform = () => {
       <VRow>
         <VCol cols="12" md="6">
           <AppSelect
+            :readonly="props.mode !== 'ADD'"
             v-model="data.platform_type"
             :items="itemsOptions"
             item-title="label"
@@ -89,10 +95,27 @@ const removePlatform = () => {
     </div>
 
     <!-- 👉 Item Actions -->
-    <div class="d-flex flex-column justify-space-between border-s pa-1">
-      <IconBtn @click="removePlatform">
+    <div
+      class="d-flex flex-column justify-space-between align-center border-s pa-1 mw-47"
+    >
+      <VSwitch
+        v-if="data.platform_id"
+        v-model="data.active"
+        color="primary"
+        class="mt-2"
+        @click="removePlatform"
+        :true-value="true"
+        :false-value="false"
+      />
+      <IconBtn v-else @click="removePlatform">
         <VIcon size="20" icon="tabler-x" />
       </IconBtn>
     </div>
   </VCard>
 </template>
+
+<style scss>
+.mw-47 {
+  min-width: 47px;
+}
+</style>

@@ -1,26 +1,12 @@
 <script setup>
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
-import { VDataTableServer } from "vuetify/labs/VDataTable";
+import { VDataTable } from "vuetify/labs/VDataTable";
 
 const pushNotificationStore = usePushNotificationStore();
-
 const isLoading = ref(false);
 const notifications = ref([]);
-const totalNotifications = ref(0);
-const searchQuery = ref("");
-const dateRange = ref("");
-const selectedStatus = ref();
-const options = ref({
-  page: 1,
-  itemsPerPage: 10,
-  sortBy: [],
-  groupBy: [],
-  search: undefined,
-});
-const currentPage = ref(1);
-
-currentPage.value = options.value.page;
-
+// const totalNotifications = ref(0);
+// const itemsPerPage = ref(10);
 const colors = {
   android: {
     color: "info",
@@ -35,32 +21,43 @@ const colors = {
     text: "Huawei",
   },
 };
-
-// 👉 headers
 const headers = [
+  { title: "", key: "data-table-expand" },
   {
-    title: "Name",
-    key: "notification_name",
+    title: "Notification",
+    key: "notification",
   },
   {
-    title: "Channel ID",
-    key: "app_id",
+    title: "Status",
+    key: "status",
   },
   {
     title: "Platform(s)",
     key: "platforms",
+    sortable: false,
   },
   {
-    title: "Company Name",
-    key: "company_name",
+    title: "Start / Send",
+    key: "start",
   },
   {
-    title: "Company ID",
-    key: "company_id",
+    title: "End",
+    key: "end",
   },
   {
-    title: "Actions",
+    title: "Sends",
+    key: "sends",
+    sortable: false,
+  },
+  {
+    title: "Opens",
+    key: "opens",
+    sortable: false,
+  },
+  {
+    title: "",
     key: "actions",
+    sortable: false,
   },
 ];
 
@@ -68,26 +65,50 @@ onMounted(async () => {
   fetchSimpleNotifications();
 });
 
-const fetchSimpleNotifications = (
-  query,
-  currentStatus,
-  firstDate,
-  lastDate,
-  option
-) => {
+// 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
+watchEffect(() => {});
+
+// 👉 Fetch
+const fetchSimpleNotifications = () => {
   isLoading.value = true;
   pushNotificationStore
-    .fetchSimpleNotifications
-    // q: query,
-    // status: currentStatus,
-    // startDate: firstDate,
-    // endDate: lastDate,
-    // options: option,
-    ()
+    .fetchSimpleNotifications()
     .then((response) => {
       notifications.value = response.results;
-      totalNotifications.value = response.data.total;
-      options.value.page = response.data.page;
+      notifications.value = [
+        {
+          id: "680dbc058ef6189fa647b0b0",
+          notification: "hello world",
+          status: "completed",
+          platforms: [
+            {
+              active: true,
+              bundle_id: "com.mehery.admin.meheryAdmin",
+              file_path:
+                "configs/uploads/mehery1234_1745730565438_ios_1745730565440.p8",
+              key_id: "DACSCD48Y8",
+              platform_id: "mehery1234_1745730565438_ios_1745730565440",
+              platform_type: "ios",
+              team_id: "6CRFUK7DVC",
+              _id: "680dbc058ef6189fa647b0b1",
+            },
+            {
+              active: true,
+              bundle_id: "com.mehery.admin.mehery_admin",
+              file_path:
+                "configs/uploads/mehery1234_1745730565438_android_1745730565442.json",
+              platform_id: "mehery1234_1745730565438_android_1745730565442",
+              platform_type: "android",
+              _id: "680dbc058ef6189fa647b0b2",
+            },
+          ],
+          start: "-",
+          end: "-",
+          sends: 100,
+          opens: 20,
+        },
+      ];
+      // totalNotifications.value = response.data.total;
     })
     .catch((error) => {
       console.log(error);
@@ -96,6 +117,13 @@ const fetchSimpleNotifications = (
       isLoading.value = false;
     });
 };
+
+// const onUpdateOptions = (newValue) => {
+//   console.log("onUpdateOptions", newValue);
+//   // options.value = newValue;
+
+//   fetchSimpleNotifications();
+// };
 </script>
 
 <template>
@@ -106,6 +134,7 @@ const fetchSimpleNotifications = (
       <VSpacer />
 
       <div class="d-flex align-center flex-wrap gap-4">
+        <!-- 👉 Create -->
         <VBtn
           prepend-icon="tabler-plus"
           :to="{ name: 'admin-push-notification-simple-add' }"
@@ -117,27 +146,63 @@ const fetchSimpleNotifications = (
 
     <VDivider />
 
-    <VDataTableServer
-      v-model:items-per-page="options.itemsPerPage"
-      v-model:page="options.page"
-      :loading="isLoading"
-      :items-length="totalNotifications"
+    <!-- SECTION Datatable -->
+    <!-- <VDataTableServer
+      class="text-no-wrap my-data-table"
+      v-model:items-per-page="itemsPerPage"
       :headers="headers"
       :items="notifications"
-      class="text-no-wrap"
-      @update:options="options = $event"
+      :items-length="totalNotifications"
+      :loading="isLoading"
+      @update:options="onUpdateOptions"
+    > -->
+    <VDataTable
+      class="text-no-wrap mb-3 my-data-table"
+      :headers="headers"
+      :items="notifications"
+      :loading="isLoading"
+      expand-on-click
     >
+      <!-- Expanded Row Data -->
+      <template #expanded-row="slotProps">
+        <tr class="v-data-table__tr">
+          <td :colspan="headers.length">
+            <p class="my-1">City: {{ slotProps.item.raw.city }}</p>
+            <p class="my-1">Experience: {{ slotProps.item.raw.experience }}</p>
+            <p>Post: {{ slotProps.item.raw.post }}</p>
+          </td>
+        </tr>
+      </template>
+
+      <!-- platforms -->
+      <template #item.platforms="{ item }">
+        <div class="d-flex gap-2">
+          <VChip
+            v-for="p in item.raw.platforms"
+            :key="p.platform_type"
+            label
+            :color="colors[p.platform_type].color"
+            class="font-weight-medium"
+          >
+            {{ colors[p.platform_type].text }}
+          </VChip>
+        </div>
+      </template>
+
+      <!-- Actions -->
       <template #item.actions="{ item }">
         <IconBtn
           :to="{
             name: 'admin-push-notification-simple-add',
-            params: { copy: item.raw.app_id },
+            // params: { copy: item.raw.id },
           }"
         >
-          <VIcon icon="mdi-copy" />
+          <VIcon icon="mdi-content-copy" />
         </IconBtn>
       </template>
-    </VDataTableServer>
+      <!-- </VDataTableServer> -->
+    </VDataTable>
+    <!-- !SECTION -->
   </VCard>
 </template>
 
@@ -149,6 +214,11 @@ const fetchSimpleNotifications = (
 
   .invoice-list-filter {
     inline-size: 12rem;
+  }
+}
+.my-data-table {
+  .v-table__wrapper {
+    min-height: 100px;
   }
 }
 </style>

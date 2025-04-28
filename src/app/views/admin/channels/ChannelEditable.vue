@@ -2,6 +2,11 @@
 import ChannelPlatformEditable from "./ChannelPlatformEditable.vue";
 
 const props = defineProps({
+  mode: {
+    type: String,
+    required: true,
+    default: "ADD",
+  },
   data: {
     type: null,
     required: true,
@@ -10,6 +15,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["fileUpload"]);
+
+onMounted(async () => {});
 
 const itemsOptions = (platform) => {
   return [
@@ -33,11 +40,13 @@ const itemsOptions = (platform) => {
 };
 
 const addPlatform = () => {
-  props.data.platforms.push({});
+  props.data.platforms.push({ active: true });
 };
 
 const removePlatform = (index) => {
-  props.data.platforms.splice(index, 1); // TODO
+  if (!props.data.platforms[index].platform_id) {
+    props.data.platforms.splice(index, 1);
+  }
 };
 
 const handleFileUpload = (file, index) => {
@@ -48,7 +57,7 @@ const handleFileUpload = (file, index) => {
 <template>
   <VCard>
     <v-card-item>
-      <v-card-title>Channel Details</v-card-title>
+      <v-card-title>App Details</v-card-title>
       <!-- <v-card-subtitle>Details below</v-card-subtitle> -->
     </v-card-item>
 
@@ -56,9 +65,9 @@ const handleFileUpload = (file, index) => {
       <VRow>
         <VCol cols="12" md="6">
           <AppTextField
-            v-model="data.app_name"
-            label="Channel Name"
-            placeholder="Enter Channel Name"
+            v-model="data.channel_name"
+            label="App Name"
+            placeholder="Enter App Name"
           />
         </VCol>
       </VRow>
@@ -84,7 +93,11 @@ const handleFileUpload = (file, index) => {
 
     <v-card-item>
       <template #append>
-        <VBtn size="38" @click="addPlatform">
+        <VBtn
+          size="38"
+          @click="addPlatform"
+          :disabled="props.data.platforms.length >= 3"
+        >
           <VIcon size="22" icon="tabler-plus" />
         </VBtn>
       </template>
@@ -99,6 +112,7 @@ const handleFileUpload = (file, index) => {
         <ChannelPlatformEditable
           :index="index"
           :itemsOptions="itemsOptions(platform)"
+          :mode="props.mode"
           :data="platform"
           @remove-platform="removePlatform"
           @fileUpload="handleFileUpload"

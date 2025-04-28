@@ -26,8 +26,8 @@
                       <AppSelect
                         v-model="form.app_id"
                         :items="ChannelList"
-                        label="Channel"
-                        placeholder="Select Channel"
+                        label="App"
+                        placeholder="Select App"
                         item-title="label"
                         item-value="value"
                         clearable
@@ -45,6 +45,14 @@
                         clearable
                         multiple
                         chips
+                      />
+                    </VCol>
+
+                    <VCol cols="12" md="6">
+                      <AppTextField
+                        v-model="form.name"
+                        label="Notification Name"
+                        placeholder="Enter Notification Name"
                       />
                     </VCol>
 
@@ -78,7 +86,7 @@
                     <VCol cols="12" md="6">
                       <AppSelect
                         v-model="form.buttonGroup"
-                        :items="ButtonGroupList"
+                        :items="pushNotificationStore.buttonGroupList"
                         label="CTA Group"
                         placeholder="Select Button Group"
                         item-title="label"
@@ -200,29 +208,12 @@ const PlatformList = [
   { label: "Huawei", value: "huawei" },
 ];
 
-const ButtonGroupList = [
-  {
-    label: "Yes | No",
-    value: "BULK_NOTIFICATION",
-    fields: [
-      { text: "Yes", id: "YES_BTN" },
-      { text: "No", id: "NO_BTN" },
-    ],
-  },
-  {
-    label: "Subscribe | Unsubscribe",
-    value: "BULK_NOTIFICATION_2",
-    fields: [
-      { text: "Subscribe", id: "SUBSCRIBE_BTN" },
-      { text: "Unsubscribe", id: "UNSUBSCRIBE_BTN" },
-    ],
-  },
-];
-
 const buttonGroupFields = computed(() => {
   if (form.buttonGroup) {
     return (
-      ButtonGroupList.find((b) => b.value === form.buttonGroup)?.fields || []
+      pushNotificationStore.buttonGroupList.find(
+        (b) => b.value === form.buttonGroup
+      )?.fields || []
     );
   }
   return [];

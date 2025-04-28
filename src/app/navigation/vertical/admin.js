@@ -1,7 +1,7 @@
 export default [
   { heading: "Admin" },
   {
-    title: "Channels",
+    title: "Apps",
     icon: { icon: "tabler-plug" },
     children: [
       { title: "List", to: "admin-channels-list" },

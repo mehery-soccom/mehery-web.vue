@@ -1,37 +1,31 @@
 <script setup>
 import ChannelEditable from "@app/views/admin/channels/ChannelEditable.vue";
-
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 
 const { show } = inject("snackbar");
-const isLoading = ref(false);
-
-const channelsStore = useChannelsStore();
-
-const router = useRouter();
-
 // const route = useRoute();
-// const paramId = route.params.id;
-// if (paramId) {
-//   channelsStore
-//     .fetchChannel({ id: paramId })
-//     .then((response) => {
-//       console.log(response);
-//       channelData.value = response.data; // TODO
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//       show({ message: "Something went wrong", color: "error" });
-//     });
-// } else {
-//   show({ message: "Channel ID missing", color: "error" });
-// }
-
+const router = useRouter();
+const channelsStore = useChannelsStore();
+const isLoading = ref(false);
 const channelData = ref({
-  app_name: "",
-  company_id: "",
-  company_name: "",
-  platforms: [{}],
+  platforms: [{ active: true }],
+});
+// const paramId = route.params.id;
+
+onMounted(async () => {
+  // if (paramId) {
+  //   channelsStore
+  //     .fetchChannel({ id: paramId })
+  //     .then((response) => {
+  //       channelData.value = response.data.channel;
+  //     })
+  //     .catch((error) => {
+  //       console.log(error);
+  //       show({ message: "Something went wrong", color: "error" });
+  //     });
+  // } else {
+  //   show({ message: "Channel ID missing", color: "error" });
+  // }
 });
 
 const onCreate = async () => {
@@ -39,7 +33,7 @@ const onCreate = async () => {
     isLoading.value = true;
 
     const formData = new FormData();
-    formData.append("app_name", channelData.value.app_name);
+    formData.append("channel_name", channelData.value.channel_name);
     formData.append("company_id", channelData.value.company_id);
     formData.append("company_name", channelData.value.company_name);
     channelData.value.platforms.map((p) => {
@@ -52,22 +46,17 @@ const onCreate = async () => {
     });
 
     await channelsStore.createChannel(formData);
-
     show({ message: "Channel created successfully", color: "success" });
-
     router.push({ name: "admin-channels-list" });
   } catch (error) {
     console.error(error);
-
     show({ message: "Something went wrong", color: "error" });
   } finally {
     isLoading.value = false;
   }
 };
 
-// const onUpdate = async () => {
-//   // TODO
-// };
+// const onUpdate = async () => {};
 </script>
 
 <template>
@@ -84,7 +73,9 @@ const onCreate = async () => {
             <VBtn @click="onCreate" class="mr-3" :disabled="isLoading">{{
               isLoading ? "loading..." : "Create"
             }}</VBtn>
-            <!-- <VBtn @click="onUpdate" class="mr-3"> Update </VBtn> -->
+            <!-- <VBtn @click="onUpdate" class="mr-3" :disabled="isLoading">{{
+              isLoading ? "loading..." : "Update"
+            }}</VBtn> -->
             <VBtn
               variant="tonal"
               color="secondary"

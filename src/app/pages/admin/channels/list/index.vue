@@ -1,26 +1,12 @@
 <script setup>
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
-import { VDataTableServer } from "vuetify/labs/VDataTable";
+import { VDataTable } from "vuetify/labs/VDataTable";
 
 const channelsStore = useChannelsStore();
-
 const isLoading = ref(false);
 const channels = ref([]);
-const totalChannels = ref(0);
-const searchQuery = ref("");
-const dateRange = ref("");
-const selectedStatus = ref();
-const options = ref({
-  page: 1,
-  itemsPerPage: 10,
-  sortBy: [],
-  groupBy: [],
-  search: undefined,
-});
-const currentPage = ref(1);
-
-currentPage.value = options.value.page;
-
+// const totalChannels = ref(0);
+// const itemsPerPage = ref(10);
 const colors = {
   android: {
     color: "info",
@@ -35,32 +21,25 @@ const colors = {
     text: "Huawei",
   },
 };
-
-// 👉 headers
 const headers = [
   {
-    title: "Channel Name",
-    key: "app_name",
+    title: "App Name",
+    key: "channel_name",
   },
   {
-    title: "Channel ID",
-    key: "app_id",
+    title: "App ID",
+    key: "channel_id",
+    sortable: false,
   },
   {
     title: "Platform(s)",
     key: "platforms",
+    sortable: false,
   },
   {
-    title: "Company Name",
-    key: "company_name",
-  },
-  {
-    title: "Company ID",
-    key: "company_id",
-  },
-  {
-    title: "Actions",
+    title: "",
     key: "actions",
+    sortable: false,
   },
 ];
 
@@ -68,21 +47,17 @@ onMounted(async () => {
   fetchChannels();
 });
 
+// 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
+watchEffect(() => {});
+
 // 👉 Fetch Channels
-const fetchChannels = (query, currentStatus, firstDate, lastDate, option) => {
+const fetchChannels = () => {
   isLoading.value = true;
   channelsStore
-    .fetchChannels
-    // q: query,
-    // status: currentStatus,
-    // startDate: firstDate,
-    // endDate: lastDate,
-    // options: option,
-    ()
+    .fetchChannels()
     .then((response) => {
       channels.value = response.results;
-      totalChannels.value = response.data.total;
-      options.value.page = response.data.page;
+      // totalChannels.value = response.data.total;
     })
     .catch((error) => {
       console.log(error);
@@ -98,12 +73,6 @@ const deleteChannel = (id, dialogCloseRef) => {
     .deleteChannel({ id })
     .then(() => {
       fetchChannels();
-      // searchQuery.value,
-      // selectedStatus.value,
-      // dateRange.value?.split("to")[0],
-      // dateRange.value?.split("to")[1],
-      // options.value
-
       dialogCloseRef.value = false;
     })
     .catch((error) => {
@@ -114,51 +83,25 @@ const deleteChannel = (id, dialogCloseRef) => {
     });
 };
 
-// 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
-// watchEffect(() => {
-// const [start, end] = dateRange.value ? dateRange.value.split("to") : "";
-// fetchChannels(
-// searchQuery.value,
-// selectedStatus.value,
-// start,
-// end,
-// options.value
-// );
-// });
+// const onUpdateOptions = (newValue) => {
+//   console.log("onUpdateOptions", newValue);
+//   // options.value = newValue;
+
+//   fetchChannels();
+// };
 </script>
 
 <template>
   <VCard v-if="channels" id="invoice-list">
     <VCardText class="d-flex align-center flex-wrap gap-4">
-      <div class="me-3 d-flex gap-3">
-        <!-- <AppSelect
-          :model-value="options.itemsPerPage"
-          :items="[
-            { value: 10, title: '10' },
-            { value: 25, title: '25' },
-            { value: 50, title: '50' },
-            { value: 100, title: '100' },
-            { value: -1, title: 'All' },
-          ]"
-          style="width: 6.25rem"
-          @update:model-value="options.itemsPerPage = parseInt($event, 10)"
-        /> -->
-      </div>
+      <div class="me-3 d-flex gap-3"></div>
 
       <VSpacer />
 
       <div class="d-flex align-center flex-wrap gap-4">
-        <!-- 👉 Search  -->
-        <!-- <div class="invoice-list-filter">
-          <AppTextField
-            v-model="searchQuery"
-            placeholder="Search Channel"
-            density="compact"
-          />
-        </div> -->
-        <!-- 👉 Create channel -->
+        <!-- 👉 Create -->
         <VBtn prepend-icon="tabler-plus" :to="{ name: 'admin-channels-add' }">
-          Create Channel
+          Create App
         </VBtn>
       </div>
     </VCardText>
@@ -166,38 +109,34 @@ const deleteChannel = (id, dialogCloseRef) => {
     <VDivider />
 
     <!-- SECTION Datatable -->
-    <VDataTableServer
-      v-model:items-per-page="options.itemsPerPage"
-      v-model:page="options.page"
-      :loading="isLoading"
-      :items-length="totalChannels"
+    <!-- <VDataTableServer
+      class="text-no-wrap my-data-table"
+      v-model:items-per-page="itemsPerPage"
       :headers="headers"
       :items="channels"
-      class="text-no-wrap"
-      @update:options="options = $event"
+      :items-length="totalChannels"
+      :loading="isLoading"
+      @update:options="onUpdateOptions"
+    > -->
+    <VDataTable
+      class="text-no-wrap mb-3 my-data-table"
+      :headers="headers"
+      :items="channels"
+      :loading="isLoading"
     >
       <!-- channel id -->
       <template #item.app_id="{ item }">
         <RouterLink
           :to="{
             name: 'admin-channels-preview-id',
-            params: { id: item.raw.app_id },
+            params: { id: item.raw.channel_id },
           }"
         >
-          #{{ item.raw.app_id }}
+          #{{ item.raw.channel_id }}
         </RouterLink>
       </template>
 
       <!-- platforms -->
-      <!-- <template #item.platforms="{ item }">
-        <div class="d-flex align-center">
-          <div class="d-flex flex-column">
-            <h6 class="text-body-1 font-weight-medium mb-0">
-              {{ item.raw.platforms.map((p) => p.platform_type).join(", ") }}
-            </h6>
-          </div>
-        </div>
-      </template> -->
       <template #item.platforms="{ item }">
         <div class="d-flex gap-2">
           <VChip
@@ -228,7 +167,7 @@ const deleteChannel = (id, dialogCloseRef) => {
                   <v-btn
                     class="ml-auto"
                     text="Yes"
-                    @click="deleteChannel(item.raw.app_id, isActive)"
+                    @click="deleteChannel(item.raw.channel_id, isActive)"
                   ></v-btn>
                   <v-btn
                     class="ml-auto"
@@ -244,57 +183,14 @@ const deleteChannel = (id, dialogCloseRef) => {
         <IconBtn
           :to="{
             name: 'admin-channels-edit-id',
-            params: { id: item.raw.app_id },
+            params: { id: item.raw.channel_id },
           }"
         >
           <VIcon icon="mdi-pencil-outline" />
         </IconBtn>
       </template>
-
-      <!-- pagination -->
-      <!-- <template #bottom>
-        <VDivider />
-        <div
-          class="d-flex align-center justify-sm-space-between justify-center flex-wrap gap-3 pa-5 pt-3"
-        >
-          <p class="text-sm text-disabled mb-0">
-            {{ paginationMeta(options, totalChannels) }}
-          </p>
-
-          <VPagination
-            v-model="options.page"
-            :length="Math.ceil(totalChannels / options.itemsPerPage)"
-            :total-visible="
-              $vuetify.display.xs
-                ? 1
-                : Math.ceil(totalChannels / options.itemsPerPage)
-            "
-          >
-            <template #prev="slotProps">
-              <VBtn
-                variant="tonal"
-                color="default"
-                v-bind="slotProps"
-                :icon="false"
-              >
-                Previous
-              </VBtn>
-            </template>
-
-            <template #next="slotProps">
-              <VBtn
-                variant="tonal"
-                color="default"
-                v-bind="slotProps"
-                :icon="false"
-              >
-                Next
-              </VBtn>
-            </template>
-          </VPagination>
-        </div>
-      </template> -->
-    </VDataTableServer>
+      <!-- </VDataTableServer> -->
+    </VDataTable>
     <!-- !SECTION -->
   </VCard>
 </template>
@@ -307,6 +203,11 @@ const deleteChannel = (id, dialogCloseRef) => {
 
   .invoice-list-filter {
     inline-size: 12rem;
+  }
+}
+.my-data-table {
+  .v-table__wrapper {
+    min-height: 100px;
   }
 }
 </style>
