@@ -164,15 +164,7 @@ const fetchSimpleNotifications = () => {
       expand-on-click
     >
       <!-- Expanded Row Data -->
-      <template #expanded-row="slotProps">
-        <tr class="v-data-table__tr">
-          <td :colspan="headers.length">
-            <p class="my-1">City: {{ slotProps.item.raw.city }}</p>
-            <p class="my-1">Experience: {{ slotProps.item.raw.experience }}</p>
-            <p>Post: {{ slotProps.item.raw.post }}</p>
-          </td>
-        </tr>
-      </template>
+      <template #expanded-row="slotProps"><div>Quick Analytics</div></template>
 
       <!-- platforms -->
       <template #item.platforms="{ item }">
@@ -194,10 +186,11 @@ const fetchSimpleNotifications = () => {
         <IconBtn
           :to="{
             name: 'admin-push-notification-simple-add',
-            // params: { copy: item.raw.id },
+            query: { copy: item.raw.id },
           }"
         >
           <VIcon icon="mdi-content-copy" />
+          <VTooltip activator="parent">Duplicate</VTooltip>
         </IconBtn>
       </template>
       <!-- </VDataTableServer> -->

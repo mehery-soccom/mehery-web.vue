@@ -24,7 +24,7 @@
                   <VRow>
                     <VCol cols="12" md="6">
                       <AppSelect
-                        v-model="form.app_id"
+                        v-model="form.channel_id"
                         :items="ChannelList"
                         label="App"
                         placeholder="Select App"
@@ -111,7 +111,15 @@
                 </VForm>
               </VWindowItem>
 
-              <VWindowItem value="tab-segments"></VWindowItem>
+              <VWindowItem value="tab-segments">
+                <VForm>
+                  <VRow>
+                    <VCol cols="12" md="6">
+                      <AppTextField label="Target" value="All Users" disabled />
+                    </VCol>
+                  </VRow>
+                </VForm>
+              </VWindowItem>
             </VWindow>
           </VCardText>
 
@@ -177,7 +185,7 @@ const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg
 const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
 
 const form = reactive({
-  app_id: null,
+  channel_id: null,
   platforms: [],
   title: "",
   message: "",
@@ -192,13 +200,10 @@ const tab = ref("tab-details");
 const ChannelList = ref([]);
 
 onMounted(async () => {
-  // Code that needs to run after the component is mounted
-  console.log("Component mounted");
-
   let res = await channelsStore.fetchChannels();
   ChannelList.value = res.results.map((c) => ({
-    label: c.app_name || c.app_id,
-    value: c.app_id,
+    label: c.channel_name || c.channel_id,
+    value: c.channel_id,
   }));
 });
 
@@ -226,7 +231,7 @@ const onSend = async () => {
     let payload = {
       title: form.title,
       message: form.message,
-      channel_id: form.app_id,
+      channel_id: form.channel_id,
       image_url: form.image_url,
       category: form.buttonGroup,
       buttons: buttonGroupFields.value.map((b) => ({
@@ -251,10 +256,6 @@ const onSend = async () => {
     isLoading.value = false;
   }
 };
-
-// watch(form, (newValue) => {
-//   console.log("watch : form", newValue);
-// });
 
 watch(platform, (newValue) => {
   view.value = "collapse";

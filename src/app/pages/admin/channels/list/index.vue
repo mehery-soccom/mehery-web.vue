@@ -27,11 +27,6 @@ const headers = [
     key: "channel_name",
   },
   {
-    title: "App ID",
-    key: "channel_id",
-    sortable: false,
-  },
-  {
     title: "Platform(s)",
     key: "platforms",
     sortable: false,
@@ -125,14 +120,14 @@ const deleteChannel = (id, dialogCloseRef) => {
       :loading="isLoading"
     >
       <!-- channel id -->
-      <template #item.app_id="{ item }">
+      <template #item.channel_name="{ item }">
         <RouterLink
           :to="{
             name: 'admin-channels-preview-id',
             params: { id: item.raw.channel_id },
           }"
         >
-          #{{ item.raw.channel_id }}
+          {{ item.raw.channel_name }}
         </RouterLink>
       </template>
 
