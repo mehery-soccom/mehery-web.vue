@@ -7,9 +7,9 @@
     <!-- configs -->
     <script>
       window.CONST = {
-        APP: "pushapp",
-        APP_CONTEXT: "/pushapp",
-        APP_TITLE: "PushApp",
+        APP: "pushapp", // "insights360" "notebook"
+        APP_CONTEXT: "/pushapp", // "/insights360" "/notebook"
+        APP_TITLE: "PushApp", // "Insights360" "Notebook"
         CDN_URL:
           location.hostname === "localhost"
             ? "http://localhost:5173"
@@ -38,7 +38,8 @@
           localConfig.SERVER_URL ||
           window.CONST.SERVER_URL;
       }
-      var CONTEXT = location.hostname === "localhost" ? "/pushapp" : "";
+      var CONTEXT =
+        location.hostname === "localhost" ? window.CONST.APP_CONTEXT : "";
       // var CONTEXT = "/__dynamic_base__";
       window.__dynamic_base__ = window.CONST.CDN_URL + CONTEXT;
     </script>

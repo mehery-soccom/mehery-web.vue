@@ -1,35 +1,52 @@
-/* eslint-disable import/order */
-import "@/@fake-db/db";
-import "@/@iconify/icons-bundle";
-import "@core/scss/template/index.scss";
-
-import App from "@app/App.vue";
-import ability from "@app/plugins/casl/ability";
-import i18n from "@app/plugins/i18n";
-import layoutsPlugin from "@app/plugins/layouts";
-import vuetify from "@app/plugins/vuetify";
-import { loadFonts } from "@app/plugins/webfontloader";
-import router from "@app/router";
-import "@app/styles/styles.scss";
-
 import { abilitiesPlugin } from "@casl/vue";
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 
-loadFonts();
+import "@/@iconify/icons-bundle";
 
-// Create vue app
-const app = createApp(App);
+import vuetify from "@app/plugins/vuetify";
 
-// Use plugins
-app.use(vuetify);
-app.use(createPinia());
-app.use(router);
-app.use(layoutsPlugin);
-app.use(i18n);
-app.use(abilitiesPlugin, ability, {
-  useGlobalProperties: true,
-});
+import ability from "@app/plugins/casl/ability"; // TODO - not needed
+// import i18n from "@app/plugins/i18n";
 
-// Mount vue app
-app.mount("#app");
+(async (cmap, cname) => {
+  let c = cmap[cname];
+
+  if (!c) return console.log("Invalid APP", { cname });
+
+  const _app = await c.app();
+  const _router = await c.router();
+  const _layoutsPlugin = await c.layoutsPlugin();
+
+  const app = createApp(_app.default);
+
+  app.use(_router.default);
+  app.use(_layoutsPlugin.default);
+  app.use(vuetify);
+  app.use(createPinia());
+  // app.use(i18n);
+  app.use(abilitiesPlugin, ability, {
+    useGlobalProperties: true,
+  });
+
+  app.mount("#app");
+})(
+  {
+    pushapp: {
+      app: () => import("@app/App.vue"),
+      router: () => import("@app/router"),
+      layoutsPlugin: () => import("@app/plugins/layouts"),
+    },
+    insights360: {
+      app: () => import("@app-insights360/App.vue"),
+      router: () => import("@app-insights360/router"),
+      layoutsPlugin: () => import("@app-insights360/plugins/layouts"),
+    },
+    notebook: {
+      app: () => import("@app-notebook/App.vue"),
+      router: () => import("@app-notebook/router"),
+      layoutsPlugin: () => import("@app-notebook/plugins/layouts"),
+    },
+  },
+  window.CONST.APP
+);

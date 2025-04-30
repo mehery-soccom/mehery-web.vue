@@ -23,7 +23,7 @@ export const createLayouts = userConfig => {
   config.app.contentWidth.value = localStorageContentWidth || userConfig.app.contentWidth
   config.app.contentLayoutNav.value = userConfig.app.contentLayoutNav
   config.app.overlayNavFromBreakpoint = userConfig.app.overlayNavFromBreakpoint
-  config.app.enableI18n = userConfig.app.enableI18n
+  // config.app.enableI18n = userConfig.app.enableI18n
   config.app.isRtl.value = localStorageIsRtl ? JSON.parse(localStorageIsRtl) : userConfig.app.isRtl
   config.app.iconRenderer = userConfig.app.iconRenderer
   config.navbar.type.value = userConfig.navbar.type

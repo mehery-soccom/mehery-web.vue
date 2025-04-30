@@ -1,9 +1,19 @@
 <script setup>
-import SnackbarProvider from "@app/components/SnackbarProvider.vue";
+import "@/@fake-db/db";
+
+import "@app/styles/styles.scss";
+import "@core/scss/template/index.scss";
+
+import { loadFonts } from "@app/plugins/webfontloader";
+loadFonts();
+
+import { useTheme } from "vuetify";
+
 import ScrollToTop from "@core/components/ScrollToTop.vue";
 import { useThemeConfig } from "@core/composable/useThemeConfig";
+
+import SnackbarProvider from "@app/plugins/SnackbarProvider.vue";
 import { hexToRgb } from "@layouts/utils";
-import { useTheme } from "vuetify";
 
 const {
   syncInitialLoaderTheme,

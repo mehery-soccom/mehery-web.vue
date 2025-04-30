@@ -1,10 +1,12 @@
 import router from "@app/router";
 import axios from "axios";
 
+import { REMOTE_SERVER_URL } from "@core/constants";
+
 const axiosIns = axios.create({
   // You can add your headers here
   // ================================
-  baseURL: "https://demo.mehery.xyz",
+  baseURL: REMOTE_SERVER_URL,
   // timeout: 1000,
   // headers: {'X-Custom-Header': 'foobar'}
 });

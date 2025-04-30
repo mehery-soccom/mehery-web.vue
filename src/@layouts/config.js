@@ -4,13 +4,12 @@ import { breakpointsVuetify } from '@vueuse/core'
 export const config = {
   app: {
     title: 'title',
-    logo: h('img', { src: '/src/app/assets/logo.svg' }),
-
+    // logo: h('img', { src: '/src/app/assets/logo.svg' }),
     // logo: () => h('img', { src: 'assets/colored-logo.png' }, null),
     contentWidth: ref(ContentWidth.Boxed),
     contentLayoutNav: ref(AppContentLayoutNav.Vertical),
     overlayNavFromBreakpoint: breakpointsVuetify.md,
-    enableI18n: true,
+    // enableI18n: true,
     isRtl: ref(false),
   },
   navbar: {

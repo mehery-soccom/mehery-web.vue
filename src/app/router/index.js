@@ -1,22 +1,51 @@
-import { APP_CONTEXT } from "@core/constants";
+import { APP, APP_CONTEXT } from "@core/constants";
 import { canNavigate } from "@layouts/plugins/casl";
-import { setupLayouts } from "virtual:generated-layouts";
 import { createRouter, createWebHistory } from "vue-router";
+
 import routes from "~pages";
+// import { setupLayouts } from "virtual:generated-layouts";
+function setupLayouts(routes) {
+  return routes.map((route) => {
+    return {
+      path: route.path,
+      meta: route.meta,
+      component: () =>
+        import(`../layouts/${route.meta?.layout || "default"}.vue`),
+      children: route.path === "/" ? [route] : [{ ...route, path: "" }],
+    };
+  });
+}
 
 import { isUserLoggedIn } from "./utils";
 
+const _routes = routes
+  .map((r) => {
+    let nameArr = r.name.split("-");
+    let pathArr = r.path.slice(1).split("/");
+    let _r = { ...r };
+    _r.appName = nameArr[0];
+    nameArr.shift();
+    pathArr.shift();
+    _r.name = nameArr.join("-");
+    _r.path = `/${pathArr.join("/")}`;
+
+    return _r;
+  })
+  .filter((r) => {
+    return r.appName === `app_${APP}`;
+  });
+console.log(_routes);
 /*
-console.log(routes)
 {
     "name": "apps-invoice-list",
     "path": "/apps/invoice/list",
     "component": () => import("path-to-component")
 }
 */
-const routesWithLayout = setupLayouts(routes);
+
+const routesWithLayout = setupLayouts(_routes);
+console.log(routesWithLayout);
 /*
-console.log(routesWithLayout)
 {
     "path": "/apps/invoice/list",
     "component": () => import("path-to-layout"),

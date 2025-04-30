@@ -1,7 +1,6 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useTheme } from 'vuetify'
-import { staticPrimaryColor } from '@app/plugins/vuetify/theme'
 import { useThemeConfig } from '@core/composable/useThemeConfig'
 import {
   RouteTransitions,
@@ -14,6 +13,8 @@ import {
   NavbarType,
 } from '@layouts/enums'
 import { themeConfig } from '@themeConfig'
+
+const staticPrimaryColor = '#7367F0'
 
 const isNavDrawerOpen = ref(false)
 const { theme, skin, appRouteTransition, navbarType, footerType, isVerticalNavCollapsed, isVerticalNavSemiDark, appContentWidth, appContentLayoutNav, isAppRtl, isNavbarBlurEnabled, isLessThanOverlayNavBreakpoint } = useThemeConfig()

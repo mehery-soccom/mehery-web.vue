@@ -4,7 +4,7 @@ import { useThemeConfig } from '@core/composable/useThemeConfig'
 
 // Components
 import Footer from '@app/layouts/components/Footer.vue'
-import NavBarI18n from '@app/layouts/components/NavBarI18n.vue'
+// import NavBarI18n from '@app/layouts/components/NavBarI18n.vue'
 import NavBarNotifications from '@app/layouts/components/NavBarNotifications.vue'
 import NavbarShortcuts from '@app/layouts/components/NavbarShortcuts.vue'
 import NavbarThemeSwitcher from '@app/layouts/components/NavbarThemeSwitcher.vue'

@@ -1,17 +1,30 @@
-import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+import "dotenv/config";
+
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
+import fs from "fs";
 import { fileURLToPath } from "node:url";
+// import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import DefineOptions from "unplugin-vue-define-options/vite"; // @ts-expect-error Known error: https://github.com/sxzz/unplugin-vue-macros/issues/257#issuecomment-1410752890
 import { defineConfig } from "vite";
 import { dynamicBase } from "vite-plugin-dynamic-base";
 import Pages from "vite-plugin-pages";
-import Layouts from "vite-plugin-vue-layouts";
+// import Layouts from "vite-plugin-vue-layouts";
 import vuetify from "vite-plugin-vuetify";
 
-var CONTEXT = "/pushapp";
+let apps = fs.readdirSync("./src").filter((f) => f.startsWith("app"));
+let pages_dirs = [];
+apps.map((a) => {
+  let _a = a === "app" ? "app_pushapp" : a.replace("-", "_");
+  pages_dirs.push({
+    dir: `src/${a}/pages`,
+    baseRoute: _a,
+  });
+});
+
+var CONTEXT = process.env.APP_CONTEXT || "/pushapp";
 // var CONTEXT = "/__dynamic_base__";
 
 // https://vitejs.dev/config/
@@ -29,19 +42,24 @@ export default defineConfig({
 
     vuetify({
       styles: {
-        configFile: "src/app/styles/variables/_vuetify.scss",
+        // configFile: "src/app/styles/variables/_vuetify.scss",
+        configFile: "src/@core/scss/template/libs/vuetify/_variables.scss",
       },
     }),
 
     Pages({
-      dirs: ["./src/app/pages"],
-
+      dirs: pages_dirs,
+      // extendRoute(route, parent) {
+      //   return {
+      //     ...route,
+      //   };
+      // },
       // ℹ️ We need three routes using single routes so we will ignore generating route for this SFC file
       onRoutesGenerated: (routes) => [
         // Email filter
         {
-          path: "/apps/email/:filter",
-          name: "apps-email-filter",
+          path: "/app_pushapp/apps/email/:filter",
+          name: "app_pushapp-apps-email-filter",
           component: "/src/app/pages/apps/email/index.vue",
           meta: {
             navActiveLink: "apps-email",
@@ -51,8 +69,8 @@ export default defineConfig({
 
         // Email label
         {
-          path: "/apps/email/label/:label",
-          name: "apps-email-label",
+          path: "/app_pushapp/apps/email/label/:label",
+          name: "app_pushapp-apps-email-label",
           component: "/src/app/pages/apps/email/index.vue",
           meta: {
             // contentClass: 'email-application',
@@ -63,9 +81,9 @@ export default defineConfig({
         ...routes,
       ],
     }),
-    Layouts({
-      layoutsDirs: "./src/app/layouts/",
-    }),
+    // Layouts({
+    //   layoutsDirs: "./src/app/layouts/",
+    // }),
 
     /*
     without :
@@ -105,8 +123,8 @@ export default defineConfig({
     Components({
       dirs: [
         "src/@core/components",
-        "src/app/views/demos",
-        "src/app/components",
+        // "src/app/views/demos",
+        // "src/app/components",
       ],
       dts: false,
     }),
@@ -130,22 +148,22 @@ export default defineConfig({
         "vue-router",
         "@vueuse/core",
         "@vueuse/math",
-        "vue-i18n",
+        // "vue-i18n",
         "pinia",
       ],
       vueTemplate: true,
       dts: false,
     }),
 
-    VueI18nPlugin({
-      runtimeOnly: true,
-      compositionOnly: true,
-      include: [
-        fileURLToPath(
-          new URL("./src/app/plugins/i18n/locales/**", import.meta.url)
-        ),
-      ],
-    }),
+    // VueI18nPlugin({
+    //   runtimeOnly: true,
+    //   compositionOnly: true,
+    //   include: [
+    //     fileURLToPath(
+    //       new URL("./src/app/plugins/i18n/locales/**", import.meta.url)
+    //     ),
+    //   ],
+    // }),
 
     /*
     Options API can be declared using the defineOptions in <script setup>,
@@ -191,13 +209,15 @@ export default defineConfig({
       "@app-configured-variables": fileURLToPath(
         new URL("./src/app/styles/variables/_template.scss", import.meta.url)
       ),
+      "@app-insights360": fileURLToPath(
+        new URL("./src/app-insights360", import.meta.url)
+      ),
+      "@app-notebook": fileURLToPath(
+        new URL("./src/app-notebook", import.meta.url)
+      ),
     },
   },
   build: {
-    // lib: {
-    //   name: "myApp",
-    //   entry: ["src/main.js"],
-    // },
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,
