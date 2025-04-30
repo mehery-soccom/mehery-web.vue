@@ -60,7 +60,7 @@ export default defineConfig({
         {
           path: "/app_pushapp/apps/email/:filter",
           name: "app_pushapp-apps-email-filter",
-          component: "/src/app/pages/apps/email/index.vue",
+          component: "/src/app-pushapp/pages/apps/email/index.vue",
           meta: {
             navActiveLink: "apps-email",
             layoutWrapperClasses: "layout-content-height-fixed",
@@ -71,7 +71,7 @@ export default defineConfig({
         {
           path: "/app_pushapp/apps/email/label/:label",
           name: "app_pushapp-apps-email-label",
-          component: "/src/app/pages/apps/email/index.vue",
+          component: "/src/app-pushapp/pages/apps/email/index.vue",
           meta: {
             // contentClass: 'email-application',
             navActiveLink: "apps-email",
@@ -205,10 +205,13 @@ export default defineConfig({
       ),
 
       // custom
-      "@app": fileURLToPath(new URL("./src/app", import.meta.url)),
       "@app-configured-variables": fileURLToPath(
-        new URL("./src/app/styles/variables/_template.scss", import.meta.url)
+        new URL(
+          "./src/app-pushapp/styles/variables/_template.scss",
+          import.meta.url
+        )
       ),
+      "@app": fileURLToPath(new URL("./src/app-pushapp", import.meta.url)),
       "@app-insights360": fileURLToPath(
         new URL("./src/app-insights360", import.meta.url)
       ),
