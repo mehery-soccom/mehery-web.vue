@@ -48,5 +48,5 @@ import ability from "@app/plugins/casl/ability"; // TODO - not needed
       layoutsPlugin: () => import("@app-notebook/plugins/layouts"),
     },
   },
-  window.CONST.APP
+  window.CONST.APP // WEBAPP
 );

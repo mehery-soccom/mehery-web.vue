@@ -123,8 +123,8 @@ export default defineConfig({
     Components({
       dirs: [
         "src/@core/components",
-        // "src/app/views/demos",
-        // "src/app/components",
+        "src/app-pushapp/views/demos",
+        "src/app-pushapp/components",
       ],
       dts: false,
     }),
