@@ -11,8 +11,6 @@ const axiosIns = axios.create({
 
 // ℹ️ Add request interceptor to send the authorization header on each subsequent request after login
 axiosIns.interceptors.request.use((config) => {
-  console.log("axios interceptors.request", config);
-
   // Retrieve token from localStorage
   const token = localStorage.getItem("accessToken");
 

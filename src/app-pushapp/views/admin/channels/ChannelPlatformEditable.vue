@@ -42,7 +42,7 @@ const removePlatform = () => {
       <VRow>
         <VCol cols="12" md="6">
           <AppSelect
-            :readonly="props.mode !== 'ADD'"
+            :readonly="data.platform_id"
             v-model="data.platform_type"
             :items="itemsOptions"
             item-title="label"

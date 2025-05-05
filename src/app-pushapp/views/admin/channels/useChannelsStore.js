@@ -47,6 +47,14 @@ export const useChannelsStore = defineStore("ChannelsStore", {
       });
     },
 
+    // 👉 Update Platform
+    updatePlatform({ channel_id, platform_id }, params) {
+      return axios.put(
+        `pushapp/api/channel/${channel_id}/platform/${platform_id}/deactivate`,
+        params
+      );
+    },
+
     // 👉 Delete Channel
     deleteChannel({ id }) {
       return axios.delete(`pushapp/api/channel/${id}`);

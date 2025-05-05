@@ -91,9 +91,16 @@ const onUpdate = async () => {
   }
 };
 
-const onUpdatePlatform = async ({ id }) => {
+const onUpdatePlatform = async ({ channel_id, platform_id }) => {
   try {
     isLoading.value = true;
+
+    await channelsStore.updatePlatform(
+      { channel_id, platform_id },
+      { user_id: "user123" }
+    );
+    show({ message: "Platform updated successfully", color: "success" });
+    router.push({ name: "admin-channels-list" });
   } catch (error) {
     console.error(error);
     show({ message: "Something went wrong", color: "error" });
@@ -108,7 +115,11 @@ const onUpdatePlatform = async ({ id }) => {
     <VCol cols="12" md="9">
       <VRow>
         <VCol cols="12">
-          <ChannelEditable :data="channelData" mode="EDIT" />
+          <ChannelEditable
+            :data="channelData"
+            mode="EDIT"
+            @update-platform="onUpdatePlatform"
+          />
         </VCol>
       </VRow>
       <VRow>

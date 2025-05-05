@@ -14,7 +14,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["fileUpload"]);
+const emit = defineEmits(["fileUpload", "updatePlatform"]);
 
 onMounted(async () => {});
 
@@ -44,8 +44,13 @@ const addPlatform = () => {
 };
 
 const removePlatform = (index) => {
-  if (!props.data.platforms[index].platform_id) {
+  let channel_id = props.data.channel_id;
+  let platform_id = props.data.platforms[index].platform_id;
+
+  if (!platform_id) {
     props.data.platforms.splice(index, 1);
+  } else {
+    emit("updatePlatform", { channel_id, platform_id });
   }
 };
 
