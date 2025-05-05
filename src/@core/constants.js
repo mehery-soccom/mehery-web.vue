@@ -10,5 +10,5 @@ export const APP_CONTEXT =
     notebook: `/nexus/notebook` || ``,
   }[APP];
 export const REMOTE_SERVER_URL =
-  CONST.remoteServerUrl || "https://demo.mehery.xyz";
+  CONST.remoteServerUrl || window.location.origin;
 export const REMOTE_JS_URL = CONST.remoteJsUrl;

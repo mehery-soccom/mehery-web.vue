@@ -1,16 +1,20 @@
 import router from "@app/router";
 import axios from "axios";
 
+let base = window.location.origin;
+console.log("axios base", base);
 const axiosIns = axios.create({
   // You can add your headers here
   // ================================
-  baseURL: window.location.origin,
+  baseURL: base,
   // timeout: 1000,
   // headers: {'X-Custom-Header': 'foobar'}
 });
 
 // ℹ️ Add request interceptor to send the authorization header on each subsequent request after login
 axiosIns.interceptors.request.use((config) => {
+  console.log("axios interceptors.request", config);
+
   // Retrieve token from localStorage
   const token = localStorage.getItem("accessToken");
 
