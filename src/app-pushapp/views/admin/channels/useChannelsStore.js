@@ -1,4 +1,4 @@
-import axios from "@app/plugins/axios";
+import axios from "@app/plugins/_axios";
 import { defineStore } from "pinia";
 
 export const useChannelsStore = defineStore("ChannelsStore", {
