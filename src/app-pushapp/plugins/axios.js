@@ -1,12 +1,10 @@
 import router from "@app/router";
 import axios from "axios";
 
-import { REMOTE_SERVER_URL } from "@core/constants";
-
 const axiosIns = axios.create({
   // You can add your headers here
   // ================================
-  baseURL: REMOTE_SERVER_URL,
+  baseURL: window.location.origin,
   // timeout: 1000,
   // headers: {'X-Custom-Header': 'foobar'}
 });
