@@ -1,4 +1,4 @@
-import axios from "@app/plugins/_axios";
+import axios from "@app/plugins/axios";
 import { defineStore } from "pinia";
 
 export const usePushNotificationStore = defineStore("PushNotificationStore", {
