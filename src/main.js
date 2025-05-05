@@ -30,6 +30,21 @@ import ability from "@app/plugins/casl/ability"; // TODO - not needed
   });
 
   app.mount("#app");
+
+  try {
+    console.log(`
+    ################################# CDN DETAILS #################################
+    VERSION :: ${process.env?.VUE_APP_VERSION || "-"}
+    BUILD TIME :: ${
+      process.env?.VUE_APP_TIMESTAMP
+        ? new Date(Number(process.env.VUE_APP_TIMESTAMP))
+        : "-"
+    }
+    ###############################################################################
+  `);
+  } catch (error) {
+    console.error(error);
+  }
 })(
   {
     pushapp: {

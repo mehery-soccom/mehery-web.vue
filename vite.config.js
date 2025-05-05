@@ -185,7 +185,12 @@ export default defineConfig({
     */
     DefineOptions(),
   ],
-  define: { "process.env": {} },
+  define: {
+    "process.env": {
+      VUE_APP_VERSION: require("./package.json").version,
+      VUE_APP_TIMESTAMP: Date.now(),
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

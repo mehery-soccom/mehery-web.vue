@@ -1,6 +1,6 @@
 {
-  "name": "vuexy-vuejs-admin-template",
-  "version": "8.0.0",
+  "name": "mehery-web-vue",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "vite",
