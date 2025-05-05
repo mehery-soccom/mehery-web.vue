@@ -90,7 +90,7 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
 
     // 👉 Send Bulk Notification
     sendBulk(params) {
-      return axios.post("/pushapp/api/send-notification-bulk", params);
+      return axios.post("pushapp/api/send-notification-bulk", params);
     },
   },
 });
