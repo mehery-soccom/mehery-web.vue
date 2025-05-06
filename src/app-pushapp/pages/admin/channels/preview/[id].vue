@@ -15,7 +15,7 @@ if (paramId) {
     .fetchChannel({ id: paramId })
     .then((response) => {
       console.log(response);
-      channelData.value = response.data; // TODO
+      channelData.value = response.data.channel; // TODO
     })
     .catch((error) => {
       console.log(error);

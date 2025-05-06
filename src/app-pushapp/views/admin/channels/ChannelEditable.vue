@@ -75,6 +75,9 @@ const handleFileUpload = (file, index) => {
             placeholder="Enter App Name"
           />
         </VCol>
+        <VCol cols="12" md="6" v-if="data.channel_id">
+          <AppTextField v-model="data.channel_id" label="App ID" readonly />
+        </VCol>
       </VRow>
       <VRow>
         <VCol cols="12" md="6">
@@ -101,7 +104,7 @@ const handleFileUpload = (file, index) => {
         <VBtn
           size="38"
           @click="addPlatform"
-          :disabled="props.data.platforms.length >= 3"
+          :disabled="props.data.platforms?.length >= 3"
         >
           <VIcon size="22" icon="tabler-plus" />
         </VBtn>

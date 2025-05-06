@@ -1,4 +1,5 @@
 <script setup>
+import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 import { VDataTable } from "vuetify/labs/VDataTable";
 
@@ -107,6 +108,37 @@ const fetchSimpleNotifications = () => {
           sends: 100,
           opens: 20,
         },
+        {
+          id: "680dbc058ef6189fa647b0b1",
+          notification: "hello world 2",
+          status: "In-progress",
+          platforms: [
+            {
+              active: true,
+              bundle_id: "com.mehery.admin.meheryAdmin",
+              file_path:
+                "configs/uploads/mehery1234_1745730565438_ios_1745730565440.p8",
+              key_id: "DACSCD48Y8",
+              platform_id: "mehery1234_1745730565438_ios_1745730565440",
+              platform_type: "ios",
+              team_id: "6CRFUK7DVC",
+              _id: "680dbc058ef6189fa647b0b1",
+            },
+            {
+              active: true,
+              bundle_id: "com.mehery.admin.mehery_admin",
+              file_path:
+                "configs/uploads/mehery1234_1745730565438_android_1745730565442.json",
+              platform_id: "mehery1234_1745730565438_android_1745730565442",
+              platform_type: "android",
+              _id: "680dbc058ef6189fa647b0b2",
+            },
+          ],
+          start: "-",
+          end: "-",
+          sends: 80,
+          opens: 10,
+        },
       ];
       // totalNotifications.value = response.data.total;
     })
@@ -164,7 +196,13 @@ const fetchSimpleNotifications = () => {
       expand-on-click
     >
       <!-- Expanded Row Data -->
-      <template #expanded-row="slotProps"><div>Quick Analytics</div></template>
+      <template #expanded-row="slotProps">
+        <tr class="v-data-table__tr">
+          <td :colspan="headers.length">
+            <NotificationQuickAnalytics :data="slotProps.item.raw" />
+          </td>
+        </tr>
+      </template>
 
       <!-- platforms -->
       <template #item.platforms="{ item }">

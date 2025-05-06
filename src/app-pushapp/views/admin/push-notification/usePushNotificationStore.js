@@ -81,11 +81,19 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
   getters: {},
   actions: {
     // 👉 Fetch Simple Notifications
-    fetchSimpleNotifications(params) {
+    async fetchSimpleNotifications() {
+      let apiRes = await axios.get("pushapp/api/notifications");
       let res = {
-        results: [],
+        results: apiRes.data.data,
+        data: {},
       };
-      return Promise.resolve(res);
+      console.log(res);
+      return res;
+    },
+
+    // 👉 Fetch Single Notification
+    async fetchSimpleNotification({ id }) {
+      return axios.get(`pushapp/api/notification/${id}`);
     },
 
     // 👉 Send Bulk Notification

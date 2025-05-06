@@ -57,7 +57,7 @@ export const useChannelsStore = defineStore("ChannelsStore", {
 
     // 👉 Delete Channel
     deleteChannel({ id }) {
-      return axios.delete(`pushapp/api/channel/${id}`);
+      return axios.delete(`pushapp/api/channel/${id}?user_id=user123`);
     },
   },
 });

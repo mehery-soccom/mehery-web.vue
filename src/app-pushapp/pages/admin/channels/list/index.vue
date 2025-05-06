@@ -2,6 +2,7 @@
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import { VDataTable } from "vuetify/labs/VDataTable";
 
+const { show } = inject("snackbar");
 const channelsStore = useChannelsStore();
 const isLoading = ref(false);
 const channels = ref([]);
@@ -25,6 +26,10 @@ const headers = [
   {
     title: "App Name",
     key: "channel_name",
+  },
+  {
+    title: "App ID",
+    key: "channel_id",
   },
   {
     title: "Platform(s)",
@@ -56,6 +61,7 @@ const fetchChannels = () => {
     })
     .catch((error) => {
       console.log(error);
+      show({ message: "Something went wrong", color: "error" });
     })
     .finally(() => {
       isLoading.value = false;
@@ -69,9 +75,11 @@ const deleteChannel = (id, dialogCloseRef) => {
     .then(() => {
       fetchChannels();
       dialogCloseRef.value = false;
+      show({ message: "Channel deleted successfully", color: "success" });
     })
     .catch((error) => {
       console.log(error);
+      show({ message: "Something went wrong", color: "error" });
     })
     .finally(() => {
       isLoading.value = false;
