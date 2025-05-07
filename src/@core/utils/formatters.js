@@ -44,3 +44,31 @@ export const formatDateToMonthShort = (value, toTimeForCurrentDay = true) => {
   return new Intl.DateTimeFormat('en-US', formatting).format(new Date(value))
 }
 export const prefixWithPlus = value => value > 0 ? `+${value}` : value
+
+import { differenceInDays, format, isYesterday, parseISO } from "date-fns";
+
+export const smartFormatDate = (dateStr, showTime = true) => {
+  if (!dateStr) return "";
+  const date = parseISO(dateStr);
+  const timeFormat = showTime ? " p" : ""; // e.g., ' 10:45 AM'
+
+  if (isToday(date)) {
+    return "Today" + (showTime ? ` at ${format(date, "p")}` : "");
+  }
+
+  if (isYesterday(date)) {
+    return "Yesterday" + (showTime ? ` at ${format(date, "p")}` : "");
+  }
+
+  const daysOld = differenceInDays(new Date(), date);
+
+  if (daysOld < 7) {
+    return format(date, `EEE, MMM d, ${timeFormat}`);
+  }
+
+  if (daysOld < 365) {
+    return format(date, `MMM d, ${timeFormat}`);
+  }
+
+  return format(date, `MMM d, yyyy, ${timeFormat}`);
+};

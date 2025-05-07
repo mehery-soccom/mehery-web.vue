@@ -2,6 +2,7 @@
 import { useTheme } from "vuetify";
 import { getLatestBarChartConfig } from "@core/libs/chartjs/chartjsConfig";
 import BarChart from "@core/libs/chartjs/components/BarChart";
+import { PLATFORM_COLORS } from "@app/utils/constants";
 
 const props = defineProps({
   colors: {
@@ -15,65 +16,83 @@ const props = defineProps({
 });
 
 const vuetifyTheme = useTheme();
-const chartOptions = computed(() =>
-  getLatestBarChartConfig(vuetifyTheme.current.value)
-);
+const chartOptions = computed(() => {
+  let o = getLatestBarChartConfig(vuetifyTheme.current.value);
+  let max = props.data.sent_to?.total || 0;
 
-onMounted(async () => {
-  console.log("NotificationQuickAnalytics mounted", props);
+  return {
+    ...o,
+    scales: {
+      ...o.scales,
+      x: {
+        ...o.scales.x,
+      },
+      y: {
+        ...o.scales.y,
+        min: 0,
+        max,
+        ticks: {
+          stepSize: (max / 6).toFixed(),
+        },
+      },
+    },
+    plugins: {
+      ...o.plugins,
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (context) => {
+            return "";
+          },
+          label: (context) => {
+            return `${context.dataset.label} : ${context.formattedValue}`;
+          },
+        },
+      },
+    },
+  };
 });
 
-const _colors = {
-  white: "#fff",
-  yellow: "#ffe802",
-  primary: "#836af9",
-  areaChartBlue: "#2c9aff",
-  barChartYellow: "#ffcf5c",
-  polarChartGrey: "#4f5d70",
-  polarChartInfo: "#299aff",
-  lineChartYellow: "#d4e157",
-  polarChartGreen: "#28dac6",
-  lineChartPrimary: "#9e69fd",
-  lineChartWarning: "#ff9800",
-  horizontalBarInfo: "#26c6da",
-  polarChartWarning: "#ff8131",
-  scatterChartGreen: "#28c76f",
-  warningShade: "#ffbd1f",
-  areaChartBlueLight: "#84d0ff",
-  areaChartGreyLight: "#edf1f4",
-  scatterChartWarning: "#ff9f43",
-  ...(props.colors || {}),
-};
+onMounted(async () => {});
 
 const _data = {
   labels: [
-    // "7/12",
-    // "8/12",
-    // "9/12",
-    // "10/12",
-    // "11/12",
-    // "12/12",
-    // "13/12",
-    // "14/12",
-    // "15/12",
-    // "16/12",
-    // "17/12",
-    // "18/12",
-    // "19/12",
-    "Sends",
-    "Opens",
+    `Sends ( ${props.data.sent_to.total} )`,
+    `Opens ( ${props.data.opened.total} )`,
   ],
   datasets: [
     {
-      maxBarThickness: 15,
-      backgroundColor: _colors.barChartYellow,
+      label: "IOS",
+      maxBarThickness: 25,
+      backgroundColor: PLATFORM_COLORS.ios.hex,
       borderColor: "transparent",
-      borderRadius: {
-        topRight: 15,
-        topLeft: 15,
-      },
-      //   data: [275, 90, 190, 205, 125, 85, 55, 87, 127, 150, 230, 280, 190],
-      data: [props.data.sends, props.data.opens],
+      // borderRadius: {
+      //   topRight: 25,
+      //   topLeft: 25,
+      // },
+      data: [props.data.sent_to.ios, props.data.opened.ios],
+    },
+    {
+      label: "Android",
+      maxBarThickness: 25,
+      backgroundColor: PLATFORM_COLORS.android.hex,
+      borderColor: "transparent",
+      // borderRadius: {
+      //   topRight: 15,
+      //   topLeft: 15,
+      // },
+      data: [props.data.sent_to.android, props.data.opened.android],
+    },
+    {
+      label: "Huawei",
+      maxBarThickness: 25,
+      backgroundColor: PLATFORM_COLORS.huawei.hex,
+      borderColor: "transparent",
+      // borderRadius: {
+      //   topRight: 15,
+      //   topLeft: 15,
+      // },
+      data: [props.data.sent_to.huawei, props.data.opened.huawei],
     },
   ],
 };

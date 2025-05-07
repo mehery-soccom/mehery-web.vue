@@ -2,24 +2,19 @@
 import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 import { VDataTable } from "vuetify/labs/VDataTable";
+import { smartFormatDate } from "@core/utils/formatters";
 
 const pushNotificationStore = usePushNotificationStore();
 const isLoading = ref(false);
 const notifications = ref([]);
-// const totalNotifications = ref(0);
+const totalNotifications = ref(0);
 // const itemsPerPage = ref(10);
 const colors = {
-  android: {
-    color: "info",
-    text: "Android",
-  },
-  ios: {
+  success: {
     color: "success",
-    text: "IOS",
   },
-  huawei: {
-    color: "primary",
-    text: "Huawei",
+  failed: {
+    color: "error",
   },
 };
 const headers = [
@@ -31,28 +26,29 @@ const headers = [
   {
     title: "Status",
     key: "status",
-  },
-  {
-    title: "Platform(s)",
-    key: "platforms",
     sortable: false,
   },
+  // {
+  //   title: "Platform(s)",
+  //   key: "platforms",
+  //   sortable: false,
+  // },
   {
     title: "Start / Send",
-    key: "start",
+    key: "sent_at",
   },
-  {
-    title: "End",
-    key: "end",
-  },
+  // {
+  //   title: "End",
+  //   key: "end",
+  // },
   {
     title: "Sends",
-    key: "sends",
+    key: "sent_to.total",
     sortable: false,
   },
   {
     title: "Opens",
-    key: "opens",
+    key: "opened.total",
     sortable: false,
   },
   {
@@ -75,72 +71,8 @@ const fetchSimpleNotifications = () => {
   pushNotificationStore
     .fetchSimpleNotifications()
     .then((response) => {
-      notifications.value = response.results;
-      notifications.value = [
-        {
-          id: "680dbc058ef6189fa647b0b0",
-          notification: "hello world",
-          status: "completed",
-          platforms: [
-            {
-              active: true,
-              bundle_id: "com.mehery.admin.meheryAdmin",
-              file_path:
-                "configs/uploads/mehery1234_1745730565438_ios_1745730565440.p8",
-              key_id: "DACSCD48Y8",
-              platform_id: "mehery1234_1745730565438_ios_1745730565440",
-              platform_type: "ios",
-              team_id: "6CRFUK7DVC",
-              _id: "680dbc058ef6189fa647b0b1",
-            },
-            {
-              active: true,
-              bundle_id: "com.mehery.admin.mehery_admin",
-              file_path:
-                "configs/uploads/mehery1234_1745730565438_android_1745730565442.json",
-              platform_id: "mehery1234_1745730565438_android_1745730565442",
-              platform_type: "android",
-              _id: "680dbc058ef6189fa647b0b2",
-            },
-          ],
-          start: "-",
-          end: "-",
-          sends: 100,
-          opens: 20,
-        },
-        {
-          id: "680dbc058ef6189fa647b0b1",
-          notification: "hello world 2",
-          status: "In-progress",
-          platforms: [
-            {
-              active: true,
-              bundle_id: "com.mehery.admin.meheryAdmin",
-              file_path:
-                "configs/uploads/mehery1234_1745730565438_ios_1745730565440.p8",
-              key_id: "DACSCD48Y8",
-              platform_id: "mehery1234_1745730565438_ios_1745730565440",
-              platform_type: "ios",
-              team_id: "6CRFUK7DVC",
-              _id: "680dbc058ef6189fa647b0b1",
-            },
-            {
-              active: true,
-              bundle_id: "com.mehery.admin.mehery_admin",
-              file_path:
-                "configs/uploads/mehery1234_1745730565438_android_1745730565442.json",
-              platform_id: "mehery1234_1745730565438_android_1745730565442",
-              platform_type: "android",
-              _id: "680dbc058ef6189fa647b0b2",
-            },
-          ],
-          start: "-",
-          end: "-",
-          sends: 80,
-          opens: 10,
-        },
-      ];
-      // totalNotifications.value = response.data.total;
+      notifications.value = response.results.map((r) => ({ ...r, id: r._id }));
+      totalNotifications.value = response.data?.total;
     })
     .catch((error) => {
       console.log(error);
@@ -204,8 +136,39 @@ const fetchSimpleNotifications = () => {
         </tr>
       </template>
 
+      <!-- notification -->
+      <template #item.notification="{ item }">
+        <div class="d-flex flex-column ms-3 col-status">
+          <span
+            class="d-block font-weight-medium text--primary text-truncate"
+            >{{ item.raw.title }}</span
+          >
+          <small class="text-truncate">{{ item.raw.message }}</small>
+        </div>
+      </template>
+
+      <!-- status -->
+      <template #item.status="{ item }">
+        <div class="d-flex gap-2">
+          <VChip
+            v-for="[k, v] in Object.entries(item.raw.status)"
+            :key="k"
+            label
+            :color="colors[k]?.color"
+            class="font-weight-medium"
+          >
+            {{ v }}
+          </VChip>
+        </div>
+      </template>
+
+      <!-- sent at -->
+      <template #item.sent_at="{ item }">
+        {{ smartFormatDate(item.raw.sent_at) }}
+      </template>
+
       <!-- platforms -->
-      <template #item.platforms="{ item }">
+      <!-- <template #item.platforms="{ item }">
         <div class="d-flex gap-2">
           <VChip
             v-for="p in item.raw.platforms"
@@ -217,14 +180,14 @@ const fetchSimpleNotifications = () => {
             {{ colors[p.platform_type].text }}
           </VChip>
         </div>
-      </template>
+      </template> -->
 
       <!-- Actions -->
       <template #item.actions="{ item }">
         <IconBtn
           :to="{
             name: 'admin-push-notification-simple-add',
-            query: { copy: item.raw.id },
+            query: { copy: item.raw.notification_id },
           }"
         >
           <VIcon icon="mdi-content-copy" />
@@ -251,5 +214,8 @@ const fetchSimpleNotifications = () => {
   .v-table__wrapper {
     min-height: 100px;
   }
+}
+.col-status {
+  max-width: 125px;
 }
 </style>

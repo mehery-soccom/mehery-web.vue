@@ -1,6 +1,7 @@
 <script setup>
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import { VDataTable } from "vuetify/labs/VDataTable";
+import { PLATFORM_COLORS } from "@app/utils/constants";
 
 const { show } = inject("snackbar");
 const channelsStore = useChannelsStore();
@@ -8,20 +9,6 @@ const isLoading = ref(false);
 const channels = ref([]);
 // const totalChannels = ref(0);
 // const itemsPerPage = ref(10);
-const colors = {
-  android: {
-    color: "info",
-    text: "Android",
-  },
-  ios: {
-    color: "success",
-    text: "IOS",
-  },
-  huawei: {
-    color: "primary",
-    text: "Huawei",
-  },
-};
 const headers = [
   {
     title: "App Name",
@@ -146,10 +133,10 @@ const deleteChannel = (id, dialogCloseRef) => {
             v-for="p in item.raw.platforms"
             :key="p.platform_type"
             label
-            :color="colors[p.platform_type].color"
+            :color="PLATFORM_COLORS[p.platform_type].color"
             class="font-weight-medium"
           >
-            {{ colors[p.platform_type].text }}
+            {{ PLATFORM_COLORS[p.platform_type].text }}
           </VChip>
         </div>
       </template>

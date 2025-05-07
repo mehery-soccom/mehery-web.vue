@@ -15,17 +15,16 @@ export default [
       { title: "Simple", to: "admin-push-notification-simple-list" },
       {
         title: "Styled",
-        // to: { name: "apps-user-view-id", params: { id: 21 } },
         to: { name: "admin-push-notification-styled" },
       },
     ],
   },
-  {
-    title: "Templates",
-    icon: { icon: "tabler-template" },
-    children: [
-      { title: "List", to: "admin-templates-list" },
-      { title: "Add", to: "admin-templates-add" },
-    ],
-  },
+  // {
+  //   title: "Templates",
+  //   icon: { icon: "tabler-template" },
+  //   children: [
+  //     { title: "List", to: "admin-templates-list" },
+  //     { title: "Add", to: "admin-templates-add" },
+  //   ],
+  // },
 ];
