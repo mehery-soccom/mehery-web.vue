@@ -176,6 +176,8 @@ import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
+
+const route = useRoute();
 const pushNotificationStore = usePushNotificationStore();
 const channelsStore = useChannelsStore();
 const { show } = inject("snackbar");
@@ -205,6 +207,32 @@ onMounted(async () => {
     label: c.channel_name || c.channel_id,
     value: c.channel_id,
   }));
+
+  const copy = route.query.copy;
+  if (copy) {
+    pushNotificationStore
+      .fetchSimpleNotification({ id: copy })
+      .then((response) => {
+        console.log(response.data.notification);
+        const notification = response.data.notification;
+        let _buttonGroupValue = {};
+        notification.buttons.map((b) => {
+          _buttonGroupValue[b.button_text] = b.button_url;
+        });
+        Object.assign(form, {
+          ...form,
+          ...notification,
+          buttonGroup: notification.category,
+          buttonGroupValue: _buttonGroupValue,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        show({ message: "Something went wrong", color: "error" });
+      });
+  } else {
+    show({ message: "Invalid Notification ID", color: "error" });
+  }
 });
 
 const PlatformList = [

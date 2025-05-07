@@ -34,8 +34,8 @@ const _routes = routes
   .filter((r) => {
     return r.appName === `app_${APP}`;
   });
-console.log(_routes);
 /*
+console.log(_routes);
 {
     "name": "apps-invoice-list",
     "path": "/apps/invoice/list",
@@ -44,8 +44,8 @@ console.log(_routes);
 */
 
 const routesWithLayout = setupLayouts(_routes);
-console.log(routesWithLayout);
 /*
+console.log(routesWithLayout);
 {
     "path": "/apps/invoice/list",
     "component": () => import("path-to-layout"),

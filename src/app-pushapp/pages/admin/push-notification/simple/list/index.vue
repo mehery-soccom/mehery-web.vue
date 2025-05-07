@@ -125,7 +125,7 @@ const fetchSimpleNotifications = () => {
       :headers="headers"
       :items="notifications"
       :loading="isLoading"
-      expand-on-click
+      show-expand
     >
       <!-- Expanded Row Data -->
       <template #expanded-row="slotProps">
