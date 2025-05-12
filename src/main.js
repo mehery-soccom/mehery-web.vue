@@ -11,7 +11,7 @@ import ability from "@app/plugins/casl/ability"; // TODO - not needed
 
 (async (cmap, cname) => {
   let c = cmap[cname];
-
+  console.log(`app name : ${JSON.stringify(cname)}`);
   if (!c) return console.log("Invalid APP", { cname });
 
   const _app = await c.app();

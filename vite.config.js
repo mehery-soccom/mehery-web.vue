@@ -16,6 +16,7 @@ import vuetify from "vite-plugin-vuetify";
 
 let apps = fs.readdirSync("./src").filter((f) => f.startsWith("app"));
 let pages_dirs = [];
+console.log(`apps : ${JSON.stringify(apps)}`);
 apps.map((a) => {
   let _a = a === "app" ? "app_pushapp" : a.replace("-", "_");
   pages_dirs.push({
@@ -25,6 +26,7 @@ apps.map((a) => {
 });
 
 var CONTEXT = process.env.APP_CONTEXT || "/pushapp";
+console.log(`context : ${CONTEXT}`);
 // var CONTEXT = "/__dynamic_base__";
 
 // https://vitejs.dev/config/
@@ -125,6 +127,8 @@ export default defineConfig({
         "src/@core/components",
         "src/app-pushapp/views/demos",
         "src/app-pushapp/components",
+        "src/app-notebook/views/demos",
+        "src/app-notebook/components",
       ],
       dts: false,
     }),
