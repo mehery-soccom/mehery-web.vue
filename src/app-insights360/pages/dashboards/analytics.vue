@@ -288,7 +288,7 @@ const fetchResolvedChat = async (start, end, chan, agent, type) => {
 const fetchSatScore = async (start, end, chan, agent, type) => {
   try {
     const response = await projectStore.fetchSatScores(start, end, chan, agent, type);
-    const total = response?.data?.results?.[0]?.total;
+    const total = response?.data?.results?.[0]?.avgScore;
     if (total != null) statsAgent.value[3].stats = String(total);
   } catch (error) { console.error("analytics error", error); }
 };
@@ -312,7 +312,7 @@ const fetchBotResolvedChat = async (start, end, chan) => {
 const fetchBotSatScore = async (start, end, chan) => {
   try {
     const response = await projectStore.fetchBotSatScores(start, end, chan);
-    const total = response?.data?.results?.[0]?.total;
+    const total = response?.data?.results?.[0]?.avgScore;
     if (total != null) statsBot.value[3].stats = String(total);
   } catch (error) { console.error("analytics error", error); }
 };
