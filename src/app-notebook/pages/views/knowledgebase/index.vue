@@ -240,7 +240,7 @@ export default {
       console.log(`Attempting to delete KB ID: ${kbId}, Name: ${kbName}`);
 
       try {
-        const response = await fetch(`/api/your-backend-endpoint/knowledgebases`, { // Replace with your actual API URL
+        const response = await fetch(`http://localhost:8090/nexus/notebook/api/qapairs/kb`, { // Replace with your actual API URL
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

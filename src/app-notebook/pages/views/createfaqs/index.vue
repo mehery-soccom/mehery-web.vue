@@ -50,12 +50,46 @@
       </div>
     </div>
 
+    <div class="kb-selection-container" v-if="tenantSelected">
+      <div class="form-group">
+        <label for="kbSelect">Select Knowledge Base:</label>
+        <div class="select-container">
+          <select 
+            id="kbSelect" 
+            v-model="selectedTopicId" 
+            class="form-select"
+            @change="tpChanged"
+          >
+            <option value="" disabled>Select a topic</option>
+            <option v-for="tp in topics" :key="tp._id" :value="tp._id">
+              {{ tp.topic_name }}
+            </option>
+          </select>
+          <div v-if="loadingKbs" class="loading-spinner">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <div class="selection-info" v-if="tenantPartitionKey && selectedKbId && selectedTopicId">
+      <div class="current-selections">
+        <div class="selection-item">
+          <span>Current Tenant: <strong>{{ tenantPartitionKey }}</strong></span>
+        </div>
+        <div class="selection-item">
+          <span>Knowledge Base: <strong>{{ selectedKbName }}</strong></span>
+        </div>
+        <div class="selection-item">
+          <span>Topic: <strong>{{ selectedTopicName }}</strong></span>
+        </div>
+        <button @click="changeSelections" class="btn btn-secondary">Change Selections</button>
+      </div>
+    </div>
     <!-- Status Message For Selection Requirements -->
     <div v-if="!canShowQAEditor" class="selection-requirements">
       <div class="alert alert-info">
-        <p v-if="!tenantSelected && !kbSelected">Tenant and Knowledge Base are not selected</p>
+        <p v-if="!tenantSelected && !kbSelected && !selectedTopicId">Tenant ,Knowledge Base and topic are not selected</p>
         <p v-else-if="!tenantSelected">Tenant is not selected</p>
         <p v-else-if="!kbSelected">Knowledge Base is not selected</p>
+        <p v-else-if="!selectedTopicId">Topic is not selected</p>
       </div>
     </div>
 
@@ -130,7 +164,9 @@ export default {
       tenantPartitionKey: "",
       tenantSelected: false,
       knowledgebases: [],
-      selectedKbId: "",
+      topics : [],
+      selectedKbId: null,
+      selectedKbName : "",
       kbSelected: false,
       loadingKbs: false,
       qaPairs: [
@@ -143,19 +179,22 @@ export default {
       statusMessage: "",
       statusType: "info", // 'info', 'success', 'error'
       statusTimeout: null,
+      selectedTopicId : null,
+      selectedTopicName : "",
+      topicSelected : false
     };
   },
 
   computed: {
     isFormValid() {
       // Check if tenant key is provided, kb is selected, and all QA pairs have content
-      if (!this.tenantPartitionKey.trim() || !this.selectedKbId) return false;
+      if (!this.tenantPartitionKey.trim() || !this.selectedKbId || !this.selectedTopicId) return false;
 
       return this.qaPairs.every((pair) => pair.que.trim() !== "" && pair.ans.trim() !== "");
     },
     
     canShowQAEditor() {
-      return this.tenantSelected && this.kbSelected;
+      return this.tenantSelected && this.kbSelected && this.selectedTopicId;
     }
   },
 
@@ -168,7 +207,36 @@ export default {
       this.selectedKbId = "";
       this.fetchKnowledgebases();
     },
-    
+    async fetchTopics(){
+      if (!this.selectedKbId) return;
+      this.loadingKbs = true;
+      try{  
+        const response = await fetch(`http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${this.selectedKbId}`,{
+          method : "GET",
+          headers: {
+            'Content-Type': 'application/json',
+            'tnt': this.tenantPartitionKey
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        this.topics = data.result || [];
+        console.log(this.topics);
+        
+        if (this.topics.length === 0) {
+          this.showStatus("No knowledge bases found for this tenant", "info");
+        }
+      }catch (error) {
+        console.error("Error fetching topics:", error);
+        this.showStatus("Failed to load topics: " + error.message, "error");
+        this.knowledgeBases = [];
+      } finally {
+        this.loadingKbs = false;
+      }
+    },
     async fetchKnowledgebases() {
       if (!this.tenantPartitionKey.trim()) return;
       
@@ -203,7 +271,16 @@ export default {
     },
     
     kbChanged() {
+      const selectedKb = this.knowledgebases.find(kb => kb._id === this.selectedKbId);
       this.kbSelected = !!this.selectedKbId;
+      console.log(`selectedKb : ${JSON.stringify(selectedKb)} selected kb id : ${this.selectedKbId}`);
+      this.selectedKbName = selectedKb.kb_name
+      this.fetchTopics();
+    },
+    tpChanged(){
+      const selectedTopic = this.topics.find(tp => tp._id === this.selectedTopicId);
+      this.topicSelected = !!this.selectedTopicId;
+      this.selectedTopicName = selectedTopic.topic_name;
     },
 
     addNewRow() {
@@ -230,9 +307,8 @@ export default {
       try {
         // Format the data as required
         const payload = {
-          tenant_partition_key: this.tenantPartitionKey,
           kb_id: this.selectedKbId,
-          article_id: "9577ad6e-eca2-4c41-a39b-c621e4ceb699", // This could also be dynamic if needed
+          topic_id: this.selectedTopicId,
           ques: this.qaPairs.map((pair) => ({
             que: pair.que.trim(),
             ans: pair.ans.trim(),
@@ -346,7 +422,7 @@ export default {
 
 .form-input {
   padding: 12px 16px;
-  border: 1px solid #ced4da;
+  
   border-radius: 4px;
   font-size: 16px;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -360,7 +436,7 @@ export default {
 
 .form-textarea {
   padding: 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid;
   border-radius: 4px;
   font-size: 15px;
   width: 100%;
@@ -476,7 +552,7 @@ export default {
 }
 
 .qa-table th {
-  background-color: #f8f9fa;
+  
   font-weight: 600;
   color: #495057;
   position: sticky;
