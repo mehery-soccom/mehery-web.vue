@@ -11,7 +11,7 @@ export const useChannelsStore = defineStore("ChannelsStore", {
   actions: {
     // 👉 Fetch all Channels
     async fetchChannels() {
-      let apiRes = await axios.get("pushapp/api/channels");
+      let apiRes = await axios.get("/api/channels");
       this.channels = apiRes.data.channels;
       let res = {
         results: apiRes.data.channels,
@@ -26,12 +26,12 @@ export const useChannelsStore = defineStore("ChannelsStore", {
 
     // 👉 Fetch single Channel
     fetchChannel({ id }) {
-      return axios.get(`pushapp/api/channel/${id}`);
+      return axios.get(`/api/channel/${id}`);
     },
 
     // 👉 Create Channel
     createChannel(params) {
-      return axios.post("pushapp/api/channel", params, {
+      return axios.post("/api/channel", params, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -40,7 +40,7 @@ export const useChannelsStore = defineStore("ChannelsStore", {
 
     // 👉 Update Channel
     updateChannel(id, params) {
-      return axios.put(`pushapp/api/channel/${id}`, params, {
+      return axios.put(`/api/channel/${id}`, params, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -50,14 +50,14 @@ export const useChannelsStore = defineStore("ChannelsStore", {
     // 👉 Update Platform
     updatePlatform({ channel_id, platform_id }, params) {
       return axios.put(
-        `pushapp/api/channel/${channel_id}/platform/${platform_id}/deactivate`,
+        `/api/channel/${channel_id}/platform/${platform_id}/deactivate`,
         params
       );
     },
 
     // 👉 Delete Channel
     deleteChannel({ id }) {
-      return axios.delete(`pushapp/api/channel/${id}?user_id=user123`);
+      return axios.delete(`/api/channel/${id}?user_id=user123`);
     },
   },
 });
