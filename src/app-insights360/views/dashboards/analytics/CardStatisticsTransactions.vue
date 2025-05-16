@@ -19,7 +19,7 @@ const props = defineProps({
           v-for="item in statistics"
           :key="item.title"
           cols="6"
-          md="3"
+          :md="statistics.length == 3 ? 4 : 3"
         >
           <div class="d-flex">
             <VAvatar

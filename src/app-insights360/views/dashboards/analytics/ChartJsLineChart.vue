@@ -5,12 +5,12 @@ import { useTheme } from 'vuetify'
 
 const props = defineProps({
   colors: {
-    type: null,
-    required: true,
+    type: Object,
+    required: false,
   },
   data: {
     type: Object,
-    required: false
+    required: true
   },
   chartOption: {
     type: Object,

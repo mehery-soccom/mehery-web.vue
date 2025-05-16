@@ -9,7 +9,6 @@ import vuetify from "@app/plugins/vuetify";
 import ability from "@app/plugins/casl/ability"; // TODO - not needed
 // import i18n from "@app/plugins/i18n";
 
-import { WEBAPP } from "@core/constants";
 
 (async (cmap, cname) => {
   let c = cmap[cname];
@@ -65,5 +64,5 @@ import { WEBAPP } from "@core/constants";
       layoutsPlugin: () => import("@app-notebook/plugins/layouts"),
     },
   },
-  WEBAPP
+  window.CONST.APP //WEBAPP
 );

@@ -1,81 +1,67 @@
 <script setup>
-const monthlyCampaignState = [
-  {
-    avatarColor: 'success',
-    avatarIcon: 'tabler-mail',
-    title: 'Emails',
-    count: '12,346',
-    stats: '0.3%',
-    statsColor: 'success',
+const props = defineProps({
+  statistics: {
+    type: Object,
+    required: true
   },
+  title: {
+    type: String,
+    required: false
+  }
+});
+const monthlyCampaignState = computed(() => [
   {
     avatarColor: 'info',
-    avatarIcon: 'tabler-link',
-    title: 'Opened',
-    count: '8,734',
-    stats: '2.1%',
+    avatarIcon: 'tabler-mail',
+    title: 'Sent',
+    count: props.statistics.total,
+    stats: '100%',
     statsColor: 'success',
   },
   {
     avatarColor: 'warning',
     avatarIcon: 'tabler-click',
-    title: 'Clicked',
-    count: '967',
-    stats: '1.4%',
-    statsColor: 'error',
+    title: 'Delivered',
+    count: props.statistics.delivered,
+    stats: `${((props.statistics.delivered/props.statistics.total) * 100).toFixed(2)}%`,
+    statsColor: 'warning',
   },
   {
     avatarColor: 'primary',
     avatarIcon: 'tabler-users',
-    title: 'Subscribe',
-    count: '345',
-    stats: '8.5%',
-    statsColor: 'success',
+    title: 'Views',
+    count: props.statistics.read,
+    stats: `${((props.statistics.read / props.statistics.total) * 100).toFixed(2)}%`,
+    statsColor: 'info',
   },
   {
-    avatarColor: 'secondary',
-    avatarIcon: 'tabler-alert-triangle',
-    title: 'Complaints',
-    count: '10',
-    stats: '1.5%',
-    statsColor: 'error',
+    avatarColor: 'success',
+    avatarIcon: 'tabler-link',
+    title: 'Replies',
+    count: props.statistics.responded,
+    stats: `${((props.statistics.responded / props.statistics.total) * 100).toFixed(2)}%`,
+    statsColor: 'success',
   },
   {
     avatarColor: 'error',
-    avatarIcon: 'tabler-ban',
-    title: 'Unsubscribe',
-    count: '86',
-    stats: '0.8%',
-    statsColor: 'success',
+    avatarIcon: 'tabler-alert-triangle',
+    title: 'Failed',
+    count: props.statistics.failed,
+    stats: `${((props.statistics.failed / props.statistics.total) * 100).toFixed(2)}%`,
+    statsColor: 'error',
   },
-]
-
-const moreMenuList = [
-  {
-    title: 'Refresh',
-    value: 'Refresh',
-  },
-  {
-    title: 'Download',
-    value: 'Download',
-  },
-  {
-    title: 'View All',
-    value: 'View All',
-  },
-]
+])
 </script>
 
 <template>
   <VCard
-    title="Monthly Campaign State"
-    subtitle="8.52k Social Visitors"
+    :title="`${title} Campaign State`"
   >
-    <template #append>
+    <!-- <template #append>
       <div class="mt-n4 me-n2">
         <MoreBtn :menu-list="moreMenuList" />
       </div>
-    </template>
+    </template> -->
 
     <VCardText>
       <VList class="card-list">

@@ -9,6 +9,7 @@ const vuetifyTheme = useTheme();
 const currentTheme = vuetifyTheme.current.value.colors;
 const projectStore = useProjectStore();
 
+const oldDates = ref([])
 const today = new Date();
 var oneWeekAgo = new Date();
 oneWeekAgo.setDate(oneWeekAgo.getDate() - 6);
@@ -21,7 +22,7 @@ var dateRange = ref(dates);
 const channelItems = ref()
 const selectedChannelItem = ref('All Channels')
 const agentTeamItems = ref()
-const selectedAgentTeamItem = ref({ name: 'All Teams', code: 'all_teams' })
+const selectedAgentTeamItem = ref({ name: 'All Agents', code: 'all_teams' })
 const listAgents = ref()
 const listTeams = ref()
 
@@ -39,7 +40,7 @@ var statsAgent = ref([
     stats: '0',
   },
   {
-    title: 'Agent - Closed',
+    title: 'Agent - Expired',
     color: 'error',
     icon: 'tabler-square-x',
     stats: '0',
@@ -65,7 +66,7 @@ var statsBot = ref([
     stats: '0',
   },
   {
-    title: 'Bot - Closed',
+    title: 'Bot - Expired',
     color: 'error',
     icon: 'tabler-square-x',
     stats: '0',
@@ -174,7 +175,7 @@ const chartData = ref({
       fill: false,
       tension: 0.5,
       pointRadius: 1,
-      label: 'Europe',
+      label: 'Agent',
       pointHoverRadius: 5,
       pointStyle: 'circle',
       borderColor: chartJsCustomColors.primary,
@@ -279,9 +280,9 @@ const fetchResolvedChat = async (start, end, chan, agent, type) => {
   try {
     const response = await projectStore.fetchResolvedChats(start, end, chan, agent, type);
     const data = response?.data?.results?.[0];
-    if (data?.resolvedCount != null && data?.closedCount != null) {
+    if (data?.resolvedCount != null && data?.expiredCount != null) {
       statsAgent.value[1].stats = String(data.resolvedCount);
-      statsAgent.value[2].stats = String(data.closedCount);
+      statsAgent.value[2].stats = String(data.expiredCount);
     }
   } catch (error) { console.error("analytics error", error); }
 };
@@ -303,9 +304,9 @@ const fetchBotResolvedChat = async (start, end, chan) => {
   try {
     const response = await projectStore.fetchBotResolvedChats(start, end, chan);
     const data = response?.data?.results?.[0];
-    if (data?.resolvedCount != null && data?.closedCount != null) {
+    if (data?.resolvedCount != null && data?.expiredCount != null) {
       statsBot.value[1].stats = String(data.resolvedCount);
-      statsBot.value[2].stats = String(data.closedCount);
+      statsBot.value[2].stats = String(data.expiredCount);
     }
   } catch (error) { console.error("analytics error", error); }
 };
@@ -322,7 +323,7 @@ const fetchLeadMsg = async (start, end, agent, type) => {
     const response = await projectStore.fetchLeadMsgs(start, end, agent, type);
     const total = response?.data?.data?.messengerSharePercentage;
     if (total != null) {
-      statsLead.value[0].stats = String(total);
+      statsLead.value[0].stats = `${String(total || 0)} %`;
       statsLead.value[0].title = `Lead Messenger (${response?.data?.data?.leadMessenger})`;
     }
   } catch (error) { console.error("analytics error", error); }
@@ -396,8 +397,13 @@ const fetchChartData = async (start, end, chan, agent, type) => {
 
     const agents = Array.from(agentSet);
 
-    // Create X-axis labels from rangeStart (formatted date)
-    const labels = results.map(block => new Date(block.rangeStart).toLocaleDateString());
+    // const labels = results.map(block => new Date(block.rangeStart).toLocaleDateString());
+    const isSingleDay = new Date(start).toDateString() === new Date(end).toDateString();
+    const labels = results.map(block => {
+      const date = new Date(block.rangeStart);
+      return isSingleDay ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // eg: 03:15 PM
+        : date.toLocaleDateString(); // eg: 13/05/2025
+    });
 
     const colorKeys = Object.keys(chartJsCustomColors);
     const datasets = agents.map((agent, index) => {
@@ -500,27 +506,33 @@ const onDateUpdate = (selectedDates, dateStr) => {
 }
 
 const onDateClosed = (selectedDates, dateStr) => {
-  console.log('Closed:', selectedDates, dateStr)
-  if (selectedDates.length === 2) {
+  console.log('Closed:', selectedDates, toRaw(oldDates.value), dateStr)
+  if (selectedDates.length === 2 && toRaw(oldDates.value) != selectedDates) {
+    oldDates.value = selectedDates;
     const start = selectedDates[0].getTime();
     const endDate = new Date(selectedDates[1])
     endDate.setHours(23, 59, 59, 999)
     const end = endDate.getTime()
+    console.log("all date closed", start, end)
     allAnalytics(start, end, selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
   }
 }
 
 const allAnalyticsWithoutDate = () => {
   console.log("channs", selectedChannelItem, selectedAgentTeamItem, dateRange.value)
-  const [startStr, endStr] = dateRange.value.split(' to ')
+  let startStr = ''; let endStr = '';
+  if (dateRange.value.includes('to')) [startStr, endStr] = dateRange.value.split(' to ')
+  else startStr = endStr = dateRange.value
   const [startDay, startMonth, startYear] = startStr.split('-').map(Number)
   const [endDay, endMonth, endYear] = endStr.split('-').map(Number)
 
   const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0)
   const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999)
+  console.log("no date", startDate, endDate)
   allAnalytics(startDate.getTime(), endDate.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team')
 }
 const allAnalytics = (start, end, chan, agent, type) => {
+  console.log("all an", start, end)
   fetchOpenChat(start, end, chan, agent, type);
   fetchResolvedChat(start, end, chan, agent, type);
   fetchSatScore(start, end, chan, agent, type);
@@ -542,7 +554,7 @@ onMounted( async () => {
   await fetchAgent();
   await fetchTeam();
   const allChan = ['All Channels'];
-  const allTeam = [{ name: 'All Teams', code: 'all_teams' }]
+  const allTeam = [{ name: 'All Agents', code: 'all_teams' }]
 
   agentTeamItems.value = [ ...allTeam, ...listAgents.value.results, ...listTeams.value.results ]
   channelItems.value = [ ...allChan, ...channelItems.value ]
@@ -556,6 +568,7 @@ onMounted( async () => {
   const formattedStart = oneWeekAgo.toLocaleDateString('en-GB').split('/').join('-')
   const formattedEnd = today.toLocaleDateString('en-GB').split('/').join('-')
   dateRange.value = `${formattedStart} to ${formattedEnd}`
+  console.log("before mount", oneWeekAgo.getTime(), today.getTime());
   allAnalytics(oneWeekAgo.getTime(), today.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
 })
 </script>
@@ -605,20 +618,6 @@ onMounted( async () => {
       />
     </div>
 
-    <!-- <VCol cols="12" md="6">
-      <AnalyticsWebsiteAnalytics />
-    </VCol>
-
-     👉 Sales Overview 
-    <VCol cols="12" md="3" sm="6">
-      <AnalyticsSalesOverview />
-    </VCol>
-
-     👉 Statistics Vertical 
-    <VCol cols="12" md="3" sm="6">
-      <CardStatisticsVertical v-bind="statisticsVertical" />
-    </VCol> -->
-
     <VCol v-for="statistics in statsAgent"
       :key="statistics.title + '_' + statistics.stats" cols="12" sm="6" md="3">
       <CardStatisticsHorizontal v-bind="statistics" />
@@ -644,44 +643,12 @@ onMounted( async () => {
     </VCol>
 
     <VCol cols="12">
-      <VCard
-        title="Statistics"
-        subtitle="Commercial networks and enterprises"
-      >
+      <VCard title="Conversation Statistics" subtitle="Number of Chats per agent">
         <VCardText>
           <ChartJsLineChart :colors="chartJsCustomColors" :chartOption="chartOptions" :data="chartData"/>
         </VCardText>
       </VCard>
     </VCol>
-
-    <!-- 
-    <VCol cols="12" md="6">
-      <AnalyticsEarningReportsWeeklyOverview />
-    </VCol>
-
-    <VCol cols="12" md="6">
-      <AnalyticsSupportTracker />
-    </VCol>
-
-    <VCol cols="12" sm="6" lg="4">
-      <AnalyticsSalesByCountries />
-    </VCol>
-
-    <VCol cols="12" sm="6" lg="4">
-      <AnalyticsTotalEarning />
-    </VCol>
-
-    <VCol cols="12" sm="6" lg="4">
-      <AnalyticsMonthlyCampaignState />
-    </VCol>
-
-    <VCol cols="12" sm="6" lg="4">
-      <AnalyticsSourceVisits />
-    </VCol>
-
-    <VCol cols="12" lg="8">
-      <AnalyticsProjectTable />
-    </VCol> -->
   </VRow>
 </template>
 

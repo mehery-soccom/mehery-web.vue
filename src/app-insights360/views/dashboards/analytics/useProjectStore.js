@@ -90,6 +90,18 @@ export const useProjectStore = defineStore("ProjectStore", {
       if(agent && agentType && agent != 'all_teams') url += `&${agentType}=${agent}`;
       return axios.get(url);
     },
+    fetchCampaignPageDatas(start, end, contact, statuses){
+      let url = `/admin/nexus/admin/api/v1/dashboard/campaign-data?dateRange1=${start}&dateRange2=${end}`
+      if(contact && contact != 'All Channels') url += `&contactType=${contact}`;
+      if(statuses && statuses.length > 0) statuses.forEach((e)=>{ url += `&status=${e}`; })
+      return axios.get(url);
+    },
+    fetchTemplateDatas(start, end, contact, agent, agentType){
+      let url = `/admin/nexus/admin/api/v1/dashboard/template-data?dateRange1=${start}&dateRange2=${end}`
+      if(contact && contact != 'All Channels') url += `&contactType=${contact}`;
+      if(agent && agentType && agent != 'all_teams') url += `&${agentType}=${agent}`;
+      return axios.get(url);
+    },
     fetchChartDatas(start, end, contact, agent, agentType){
       let url = `/admin/nexus/admin/api/v1/dashboard/charts?dateRange1=${start}&dateRange2=${end}`
       if(contact && contact != 'All Channels') url += `&contactType=${contact}`;

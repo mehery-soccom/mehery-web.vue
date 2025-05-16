@@ -1,11 +1,11 @@
 export default [
   { heading: "Admin" },
   {
-    title: "Views",
+    title: "Analytics",
     icon: { icon: "tabler-report-search" },
     children: [
-      { title: "view one", to: "views-one" },
-      { title: "view two", to: "views-two" },
+      { title: "Campaign", to: "views-campaign" },
+      { title: "Template", to: "views-template" },
     ],
   },
 ];
