@@ -335,7 +335,6 @@ export default {
         
         this.tenantPartitionKey = this.tempTenantKey.trim();
         // Don't reset tempTenantKey yet as we need it for the next step
-        console.log(`tenant_partition_key : ${this.tenantPartitionKey}`);
       }
       
       if (this.tenantPartitionKey && this.tempKbId) {
@@ -344,7 +343,7 @@ export default {
         if (selectedKb) {
           this.selectedKbId = this.tempKbId;
           this.selectedKbName = selectedKb.kb_name;
-          console.log(`kb_id : ${this.selectedKbId}`);
+      
           // Reset temporary values
           // this.tempTenantKey = "";
           this.tempKbId = "";
@@ -356,10 +355,10 @@ export default {
           // this.fetchData(1);
         }
       }
-      console.log(`Outside topic selection`);
+      
       if(this.selectedKbId && this.tempTopicId){
         const selectedTopic = this.topics.find(tp => tp._id === this.tempTopicId);
-        console.log(`Inside topic selection`);
+        
         if(selectedTopic){
           this.selectedTopicId = this.tempTopicId;
           this.selectedTopicName = selectedTopic.topic_name;
