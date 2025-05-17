@@ -2,7 +2,6 @@
 <template>
   <div class="qa-table-container">
     <h1 class="title">QA Pairs Explorer</h1>
-
     <!-- Tenant and KB Selection Form -->
     <div class="selection-form-container" v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId">
       <form @submit.prevent="submitSelections" class="selection-form">
@@ -17,8 +16,19 @@
             class="form-input"
           />
         </div>
-        
-        <div class="form-group" v-if="tenantPartitionKey && knowledgeBases.length > 0">
+
+        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
+          Set Tenant key
+        </button>
+      </form>
+    </div>
+
+    <div class="selection-form-container" v-if="!selectedKbId && tenantPartitionKey">
+      <form @submit.prevent="submitSelections" class="selection-form">
+        <div
+          class="form-group"
+          v-if="tenantPartitionKey && knowledgeBases.length > 0"
+        >
           <label for="kbSelection">Knowledge Base:</label>
           <select
             id="kbSelection"
@@ -32,7 +42,13 @@
             </option>
           </select>
         </div>
-
+        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
+          Select Knowledge Base
+        </button>
+      </form>
+    </div>
+    <div class="selection-form-container" v-if="!selectedTopicId && selectedKbId">
+      <form @submit.prevent="submitSelections" class="selection-form">
         <div class="form-group" v-if="selectedKbId && topics.length > 0">
           <label for="topicSelection">Select Topic:</label>
           <select
@@ -41,19 +57,24 @@
             required
             class="form-input"
           >
-            <option value="" disabled>Select a Topic from knowledge base</option>
+            <option value="" disabled>
+              Select a Topic from knowledge base
+            </option>
             <option v-for="tp in topics" :key="tp._id" :value="tp._id">
               {{ tp.topic_name }}
             </option>
           </select>
         </div>
-        
-        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">Load Knowledgebases</button>
+        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
+          Select Topic 
+        </button>
       </form>
     </div>
-
     <!-- Selection Status Messages -->
-    <div v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId" class="selection-status">
+    <div
+      v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId"
+      class="selection-status"
+    >
       <div v-if="!tenantPartitionKey" class="status-alert">
         Tenant is not selected
       </div>
@@ -66,24 +87,37 @@
     </div>
 
     <!-- Tenant and KB Display & Change Option -->
-    <div class="selection-info" v-if="tenantPartitionKey && selectedKbId && selectedTopicId">
+    <div
+      class="selection-info"
+      v-if="tenantPartitionKey && selectedKbId && selectedTopicId"
+    >
       <div class="current-selections">
         <div class="selection-item">
-          <span>Current Tenant: <strong>{{ tenantPartitionKey }}</strong></span>
+          <span
+            >Current Tenant: <strong>{{ tenantPartitionKey }}</strong></span
+          >
         </div>
         <div class="selection-item">
-          <span>Knowledge Base: <strong>{{ selectedKbName }}</strong></span>
+          <span
+            >Knowledge Base: <strong>{{ selectedKbName }}</strong></span
+          >
         </div>
         <div class="selection-item">
-          <span>Topic: <strong>{{ selectedTopicName }}</strong></span>
+          <span
+            >Topic: <strong>{{ selectedTopicName }}</strong></span
+          >
         </div>
-        <button @click="changeSelections" class="btn btn-secondary">Change Selections</button>
+        <button @click="changeSelections" class="btn btn-secondary">
+          Change Selections
+        </button>
       </div>
 
       <div class="data-controls">
-        <button @click="refreshData" class="btn btn-primary">Refresh Data</button>
-        <button 
-          @click="updateEditedItems" 
+        <button @click="refreshData" class="btn btn-primary">
+          Refresh Data
+        </button>
+        <button
+          @click="updateEditedItems"
           class="btn btn-success"
           :disabled="getEditedCount() === 0"
         >
@@ -102,13 +136,26 @@
     </div>
 
     <!-- Actions Bar - Only show when items are loaded and selections are possible -->
-    <div v-if="!loading && tenantPartitionKey && selectedKbId && selectedTopicId && qaData.length > 0" class="actions-bar">
+    <div
+      v-if="
+        !loading &&
+        tenantPartitionKey &&
+        selectedKbId &&
+        selectedTopicId &&
+        qaData.length > 0
+      "
+      class="actions-bar"
+    >
       <div class="selection-info">
         <span v-if="getSelectedCount() === 0">No items selected</span>
         <span v-else>{{ getSelectedCount() }} item(s) selected</span>
       </div>
       <div class="bulk-actions">
-        <button @click="confirmDeleteSelected" class="btn btn-danger" :disabled="getSelectedCount() === 0">
+        <button
+          @click="confirmDeleteSelected"
+          class="btn btn-danger"
+          :disabled="getSelectedCount() === 0"
+        >
           Delete Selected
         </button>
         <button @click="showDelKbModal" class="btn btn-danger">
@@ -121,10 +168,21 @@
     </div>
 
     <!-- Data Table -->
-    <div v-if="!loading && tenantPartitionKey && selectedKbId && selectedTopicId && qaData.length > 0" class="table-wrapper">
+    <div
+      v-if="
+        !loading &&
+        tenantPartitionKey &&
+        selectedKbId &&
+        selectedTopicId &&
+        qaData.length > 0
+      "
+      class="table-wrapper"
+    >
       <div class="table-header">
         <h2>QA Pairs Data</h2>
-        <span class="data-info">Showing {{ qaData.length }} of {{ totalItems }} items</span>
+        <span class="data-info"
+          >Showing {{ qaData.length }} of {{ totalItems }} items</span
+        >
       </div>
 
       <div class="table-responsive">
@@ -145,9 +203,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr 
-              v-for="item in qaData" 
-              :key="item._id" 
+            <tr
+              v-for="item in qaData"
+              :key="item._id"
               :class="{ 'edited-row': isItemEdited(item._id) }"
             >
               <td class="checkbox-col">
@@ -159,13 +217,16 @@
                   class="checkbox"
                 />
               </td>
-              <td 
-                @click="startEditing(item._id, 'question')" 
-                :class="{ 'editing': isEditingCell(item._id, 'question') }"
+              <td
+                @click="startEditing(item._id, 'question')"
+                :class="{ editing: isEditingCell(item._id, 'question') }"
               >
-                <div v-if="isEditingCell(item._id, 'question')" class="edit-container">
-                  <textarea 
-                    v-model="editingContent.text" 
+                <div
+                  v-if="isEditingCell(item._id, 'question')"
+                  class="edit-container"
+                >
+                  <textarea
+                    v-model="editingContent.text"
                     class="edit-input"
                     @blur="finishEditing(item._id, 'question')"
                     @keydown.enter.prevent="finishEditing(item._id, 'question')"
@@ -174,13 +235,16 @@
                 </div>
                 <div v-else>{{ item.question }}</div>
               </td>
-              <td 
-                @click="startEditing(item._id, 'answer')" 
-                :class="{ 'editing': isEditingCell(item._id, 'answer') }"
+              <td
+                @click="startEditing(item._id, 'answer')"
+                :class="{ editing: isEditingCell(item._id, 'answer') }"
               >
-                <div v-if="isEditingCell(item._id, 'answer')" class="edit-container">
-                  <textarea 
-                    v-model="editingContent.text" 
+                <div
+                  v-if="isEditingCell(item._id, 'answer')"
+                  class="edit-container"
+                >
+                  <textarea
+                    v-model="editingContent.text"
                     class="edit-input"
                     @blur="finishEditing(item._id, 'answer')"
                     @keydown.enter.prevent="finishEditing(item._id, 'answer')"
@@ -195,12 +259,22 @@
       </div>
 
       <div class="pagination">
-        <div class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</div>
+        <div class="pagination-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div>
         <div class="pagination-controls">
-          <button @click="previousPage" :disabled="currentPage === 1" class="btn btn-pagination">
+          <button
+            @click="previousPage"
+            :disabled="currentPage === 1"
+            class="btn btn-pagination"
+          >
             <span>←</span> Previous
           </button>
-          <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-pagination">
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages"
+            class="btn btn-pagination"
+          >
             Next <span>→</span>
           </button>
         </div>
@@ -208,19 +282,31 @@
     </div>
 
     <!-- No Data Message -->
-    <div v-if="!loading && tenantPartitionKey && selectedKbId && qaData.length === 0" class="no-data">
-      <p>No QA pairs data available. Please check your selections and try again.</p>
+    <div
+      v-if="
+        !loading && tenantPartitionKey && selectedKbId && qaData.length === 0
+      "
+      class="no-data"
+    >
+      <p>
+        No QA pairs data available. Please check your selections and try again.
+      </p>
     </div>
 
     <!-- Delete Confirmation Modal -->
     <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Confirm Delete</h3>
-        <p>Are you sure you want to delete {{ getSelectedCount() }} selected item(s)?</p>
+        <p>
+          Are you sure you want to delete {{ getSelectedCount() }} selected
+          item(s)?
+        </p>
         <p class="delete-warning">This action cannot be undone.</p>
         <div class="modal-actions">
           <button @click="deleteSelected" class="btn btn-danger">Delete</button>
-          <button @click="cancelDelete" class="btn btn-secondary">Cancel</button>
+          <button @click="cancelDelete" class="btn btn-secondary">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -229,17 +315,27 @@
     <div v-if="showKbDeleteModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Confirm Delete</h3>
-        <p>Are you sure you want to delete entirity of {{ this.selectedKbName }} Knowlwdgebase</p>
+        <p>
+          Are you sure you want to delete entirity of
+          {{ this.selectedKbName }} Knowlwdgebase
+        </p>
         <p class="delete-warning">This action cannot be undone.</p>
         <div class="modal-actions">
-          <button @click="deleteKnowledgeBase" class="btn btn-danger">Delete</button>
-          <button @click="cancelDeleteKb" class="btn btn-secondary">Cancel</button>
+          <button @click="deleteKnowledgeBase" class="btn btn-danger">
+            Delete
+          </button>
+          <button @click="cancelDeleteKb" class="btn btn-secondary">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Status Messages -->
-    <div v-if="statusMessage" :class="['status-message', 'status-' + statusType]">
+    <div
+      v-if="statusMessage"
+      :class="['status-message', 'status-' + statusType]"
+    >
       {{ statusMessage }}
       <button @click="clearStatus" class="status-close">&times;</button>
     </div>
@@ -258,8 +354,8 @@ export default {
       editingContent: {
         itemId: null,
         field: null,
-        text: '',
-        originalText: ''
+        text: "",
+        originalText: "",
       },
       loading: false,
       currentPage: 1,
@@ -267,37 +363,40 @@ export default {
       totalItems: 0,
       pageSize: 25,
       knowledgeBases: [], // List of knowledge bases
-      topics : [],
+      topics: [],
       tenantPartitionKey: null,
       tempTenantKey: "",
       selectedKbId: null, // Selected knowledge base ID
       selectedKbName: "", // Selected knowledge base name
       tempKbId: "", // Temporary KB ID for form
       showDeleteModal: false,
-      showKbDeleteModal : false,
+      showKbDeleteModal: false,
       statusMessage: "",
       statusType: "info", // 'info', 'success', 'error'
       statusTimeout: null,
       cacheTimestamp: null, // When the cache was last refreshed
-      tempTopicId : "",
-      selectedTopicId : null,
-      selectedTopicName :""
+      tempTopicId: "",
+      selectedTopicId: null,
+      selectedTopicName: "",
     };
   },
 
   computed: {
     allSelected() {
-      return this.qaData.length > 0 && 
-             this.selectedIdsByPage[this.currentPage] && 
-             this.selectedIdsByPage[this.currentPage].length === this.qaData.length;
+      return (
+        this.qaData.length > 0 &&
+        this.selectedIdsByPage[this.currentPage] &&
+        this.selectedIdsByPage[this.currentPage].length === this.qaData.length
+      );
     },
     isFormValid() {
-      return this.tempTenantKey.trim() && (
-        !this.tenantPartitionKey || // No tenant set yet, so only validate tenant field
-        (this.knowledgeBases.length > 0 && this.tempKbId) || // Tenant set, so validate KB selection
-        (this.topics.length > 0 && this.tempTopicId)
+      return (
+        this.tempTenantKey.trim() &&
+        (!this.tenantPartitionKey || // No tenant set yet, so only validate tenant field
+          (this.knowledgeBases.length > 0 && this.tempKbId) || // Tenant set, so validate KB selection
+          (this.topics.length > 0 && this.tempTopicId))
       );
-    }
+    },
   },
 
   watch: {
@@ -308,7 +407,7 @@ export default {
         if (this.tenantPartitionKey && this.selectedKbId) {
           this.loadPageData(newPage);
         }
-      }
+      },
     },
     // Fetch knowledge bases when tenant key is set
     tenantPartitionKey: {
@@ -317,49 +416,52 @@ export default {
         if (newValue) {
           this.fetchKnowledgeBases();
         }
-      }
+      },
     },
-    selectedKbId:{
-      immediate:true,
+    selectedKbId: {
+      immediate: true,
       handler(newValue) {
-        if(newValue){
+        if (newValue) {
           this.fetchTopics();
         }
-      }
-    }
+      },
+    },
   },
 
   methods: {
     submitSelections() {
       if (!this.tenantPartitionKey && this.tempTenantKey.trim()) {
-        
         this.tenantPartitionKey = this.tempTenantKey.trim();
         // Don't reset tempTenantKey yet as we need it for the next step
       }
-      
+
       if (this.tenantPartitionKey && this.tempKbId) {
         // Find the KB name for the selected ID
-        const selectedKb = this.knowledgeBases.find(kb => kb._id === this.tempKbId);
+        const selectedKb = this.knowledgeBases.find(
+          (kb) => kb._id === this.tempKbId
+        );
         if (selectedKb) {
           this.selectedKbId = this.tempKbId;
           this.selectedKbName = selectedKb.kb_name;
-      
+
           // Reset temporary values
           // this.tempTenantKey = "";
           this.tempKbId = "";
-          
+
           // Reset data states
           // this.resetState();
-          
+
           // // Fetch first page of data
           // this.fetchData(1);
         }
       }
-      
-      if(this.selectedKbId && this.tempTopicId){
-        const selectedTopic = this.topics.find(tp => tp._id === this.tempTopicId);
-        
-        if(selectedTopic){
+
+      if (this.selectedKbId && this.tempTopicId) {
+        const selectedTopic = this.topics.find(
+          (tp) => tp._id === this.tempTopicId
+        );
+
+        if (selectedTopic) {
           this.selectedTopicId = this.tempTopicId;
           this.selectedTopicName = selectedTopic.topic_name;
 
@@ -374,8 +476,8 @@ export default {
       this.selectedKbId = null;
       this.selectedKbName = "";
       this.selectedTopicId = null;
-      this.selectedTopicName ="";
-      this.resetState();
+      this.selectedTopicName = "";
+      this.resetStateComplete();
     },
     resetStateComplete() {
       this.qaData = [];
@@ -386,8 +488,8 @@ export default {
       this.editingContent = {
         itemId: null,
         field: null,
-        text: '',
-        originalText: ''
+        text: "",
+        originalText: "",
       };
       this.knowledgeBases = [];
       this.topics = [];
@@ -400,7 +502,7 @@ export default {
       this.selectedKbName = "";
       this.tempTopicId = "";
       this.selectedTopicId = null;
-      this.selectedTopicName ="";
+      this.selectedTopicName = "";
     },
     resetState() {
       this.qaData = [];
@@ -411,37 +513,40 @@ export default {
       this.editingContent = {
         itemId: null,
         field: null,
-        text: '',
-        originalText: ''
+        text: "",
+        originalText: "",
       };
       this.currentPage = 1;
       this.totalPages = 0;
       this.totalItems = 0;
       this.cacheTimestamp = null;
     },
-    async fetchTopics(){
+    async fetchTopics() {
       if (!this.selectedKbId) return;
       this.loading = true;
-      try{  
-        const response = await fetch(`http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${this.selectedKbId}`,{
-          method : "GET",
-          headers: {
-            'Content-Type': 'application/json',
-            'tnt': this.tenantPartitionKey
+      try {
+        const response = await fetch(
+          `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${this.selectedKbId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
+            },
           }
-        });
+        );
         if (!response.ok) {
           throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         this.topics = data.result || [];
         console.log(this.topics);
-        
+
         if (this.topics.length === 0) {
           this.showStatus("No knowledge bases found for this tenant", "info");
         }
-      }catch (error) {
+      } catch (error) {
         console.error("Error fetching topics:", error);
         this.showStatus("Failed to load topics: " + error.message, "error");
         this.knowledgeBases = [];
@@ -451,31 +556,37 @@ export default {
     },
     async fetchKnowledgeBases() {
       if (!this.tenantPartitionKey) return;
-      
+
       this.loading = true;
-      
+
       try {
-        const response = await fetch('http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=false', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'tnt': this.tenantPartitionKey
+        const response = await fetch(
+          "http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=false",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
+            },
           }
-        });
-        
+        );
+
         if (!response.ok) {
           throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         this.knowledgeBases = data.result || [];
-        
+
         if (this.knowledgeBases.length === 0) {
           this.showStatus("No knowledge bases found for this tenant", "info");
         }
       } catch (error) {
         console.error("Error fetching knowledge bases:", error);
-        this.showStatus("Failed to load knowledge bases: " + error.message, "error");
+        this.showStatus(
+          "Failed to load knowledge bases: " + error.message,
+          "error"
+        );
         this.knowledgeBases = [];
       } finally {
         this.loading = false;
@@ -485,7 +596,7 @@ export default {
     // Load data from cache or fetch from server
     async loadPageData(pageNum) {
       if (!this.tenantPartitionKey || !this.selectedKbId) return;
-      
+
       // If page exists in cache, use it
       if (this.cachedPages[pageNum]) {
         this.qaData = this.cachedPages[pageNum];
@@ -495,7 +606,7 @@ export default {
         }
         return;
       }
-      
+
       // Otherwise, fetch from server
       await this.fetchData(pageNum);
     },
@@ -538,20 +649,20 @@ export default {
         this.qaData = data.data;
         this.totalPages = parseInt(data.totalPages);
         this.totalItems = parseInt(data.total);
-        
+
         // Cache the retrieved data
         this.cachedPages[pageNum] = data.data;
-        
+
         // Initialize selection array for this page if needed
         if (!this.selectedIdsByPage[pageNum]) {
           this.selectedIdsByPage[pageNum] = [];
         }
-        
+
         // Update the lastSeenId for pagination
         if (this.qaData.length > 0) {
           this.lastSeenIds[pageNum] = this.qaData[this.qaData.length - 1]._id;
         }
-        
+
         // Update cache timestamp
         this.cacheTimestamp = new Date();
       } catch (error) {
@@ -567,23 +678,25 @@ export default {
       if (!this.selectedIdsByPage[this.currentPage]) {
         this.selectedIdsByPage[this.currentPage] = [];
       }
-      
+
       if (this.allSelected) {
         this.selectedIdsByPage[this.currentPage] = [];
       } else {
-        this.selectedIdsByPage[this.currentPage] = this.qaData.map(item => item._id);
+        this.selectedIdsByPage[this.currentPage] = this.qaData.map(
+          (item) => item._id
+        );
       }
     },
     showDelKbModal() {
-        this.showKbDeleteModal = true;
+      this.showKbDeleteModal = true;
     },
     confirmDeleteSelected() {
       if (this.getSelectedCount() > 0) {
         this.showDeleteModal = true;
       }
     },
-    cancelDeleteKb(){
-        this.showKbDeleteModal = false;
+    cancelDeleteKb() {
+      this.showKbDeleteModal = false;
     },
     cancelDelete() {
       this.showDeleteModal = false;
@@ -593,7 +706,10 @@ export default {
     getAllSelectedIds() {
       let allSelectedIds = [];
       for (const pageNum in this.selectedIdsByPage) {
-        allSelectedIds = [...allSelectedIds, ...this.selectedIdsByPage[pageNum]];
+        allSelectedIds = [
+          ...allSelectedIds,
+          ...this.selectedIdsByPage[pageNum],
+        ];
       }
       return allSelectedIds;
     },
@@ -602,39 +718,45 @@ export default {
     getSelectedCount() {
       return this.getAllSelectedIds().length;
     },
-    async deleteKnowledgeBase(){
-        this.showDelKbModal = false;
-        this.loading = true;
-        try{
-          const response = await fetch('http://localhost:8090/nexus/notebook/api/qapairs/kb', {
-            method: 'DELETE',
+    async deleteKnowledgeBase() {
+      this.showDelKbModal = false;
+      this.loading = true;
+      try {
+        const response = await fetch(
+          "http://localhost:8090/nexus/notebook/api/qapairs/kb",
+          {
+            method: "DELETE",
             headers: {
-              'Content-Type': 'application/json',
-              'tnt': this.tenantPartitionKey
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
             },
-            body : JSON.stringify({
-                kb_id : this.selectedKbId,
-                kb_name : this.selectedKbName
-            })
-          });
-          if (!response.ok) {
+            body: JSON.stringify({
+              kb_id: this.selectedKbId,
+              kb_name: this.selectedKbName,
+            }),
+          }
+        );
+        if (!response.ok) {
           throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
 
-          const data = await response.json();
-          console.log(`response del: ${JSON.stringify(data)}`);
-        
-          // Show success message
-          this.showStatus(`Successfully deleted ${this.selectedKbName} knowledge base`, "success");
-        
-          // Clear cache and reload data
-          this.resetStateComplete();
-        }catch (error) {
-            console.error("Error deleting records:", error);
-            this.showStatus("Failed to delete records: " + error.message, "error");
-        } finally {
-            this.loading = false;
-        }
+        const data = await response.json();
+        console.log(`response del: ${JSON.stringify(data)}`);
+
+        // Show success message
+        this.showStatus(
+          `Successfully deleted ${this.selectedKbName} knowledge base`,
+          "success"
+        );
+
+        // Clear cache and reload data
+        this.resetStateComplete();
+      } catch (error) {
+        console.error("Error deleting records:", error);
+        this.showStatus("Failed to delete records: " + error.message, "error");
+      } finally {
+        this.loading = false;
+      }
     },
     async deleteSelected() {
       this.showDeleteModal = false;
@@ -651,7 +773,7 @@ export default {
           },
           body: JSON.stringify({
             kb_id: this.selectedKbId,
-            topic_id : this.selectedTopicId,
+            topic_id: this.selectedTopicId,
             del_ids: selectedIds,
           }),
         });
@@ -662,10 +784,13 @@ export default {
 
         const data = await response.json();
         console.log(`response del: ${JSON.stringify(data)}`);
-        
+
         // Show success message
-        this.showStatus(`Successfully deleted ${selectedIds.length} item(s)`, "success");
-        
+        this.showStatus(
+          `Successfully deleted ${selectedIds.length} item(s)`,
+          "success"
+        );
+
         // Clear cache and reload data
         this.resetState();
         this.fetchData(1);
@@ -718,7 +843,7 @@ export default {
     getCacheStatus() {
       const pagesCount = Object.keys(this.cachedPages).length;
       let timeAgo = "";
-      
+
       if (this.cacheTimestamp) {
         const seconds = Math.floor((new Date() - this.cacheTimestamp) / 1000);
         if (seconds < 60) {
@@ -729,31 +854,31 @@ export default {
           timeAgo = `${Math.floor(seconds / 3600)} hours ago`;
         }
       }
-      
+
       return `${pagesCount} page(s) cached ${timeAgo}`;
     },
-    
+
     // Start editing a cell
     startEditing(itemId, field) {
       // Get the current item from the data
-      const item = this.qaData.find(item => item._id === itemId);
+      const item = this.qaData.find((item) => item._id === itemId);
       if (!item) return;
-      
+
       // Set up the editing state
       this.editingContent = {
         itemId: itemId,
         field: field,
         text: item[field],
-        originalText: item[field]
+        originalText: item[field],
       };
-      
+
       // Focus the textarea after Vue updates the DOM
       this.$nextTick(() => {
         if (this.$refs.editTextarea) {
-          const textarea = Array.isArray(this.$refs.editTextarea) 
-            ? this.$refs.editTextarea[0] 
+          const textarea = Array.isArray(this.$refs.editTextarea)
+            ? this.$refs.editTextarea[0]
             : this.$refs.editTextarea;
-          
+
           if (textarea) {
             textarea.focus();
             textarea.select();
@@ -761,101 +886,113 @@ export default {
         }
       });
     },
-    
+
     // Complete editing and save changes
     finishEditing(itemId, field) {
       // Make sure we're editing this item and field
-      if (this.editingContent.itemId !== itemId || this.editingContent.field !== field) {
+      if (
+        this.editingContent.itemId !== itemId ||
+        this.editingContent.field !== field
+      ) {
         return;
       }
-      
+
       const newText = this.editingContent.text.trim();
       const originalText = this.editingContent.originalText.trim();
-      
+
       // Only update if content changed
       if (newText !== originalText) {
         // Find item in the current data and update it
-        const item = this.qaData.find(item => item._id === itemId);
+        const item = this.qaData.find((item) => item._id === itemId);
         if (item) {
           item[field] = newText;
-          
+
           // Update the item in cache as well
-          Object.values(this.cachedPages).forEach(pageData => {
-            const cachedItem = pageData.find(i => i._id === itemId);
+          Object.values(this.cachedPages).forEach((pageData) => {
+            const cachedItem = pageData.find((i) => i._id === itemId);
             if (cachedItem) {
               cachedItem[field] = newText;
             }
           });
-          
+
           // Track this item as edited
           if (!this.editedItems[itemId]) {
             this.editedItems[itemId] = {
               _id: itemId,
               question: item.question,
               answer: item.answer,
-              kb_id: this.selectedKbId  // Add the KB ID for the update API
+              kb_id: this.selectedKbId, // Add the KB ID for the update API
             };
           } else {
             this.editedItems[itemId][field] = newText;
           }
         }
       }
-      
+
       // Clear editing state
       this.editingContent = {
         itemId: null,
         field: null,
-        text: '',
-        originalText: ''
+        text: "",
+        originalText: "",
       };
     },
-    
+
     // Check if we're currently editing a specific cell
     isEditingCell(itemId, field) {
-      return this.editingContent.itemId === itemId && this.editingContent.field === field;
+      return (
+        this.editingContent.itemId === itemId &&
+        this.editingContent.field === field
+      );
     },
-    
+
     // Check if an item has been edited
     isItemEdited(itemId) {
       return !!this.editedItems[itemId];
     },
-    
+
     // Get count of edited items
     getEditedCount() {
       return Object.keys(this.editedItems).length;
     },
-    
+
     // Send all edited items to the update API
     async updateEditedItems() {
       if (this.getEditedCount() === 0) return;
-      
+
       this.loading = true;
       const editedItemsArray = Object.values(this.editedItems);
-      
+
       try {
-        const response = await fetch('http://localhost:8090/nexus/notebook/api/qapairs', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'tnt': this.tenantPartitionKey
-          },
-          body: JSON.stringify({
-            kb_id : this.selectedKbId,
-            topic_id : this.selectedTopicId,
-            updateDocs: editedItemsArray
-          })
-        });
-        
+        const response = await fetch(
+          "http://localhost:8090/nexus/notebook/api/qapairs",
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
+            },
+            body: JSON.stringify({
+              kb_id: this.selectedKbId,
+              topic_id: this.selectedTopicId,
+              updateDocs: editedItemsArray,
+            }),
+          }
+        );
+
         if (!response.ok) {
           throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         console.log(`Update response: ${JSON.stringify(data)}`);
-        
+
         // Show success message
-        this.showStatus(`Successfully updated ${editedItemsArray.length} item(s)`, "success");
-        
+        this.showStatus(
+          `Successfully updated ${editedItemsArray.length} item(s)`,
+          "success"
+        );
+
         // Clear edited items after successful update
         this.editedItems = {};
         this.refreshData();
@@ -865,7 +1002,7 @@ export default {
       } finally {
         this.loading = false;
       }
-    }
+    },
   },
 };
 </script>
@@ -874,8 +1011,8 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans",
-    "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   color: #333;
   background-color: #fff;
   border-radius: 8px;
@@ -919,6 +1056,7 @@ export default {
 }
 
 .form-input {
+  color: black;
   padding: 12px 16px;
   border: 1px solid #ced4da;
   border-radius: 4px;

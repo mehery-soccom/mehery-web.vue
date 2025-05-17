@@ -178,6 +178,16 @@ export default {
     },
   },
   methods: {
+    resetKb(){
+      this.parentId= null;
+      this.parentCode= null;
+      this.parentCategory= null;
+      this.parentType= null;
+      this.selectedKbTitle= "";
+      this.iskbselected= false;
+      this.knowledgebases = [];
+      this.fetchknowledgebases();
+    },
     openEditModal(pg) {
       this.editPage = { ...pg }; // clone to avoid in-place mutation
       this.showModal = true;
@@ -271,7 +281,35 @@ export default {
       }
     },
     async deleteKB(id) {
-      // this.knowledgebases = this.knowledgebases.filter((kb) => kb._id !== id);
+      this.isLoading = true;
+      this.error = null;
+      try {
+        // Simulate an API call - replace with your actual API endpoint
+        const response = await fetch(
+          "http://localhost:8090/nexus/notebook/article/api/kb",
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
+            },
+            body: JSON.stringify({
+              kb_id: id
+            }),
+          }
+        );
+        const data = await response.json();
+        if (!data.success) {
+          this.error = data.message;
+        } else {
+        }
+      } catch (err) {
+        this.handleApiError(err);
+      } finally {
+        this.pages = [];
+        this.resetKb();
+        this.isLoading = false;
+      }
     },
     async submitPage() {
       if (!this.pageTitle || !this.document.trim()) {
