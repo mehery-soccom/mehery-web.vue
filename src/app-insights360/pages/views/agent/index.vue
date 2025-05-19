@@ -2,7 +2,9 @@
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from 'vue';
+import { useDatePickerFilters } from './../../../views/dashboards/analytics/useDatePickerFilters';
 
+const { customPlugin } = useDatePickerFilters()
 const projectStore = useProjectStore();
 const tempTable = ref([])
 const headers = [
@@ -49,36 +51,14 @@ const onDateClosed = (selectedDates, dateStr) => {
   console.log('Closed:', selectedDates, toRaw(oldDates.value), dateStr)
   if (selectedDates.length === 2 && toRaw(oldDates.value) != selectedDates) {
     oldDates.value = selectedDates;
-    const start = selectedDates[0].getTime();
+    const start = new Date(selectedDates[0])
+    start.setHours(0, 0, 0, 0)
     const endDate = new Date(selectedDates[1])
     endDate.setHours(23, 59, 59, 999)
-    const end = endDate.getTime()
-    console.log("all date closed", start, end)
-    fetchAgentData(start, end);
+    fetchAgentData(start.getTime(), endDate.getTime());
   }
 }
 
-// const formatDate = (date) => date.toLocaleDateString('en-GB').split('/').join('-')
-// const setToday = () => {
-//   const today = new Date()
-//   dateRange.value = formatDate(today)
-//   allAnalytics();
-// }
-// const setYesterday = () => {
-//   const y = new Date()
-//   y.setDate(y.getDate() - 1)
-//   const start = new Date(y.setHours(0, 0, 0, 0))
-//   dateRange.value = formatDate(start)
-//   allAnalytics();
-// }
-// const setLast7Days = () => {
-//   const today = new Date()
-//   const start = new Date()
-//   start.setDate(today.getDate() - 6)
-//   start.setHours(0, 0, 0, 0)
-//   dateRange.value = `${formatDate(start)} to ${formatDate(today)}`
-//   allAnalytics();
-// }
 const formatDuration = (seconds) => {
   console.log("time vals", seconds)
   if (!seconds || isNaN(seconds)) return '-';
@@ -142,12 +122,9 @@ onMounted( async () => {
     <div style="width: 100%;display: flex; justify-content: flex-end;">
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
-        :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,
-          onValueUpdate: onDateUpdate, onClose: onDateClosed }"
+        :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right',
+        onClose: onDateClosed, plugins: [customPlugin]}"
       />
-      <!-- <VBtn size="small" @click="setToday">Today</VBtn>
-      <VBtn size="small" @click="setYesterday">Yesterday</VBtn>
-      <VBtn size="small" @click="setLast7Days">Last 7 Days</VBtn> -->
     </div>
     <VCol cols="12">
       <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Agent Data'" >
@@ -174,6 +151,17 @@ onMounted( async () => {
 </template>
 
 <style>
+.flatpickr-custom-btn {
+  font-size: 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.flatpickr-custom-btn:hover {
+  background-color: #ddd;
+}
 .status-dot {
   display: inline-block;
   width: 10px;

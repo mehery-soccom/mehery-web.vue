@@ -3,7 +3,9 @@ import AnalyticsMonthlyCampaignState from '@/app-insights360/views/dashboards/an
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from 'vue';
+import { useDatePickerFilters } from './../../../views/dashboards/analytics/useDatePickerFilters';
 
+const { customPlugin } = useDatePickerFilters()
 const projectStore = useProjectStore();
 const channelItems = ref()
 const selectedChannelItem = ref('All Channels')
@@ -52,12 +54,11 @@ const onDateClosed = (selectedDates, dateStr) => {
   console.log('Closed:', selectedDates, toRaw(oldDates.value), dateStr)
   if (selectedDates.length === 2 && toRaw(oldDates.value) != selectedDates) {
     oldDates.value = selectedDates;
-    const start = selectedDates[0].getTime();
+    const start = new Date(selectedDates[0])
+    start.setHours(0, 0, 0, 0)
     const endDate = new Date(selectedDates[1])
     endDate.setHours(23, 59, 59, 999)
-    const end = endDate.getTime()
-    console.log("all date closed", start, end)
-    fetchTemplateData(start, end, selectedChannelItem.value, false);
+    fetchTemplateData(start.getTime(), endDate.getTime(), selectedChannelItem.value, false);
   }
 }
 
@@ -106,7 +107,7 @@ onMounted( async () => {
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,
-          onValueUpdate: onDateUpdate, onClose: onDateClosed }"
+          onValueUpdate: onDateUpdate, onClose: onDateClosed, plugins: [customPlugin] }"
       />
     </div>
     <VCol v-for="(campaign, index) in tempCharts"
@@ -119,4 +120,16 @@ onMounted( async () => {
   </VRow>
 </template>
 
-<style></style>
+<style>
+.flatpickr-custom-btn {
+  font-size: 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.flatpickr-custom-btn:hover {
+  background-color: #ddd;
+}
+</style>

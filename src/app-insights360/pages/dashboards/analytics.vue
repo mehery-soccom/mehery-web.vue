@@ -4,7 +4,9 @@ import ChartJsLineChart from "@/app-insights360/views/dashboards/analytics/Chart
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from "vue";
 import { useTheme } from "vuetify";
+import { useDatePickerFilters } from './../../views/dashboards/analytics/useDatePickerFilters';
 
+const { customPlugin } = useDatePickerFilters()
 const vuetifyTheme = useTheme();
 const currentTheme = vuetifyTheme.current.value.colors;
 const projectStore = useProjectStore();
@@ -509,12 +511,11 @@ const onDateClosed = (selectedDates, dateStr) => {
   console.log('Closed:', selectedDates, toRaw(oldDates.value), dateStr)
   if (selectedDates.length === 2 && toRaw(oldDates.value) != selectedDates) {
     oldDates.value = selectedDates;
-    const start = selectedDates[0].getTime();
+    const start = new Date(selectedDates[0])
+    start.setHours(0, 0, 0, 0)
     const endDate = new Date(selectedDates[1])
     endDate.setHours(23, 59, 59, 999)
-    const end = endDate.getTime()
-    console.log("all date closed", start, end)
-    allAnalytics(start, end, selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
+    allAnalytics(start.getTime(), endDate.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
   }
 }
 
@@ -614,7 +615,7 @@ onMounted( async () => {
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin-right: 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,
-          onValueUpdate: onDateUpdate, onClose: onDateClosed }"
+          onValueUpdate: onDateUpdate, onClose: onDateClosed, plugins: [customPlugin] }"
       />
     </div>
 
@@ -654,4 +655,17 @@ onMounted( async () => {
 
 <style lang="scss">
 @use "@core/scss/template/libs/apex-chart.scss";
+</style>
+<style>
+.flatpickr-custom-btn {
+  font-size: 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.flatpickr-custom-btn:hover {
+  background-color: #ddd;
+}
 </style>
