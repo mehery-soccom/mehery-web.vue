@@ -8,13 +8,13 @@ export const useProjectStore = defineStore("ProjectStore", {
       return axios.get("/dashboard/analytics/projects");
     },
     fetchChannels() {
-      return axios.get(`/admin/admin/fetch-contact-type`);
+      return axios.get(`${window.location.origin}/admin/admin/fetch-contact-type`);
     },
     fetchAgents() {
-      return axios.get(`/admin/api/admins/agent?includeInActive=false`);
+      return axios.get(`${window.location.origin}/admin/api/admins/agent?includeInActive=false`);
     },
     fetchTeams() {
-      return axios.get(`/admin/api/admins/dept?includeInActive=false`);
+      return axios.get(`${window.location.origin}/admin/api/admins/dept?includeInActive=false`);
     },
     fetchOpenChats(start, end, contact, agent, agentType){
       let url = `/api/v1/dashboard/conversation-status/open?dateRange1=${start}&dateRange2=${end}`;
