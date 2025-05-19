@@ -16,7 +16,6 @@ const props = defineProps({
 const search = ref('')
 const columnSearch = reactive({})
 
-// Initialize keys for column search
 watchEffect(() => {
   props.headers?.forEach(header => {
     if (!(header.key in columnSearch)) {
@@ -73,13 +72,14 @@ const filteredItems = computed(() => {
 
     <!-- 👉 Data Table  -->
     <VDataTable
+      v-bind="$attrs"
       :headers="toRaw(props.headers)"
       :items="filteredItems"
       :search="search"
       :items-per-page="10"
       class="text-no-wrap"
     >
-      <template #headers="{ columns }">
+      <!-- <template #headers="{ columns }">
         <tr>
           <th v-for="column in columns" :key="column.key"> {{ column.title }}</th>
         </tr>
@@ -93,6 +93,18 @@ const filteredItems = computed(() => {
               placeholder="🔍︎ Search"
             />
           </th>
+        </tr>
+      </template> -->
+      <template #item="{ item }">
+        <tr>
+          <td v-for="header in props.headers" :key="header.key">
+            <slot :name="`item.${header.key}`"
+              :item="item" v-if="$slots[`item.${header.key}`]"
+            />
+            <template v-else>
+              <span>{{ item.value[header.key] }}</span>
+            </template>
+          </td>
         </tr>
       </template>
     </VDataTable>

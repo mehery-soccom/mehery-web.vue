@@ -102,6 +102,10 @@ export const useProjectStore = defineStore("ProjectStore", {
       if(agent && agentType && agent != 'all_teams') url += `&${agentType}=${agent}`;
       return axios.get(url);
     },
+    fetchAgentDatas(start, end){
+      let url = `/admin/nexus/admin/api/v1/dashboard/agent-data?dateRange1=${start}&dateRange2=${end}`
+      return axios.get(url);
+    },
     fetchChartDatas(start, end, contact, agent, agentType){
       let url = `/admin/nexus/admin/api/v1/dashboard/charts?dateRange1=${start}&dateRange2=${end}`
       if(contact && contact != 'All Channels') url += `&contactType=${contact}`;

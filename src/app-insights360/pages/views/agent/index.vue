@@ -4,29 +4,27 @@ import { useProjectStore } from "@app-insights360/views/dashboards/analytics/use
 import { ref } from 'vue';
 
 const projectStore = useProjectStore();
-const channelItems = ref()
-const selectedChannelItem = ref('All Channels')
-const tempCharts = ref([])
 const tempTable = ref([])
 const headers = [
-  { title: 'TEMPLATE', key: 'templateCode', searchable: true },
-  { title: 'CHANNEL', key: 'channelId', searchable: true },
-  { title: 'CATEGORY', key: 'templateType', searchable: true },
-  { title: 'SENT', key: 'total'},
-  { title: 'DELIVERED', key: 'delivered', sortable: false },
-  { title: 'READ', key: 'read', sortable: false },
-  { title: 'REPLIED', key: 'responded', sortable: false },
-  { title: 'FAILED', key: 'failed', sortable: false },
+  { title: 'AGENT', key: 'agent', searchable: true, sortable: true },
+  { title: 'TEAM', key: 'deptName', searchable: true },
+  { title: 'STATUS', key: 'status' },
+  { title: 'START LAG', key: 'averageStartLag'},
+  { title: 'RESPONSE TIME', key: 'averageResponseTime'},
+  { title: 'ASSIGNED DURATION', key: 'averageAssignedDuration'},
+  { title: 'OPEN', key: 'openConversations', sortable: false },
+  { title: 'RESOLVED', key: 'resolvedConversations', sortable: false },
+  { title: 'EXPIRED', key: 'expiredConversations', sortable: false },
+  { title: 'FEEDBACK', key: 'averageSatisfaction', sortable: false },
 ]
 
-const fetchTemplateData = async (start, end, chan, bool) => {
+const fetchAgentData = async (start, end) => {
   try {
-    const response = await projectStore.fetchTemplateDatas(start, end, chan);
-    if (response?.data?.data != null) {
-      tempCharts.value = Object.entries(response?.data?.data).map(([channel, data]) => ({ title: channel, ...data }))
-      tempTable.value = response?.data?.results;
-      if(!bool) channelItems.value = ['All Channels', ...Object.keys(response?.data?.data || {})];
-      console.log("ana", tempCharts.value, tempTable.value);
+    const response = await projectStore.fetchAgentDatas(start, end);
+    if (response?.data?.results != null) {
+      const resultsWithActivity = response.data.results.map(item => ({ ...item, activity: findStatus(item.session) }));
+      tempTable.value = resultsWithActivity;
+      console.log("ana", tempTable.value);
     }
   } catch (error) { console.error("analytics error", error); }
 };
@@ -56,12 +54,68 @@ const onDateClosed = (selectedDates, dateStr) => {
     endDate.setHours(23, 59, 59, 999)
     const end = endDate.getTime()
     console.log("all date closed", start, end)
-    fetchTemplateData(start, end, selectedChannelItem.value, false);
+    fetchAgentData(start, end);
   }
 }
 
+// const formatDate = (date) => date.toLocaleDateString('en-GB').split('/').join('-')
+// const setToday = () => {
+//   const today = new Date()
+//   dateRange.value = formatDate(today)
+//   allAnalytics();
+// }
+// const setYesterday = () => {
+//   const y = new Date()
+//   y.setDate(y.getDate() - 1)
+//   const start = new Date(y.setHours(0, 0, 0, 0))
+//   dateRange.value = formatDate(start)
+//   allAnalytics();
+// }
+// const setLast7Days = () => {
+//   const today = new Date()
+//   const start = new Date()
+//   start.setDate(today.getDate() - 6)
+//   start.setHours(0, 0, 0, 0)
+//   dateRange.value = `${formatDate(start)} to ${formatDate(today)}`
+//   allAnalytics();
+// }
+const formatDuration = (seconds) => {
+  console.log("time vals", seconds)
+  if (!seconds || isNaN(seconds)) return '-';
+  seconds = seconds / 1000;
+
+  if (seconds >= 86400) {
+    const days = (seconds / 86400).toFixed(2);
+    return `${days} day${days >= 2 ? 's' : ''}`;
+  } else if (seconds >= 3600) {
+    const hours = (seconds / 3600).toFixed(2);
+    return `${hours} hour${hours >= 2 ? 's' : ''}`;
+  } else if (seconds >= 60) {
+    const minutes = (seconds / 60).toFixed(2);
+    return `${minutes} min${minutes >= 2 ? 's' : ''}`;
+  } else {
+    return `${seconds.toFixed(0)} second${seconds >= 2 ? 's' : ''}`;
+  }
+};
+const findStatus = (sess) =>{
+  var awayStamp = new Date().getTime()-600000;
+  var offlineStamp = awayStamp-600000*2;
+  let activity = "offline";
+  if(!sess) activity = 'offline'; 
+  else { 
+    const session = sess; 
+    if(session && Object.keys(session).length > 0) session.isLoggedIn = (session.isLoggedIn && (session.lastOnlineStamp > offlineStamp));
+    if(session && Object.keys(session).length > 0) session.isAway = session.isOnline && session.isLoggedIn && (session.lastOnlineStamp < awayStamp);
+    if (!session || !session.isEnabled || !session.isLoggedIn) activity = "offline";
+    else if (session.isAway) activity = "away";
+    else if (session.isOnline) activity = "online";
+    console.log("sess 2",sess, sess.isOnline, session.isAway, !session || !session.isEnabled || !session.isLoggedIn)
+  }
+  return activity;
+}
+
 const allAnalytics = () => {
-  console.log("channs", selectedChannelItem, dateRange.value)
+  console.log("channs", dateRange.value)
   let startStr = ''; let endStr = '';
   if (dateRange.value.includes('to')) [startStr, endStr] = dateRange.value.split(' to ')
   else startStr = endStr = dateRange.value
@@ -71,7 +125,7 @@ const allAnalytics = () => {
   const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0)
   const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999)
   console.log("no date", startDate, endDate)
-  fetchTemplateData(startDate.getTime(), endDate.getTime(), selectedChannelItem.value, true)
+  fetchAgentData(startDate.getTime(), endDate.getTime())
 }
 
 onMounted( async () => {
@@ -79,39 +133,60 @@ onMounted( async () => {
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 6);
   oneWeekAgo.setHours(0, 0, 0, 0);
-  fetchTemplateData(oneWeekAgo.getTime(), now.getTime(), 'All Channels', false);
+  fetchAgentData(oneWeekAgo.getTime(), now.getTime());
 })
 </script>
 
 <template>
   <VRow>
     <div style="width: 100%;display: flex; justify-content: flex-end;">
-      <VMenu transition="scale-transition" style="min-width: 200px !important;">
-        <template #activator="{ props }">
-          <VBtn v-bind="props">
-            {{ selectedChannelItem || 'Select an option' }}
-          </VBtn>
-        </template>
-
-        <VList>
-          <VListItem
-            v-for="(item, index) in channelItems"
-            :key="index"
-            @click="() => { selectedChannelItem = item; allAnalytics(); }">
-            <VListItemTitle>{{ item }}</VListItemTitle>
-          </VListItem>
-        </VList>
-      </VMenu>
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,
           onValueUpdate: onDateUpdate, onClose: onDateClosed }"
       />
+      <!-- <VBtn size="small" @click="setToday">Today</VBtn>
+      <VBtn size="small" @click="setYesterday">Yesterday</VBtn>
+      <VBtn size="small" @click="setLast7Days">Last 7 Days</VBtn> -->
     </div>
     <VCol cols="12">
-      <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" />
+      <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Agent Data'" >
+        <template #item.averageStartLag="{ item }">
+          {{ formatDuration(item.value.averageStartLag) }}
+        </template>
+
+        <template #item.averageResponseTime="{ item }">
+          {{ formatDuration(item.value.averageResponseTime) }}
+        </template>
+
+        <template #item.averageAssignedDuration="{ item }">
+          {{ formatDuration(item.value.averageAssignedDuration) }}
+        </template>
+        <!-- {{ findStatus(item.value.session) }} -->
+        <template #item.status="{ item }">
+          <span v-if="item.value.activity === 'online'" class="status-dot green-dot"></span>
+          <span v-else-if="item.value.activity === 'away'" class="status-dot orange-dot"></span>
+          <span v-else class="status-dot red-dot"></span>
+        </template>
+      </DemoDataTableKitchenSink>
     </VCol>
   </VRow>
 </template>
 
-<style lang="scss"></style>
+<style>
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.green-dot {
+  background-color: rgb(10, 200, 10);
+}
+.red-dot {
+  background-color: red;
+}
+.orange-dot {
+  background-color: orange;
+}
+</style>
