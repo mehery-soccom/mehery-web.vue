@@ -13,16 +13,16 @@ const selectedChannelItem = ref('All Channels')
 const campCharts = ref([])
 const campTable = ref([])
 const headers = [
-  { title: 'CAMPAIGN', key: 'name', searchable: true },
-  { title: 'CHANNEL', key: 'channelId', searchable: true },
-  { title: 'TEMPLATE', key: 'templateName', searchable: true },
-  { title: 'STATUS', key: 'status', searchable: true },
-  { title: 'TOTAL', key: 'total'},
-  { title: 'SENT', key: 'sent'},
-  { title: 'DELIVERED', key: 'delivered', sortable: false },
-  { title: 'READ', key: 'read', sortable: false },
-  { title: 'REPLIED', key: 'responded', sortable: false },
-  { title: 'FAILED', key: 'failed', sortable: false },
+  { title: 'Campaign', key: 'name', searchable: true },
+  { title: 'Channel', key: 'channelId', searchable: true },
+  { title: 'Template', key: 'templateName', searchable: true },
+  { title: 'Status', key: 'status', searchable: true },
+  { title: 'Total', key: 'total'},
+  { title: 'Sent', key: 'sent'},
+  { title: 'Delivered', key: 'delivered', sortable: false },
+  { title: 'Read', key: 'read', sortable: false },
+  { title: 'Replied', key: 'responded', sortable: false },
+  { title: 'Failed', key: 'failed', sortable: false },
 ]
 const statsCamp = ref([
   {

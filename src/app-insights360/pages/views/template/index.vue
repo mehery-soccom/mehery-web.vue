@@ -12,14 +12,14 @@ const selectedChannelItem = ref('All Channels')
 const tempCharts = ref([])
 const tempTable = ref([])
 const headers = [
-  { title: 'TEMPLATE', key: 'templateCode', searchable: true },
-  { title: 'CHANNEL', key: 'channelId', searchable: true },
-  { title: 'CATEGORY', key: 'templateType', searchable: true },
-  { title: 'SENT', key: 'total'},
-  { title: 'DELIVERED', key: 'delivered', sortable: false },
-  { title: 'READ', key: 'read', sortable: false },
-  { title: 'REPLIED', key: 'responded', sortable: false },
-  { title: 'FAILED', key: 'failed', sortable: false },
+  { title: 'Template', key: 'templateCode', searchable: true },
+  { title: 'Channel', key: 'channelId', searchable: true },
+  { title: 'Category', key: 'templateType', searchable: true },
+  { title: 'Sent', key: 'total'},
+  { title: 'Delivered', key: 'delivered', sortable: false },
+  { title: 'Read', key: 'read', sortable: false },
+  { title: 'Replied', key: 'responded', sortable: false },
+  { title: 'Failed', key: 'failed', sortable: false },
 ]
 
 const fetchTemplateData = async (start, end, chan, bool) => {

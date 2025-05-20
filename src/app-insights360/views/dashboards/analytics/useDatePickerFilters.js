@@ -5,7 +5,7 @@ export const useDatePickerFilters = () => {
       container.style.display = 'flex'
       container.style.flexWrap = 'wrap'
       container.style.gap = '6px'
-      container.style.justifyContent = 'space-between'
+      container.style.justifyContent = 'space-evenly'
       container.style.padding = '6px 10px'
 
       container.innerHTML = `

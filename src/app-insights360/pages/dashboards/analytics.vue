@@ -404,7 +404,7 @@ const fetchChartData = async (start, end, chan, agent, type) => {
     const labels = results.map(block => {
       const date = new Date(block.rangeStart);
       return isSingleDay ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // eg: 03:15 PM
-        : date.toLocaleDateString(); // eg: 13/05/2025
+        : date.toLocaleDateString('en-GB'); // eg: 13/05/2025
     });
 
     const colorKeys = Object.keys(chartJsCustomColors);

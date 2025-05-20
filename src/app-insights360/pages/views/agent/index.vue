@@ -8,16 +8,17 @@ const { customPlugin } = useDatePickerFilters()
 const projectStore = useProjectStore();
 const tempTable = ref([])
 const headers = [
-  { title: 'AGENT', key: 'agent', searchable: true, sortable: true },
-  { title: 'TEAM', key: 'deptName', searchable: true },
-  { title: 'STATUS', key: 'status' },
-  { title: 'START LAG', key: 'averageStartLag'},
-  { title: 'RESPONSE TIME', key: 'averageResponseTime'},
-  { title: 'ASSIGNED DURATION', key: 'averageAssignedDuration'},
-  { title: 'OPEN', key: 'openConversations', sortable: false },
-  { title: 'RESOLVED', key: 'resolvedConversations', sortable: false },
-  { title: 'EXPIRED', key: 'expiredConversations', sortable: false },
-  { title: 'FEEDBACK', key: 'averageSatisfaction', sortable: false },
+  { title: 'Agent', key: 'agent', searchable: true, sortable: true },
+  { title: 'Team', key: 'deptName', searchable: true },
+  { title: 'Status', key: 'status', sortable: false },
+  { title: 'No. of Conv', key: 'totalConversations'},
+  { title: 'Av Start Lag', key: 'averageStartLag'},
+  { title: 'Av Response Time', key: 'averageResponseTime'},
+  { title: 'Duration', key: 'averageAssignedDuration'},
+  { title: 'Open', key: 'openConversations', sortable: false },
+  { title: 'Resolved', key: 'resolvedConversations', sortable: false },
+  { title: 'Expired', key: 'expiredConversations', sortable: false },
+  { title: 'Feedback', key: 'averageSatisfaction', sortable: false },
 ]
 
 const fetchAgentData = async (start, end) => {
@@ -66,15 +67,15 @@ const formatDuration = (seconds) => {
 
   if (seconds >= 86400) {
     const days = (seconds / 86400).toFixed(2);
-    return `${days} day${days >= 2 ? 's' : ''}`;
+    return `${days} d`;
   } else if (seconds >= 3600) {
     const hours = (seconds / 3600).toFixed(2);
-    return `${hours} hour${hours >= 2 ? 's' : ''}`;
+    return `${hours} h`;
   } else if (seconds >= 60) {
     const minutes = (seconds / 60).toFixed(2);
-    return `${minutes} min${minutes >= 2 ? 's' : ''}`;
+    return `${minutes} m`;
   } else {
-    return `${seconds.toFixed(0)} second${seconds >= 2 ? 's' : ''}`;
+    return `${seconds.toFixed(0)} s`;
   }
 };
 const findStatus = (sess) =>{
