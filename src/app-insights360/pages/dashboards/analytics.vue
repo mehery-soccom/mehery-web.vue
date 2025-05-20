@@ -24,7 +24,7 @@ var dateRange = ref(dates);
 const channelItems = ref()
 const selectedChannelItem = ref('All Channels')
 const agentTeamItems = ref()
-const selectedAgentTeamItem = ref({ name: 'All Agents', code: 'all_teams' })
+const selectedAgentTeamItem = ref({ name: 'All Agents', code: 'all_teams', id: 'all_teams' })
 const listAgents = ref()
 const listTeams = ref()
 
@@ -515,7 +515,9 @@ const onDateClosed = (selectedDates, dateStr) => {
     start.setHours(0, 0, 0, 0)
     const endDate = new Date(selectedDates[1])
     endDate.setHours(23, 59, 59, 999)
-    allAnalytics(start.getTime(), endDate.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
+    allAnalytics(start.getTime(), endDate.getTime(), selectedChannelItem.value, 
+    selectedAgentTeamItem.value.dept_id ? selectedAgentTeamItem.value.code : selectedAgentTeamItem.value.id, 
+    selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
   }
 }
 
@@ -530,7 +532,9 @@ const allAnalyticsWithoutDate = () => {
   const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0)
   const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999)
   console.log("no date", startDate, endDate)
-  allAnalytics(startDate.getTime(), endDate.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team')
+  allAnalytics(startDate.getTime(), endDate.getTime(), selectedChannelItem.value, 
+  selectedAgentTeamItem.value.dept_id ? selectedAgentTeamItem.value.code : selectedAgentTeamItem.value.id, 
+  selectedAgentTeamItem.value.dept_id ? 'agent' : 'team')
 }
 const allAnalytics = (start, end, chan, agent, type) => {
   console.log("all an", start, end)
@@ -555,7 +559,7 @@ onMounted( async () => {
   await fetchAgent();
   await fetchTeam();
   const allChan = ['All Channels'];
-  const allTeam = [{ name: 'All Agents', code: 'all_teams' }]
+  const allTeam = [{ name: 'All Agents', code: 'all_teams', id: 'all_teams' }]
 
   agentTeamItems.value = [ ...allTeam, ...listAgents.value.results, ...listTeams.value.results ]
   channelItems.value = [ ...allChan, ...channelItems.value ]
@@ -570,7 +574,9 @@ onMounted( async () => {
   const formattedEnd = today.toLocaleDateString('en-GB').split('/').join('-')
   dateRange.value = `${formattedStart} to ${formattedEnd}`
   console.log("before mount", oneWeekAgo.getTime(), today.getTime());
-  allAnalytics(oneWeekAgo.getTime(), today.getTime(), selectedChannelItem.value, selectedAgentTeamItem.value.code, selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
+  allAnalytics(oneWeekAgo.getTime(), today.getTime(), selectedChannelItem.value, 
+  selectedAgentTeamItem.value.dept_id ? selectedAgentTeamItem.value.code : selectedAgentTeamItem.value.id, 
+  selectedAgentTeamItem.value.dept_id ? 'agent' : 'team');
 })
 </script>
 
