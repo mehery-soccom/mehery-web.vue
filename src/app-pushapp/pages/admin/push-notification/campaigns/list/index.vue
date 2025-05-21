@@ -101,7 +101,7 @@ const fetchSimpleNotifications = () => {
         <!-- 👉 Create -->
         <VBtn
           prepend-icon="tabler-plus"
-          :to="{ name: 'admin-push-notification-simple-add' }"
+          :to="{ name: 'admin-push-notification-campaigns-add' }"
         >
           New Notification
         </VBtn>
@@ -175,7 +175,7 @@ const fetchSimpleNotifications = () => {
       <template #item.actions="{ item }">
         <IconBtn
           :to="{
-            name: 'admin-push-notification-simple-add',
+            name: 'admin-push-notification-campaigns-add',
             query: { copy: item.raw.notification_id },
           }"
         >

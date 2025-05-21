@@ -132,7 +132,7 @@
             <VBtn
               variant="tonal"
               color="secondary"
-              :to="{ name: 'admin-push-notification-simple-list' }"
+              :to="{ name: 'admin-push-notification-campaigns-list' }"
             >
               Cancel
             </VBtn>
