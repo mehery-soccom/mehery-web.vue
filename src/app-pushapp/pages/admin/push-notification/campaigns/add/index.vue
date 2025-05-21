@@ -230,8 +230,6 @@ onMounted(async () => {
         console.log(error);
         show({ message: "Something went wrong", color: "error" });
       });
-  } else {
-    show({ message: "Invalid Notification ID", color: "error" });
   }
 });
 

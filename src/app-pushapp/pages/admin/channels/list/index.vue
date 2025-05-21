@@ -1,14 +1,13 @@
 <script setup>
-import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
-import { VDataTable } from "vuetify/labs/VDataTable";
+import MyDataTable from "@/@common/components/MyDataTable.vue";
 import { PLATFORM_COLORS } from "@app/utils/constants";
+import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 
 const { show } = inject("snackbar");
 const channelsStore = useChannelsStore();
 const isLoading = ref(false);
 const channels = ref([]);
 // const totalChannels = ref(0);
-// const itemsPerPage = ref(10);
 const headers = [
   {
     title: "App Name",
@@ -34,9 +33,6 @@ onMounted(async () => {
   fetchChannels();
 });
 
-// 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
-watchEffect(() => {});
-
 // 👉 Fetch Channels
 const fetchChannels = () => {
   isLoading.value = true;
@@ -47,8 +43,9 @@ const fetchChannels = () => {
       // totalChannels.value = response.data.total;
     })
     .catch((error) => {
-      console.log(error);
-      show({ message: "Something went wrong", color: "error" });
+      if (!error.response?.data?.error == "No channels found")
+        show({ message: "Something went wrong", color: "error" });
+      channels.value = [];
     })
     .finally(() => {
       isLoading.value = false;
@@ -72,13 +69,6 @@ const deleteChannel = (id, dialogCloseRef) => {
       isLoading.value = false;
     });
 };
-
-// const onUpdateOptions = (newValue) => {
-//   console.log("onUpdateOptions", newValue);
-//   // options.value = newValue;
-
-//   fetchChannels();
-// };
 </script>
 
 <template>
@@ -98,22 +88,7 @@ const deleteChannel = (id, dialogCloseRef) => {
 
     <VDivider />
 
-    <!-- SECTION Datatable -->
-    <!-- <VDataTableServer
-      class="text-no-wrap my-data-table"
-      v-model:items-per-page="itemsPerPage"
-      :headers="headers"
-      :items="channels"
-      :items-length="totalChannels"
-      :loading="isLoading"
-      @update:options="onUpdateOptions"
-    > -->
-    <VDataTable
-      class="text-no-wrap mb-3 my-data-table"
-      :headers="headers"
-      :items="channels"
-      :loading="isLoading"
-    >
+    <MyDataTable :headers="headers" :items="channels" :loading="isLoading">
       <!-- channel id -->
       <template #item.channel_name="{ item }">
         <RouterLink
@@ -179,9 +154,7 @@ const deleteChannel = (id, dialogCloseRef) => {
           <VIcon icon="mdi-pencil-outline" />
         </IconBtn>
       </template>
-      <!-- </VDataTableServer> -->
-    </VDataTable>
-    <!-- !SECTION -->
+    </MyDataTable>
   </VCard>
 </template>
 
@@ -193,11 +166,6 @@ const deleteChannel = (id, dialogCloseRef) => {
 
   .invoice-list-filter {
     inline-size: 12rem;
-  }
-}
-.my-data-table {
-  .v-table__wrapper {
-    min-height: 100px;
   }
 }
 </style>

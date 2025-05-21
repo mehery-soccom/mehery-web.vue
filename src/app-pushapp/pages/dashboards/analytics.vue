@@ -1,4 +1,5 @@
 <script setup>
+/*
 import { useTheme } from 'vuetify'
 import AnalyticsEarningReportsWeeklyOverview from '@app/views/dashboards/analytics/AnalyticsEarningReportsWeeklyOverview.vue'
 import AnalyticsMonthlyCampaignState from '@app/views/dashboards/analytics/AnalyticsMonthlyCampaignState.vue'
@@ -71,95 +72,103 @@ const statisticsVertical = {
     },
   },
 }
+*/
 </script>
 
 <template>
   <VRow class="match-height">
     <!-- 👉 Website analytics -->
-    <VCol
+    <!-- <VCol
       cols="12"
       md="6"
     >
       <AnalyticsWebsiteAnalytics />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Sales Overview -->
-    <VCol
+    <!-- <VCol
       cols="12"
       md="3"
       sm="6"
     >
       <AnalyticsSalesOverview />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Statistics Vertical -->
-    <VCol
+    <!-- <VCol
       cols="12"
       md="3"
       sm="6"
     >
       <CardStatisticsVertical v-bind="statisticsVertical" />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Earning Reports Weekly Overview -->
-    <VCol
+    <!-- <VCol
       cols="12"
       md="6"
     >
       <AnalyticsEarningReportsWeeklyOverview />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Support Tracker -->
-    <VCol
+    <!-- <VCol
       cols="12"
       md="6"
     >
       <AnalyticsSupportTracker />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Sales by Countries -->
-    <VCol
+    <!-- <VCol
       cols="12"
       sm="6"
       lg="4"
     >
       <AnalyticsSalesByCountries />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Total Earning -->
-    <VCol
+    <!-- <VCol
       cols="12"
       sm="6"
       lg="4"
     >
       <AnalyticsTotalEarning />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Monthly Campaign State -->
-    <VCol
+    <!-- <VCol
       cols="12"
       sm="6"
       lg="4"
     >
       <AnalyticsMonthlyCampaignState />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Source Visits -->
-    <VCol
+    <!-- <VCol
       cols="12"
       sm="6"
       lg="4"
     >
       <AnalyticsSourceVisits />
-    </VCol>
+    </VCol> -->
 
     <!-- 👉 Project Table -->
-    <VCol
+    <!-- <VCol
       cols="12"
       lg="8"
     >
       <AnalyticsProjectTable />
-    </VCol>
+    </VCol> -->
+
+    <div :style="{ width: '100%', textAlign: 'center', marginTop: '300px' }">
+      <h3 :style="{ fontSize: '44px' }">
+        <VIcon icon="tabler-settings" /> PushApp
+        <small>v1.0</small>
+      </h3>
+    </div>
   </VRow>
 </template>
 

@@ -1,7 +1,7 @@
 <script setup>
+import MyDataTable from "@/@common/components/MyDataTable.vue";
 import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
-import { VDataTable } from "vuetify/labs/VDataTable";
 import { smartFormatDate } from "@core/utils/formatters";
 
 const pushNotificationStore = usePushNotificationStore();
@@ -110,18 +110,7 @@ const fetchSimpleNotifications = () => {
 
     <VDivider />
 
-    <!-- SECTION Datatable -->
-    <!-- <VDataTableServer
-      class="text-no-wrap my-data-table"
-      v-model:items-per-page="itemsPerPage"
-      :headers="headers"
-      :items="notifications"
-      :items-length="totalNotifications"
-      :loading="isLoading"
-      @update:options="onUpdateOptions"
-    > -->
-    <VDataTable
-      class="text-no-wrap mb-3 my-data-table"
+    <MyDataTable
       :headers="headers"
       :items="notifications"
       :loading="isLoading"
@@ -194,9 +183,7 @@ const fetchSimpleNotifications = () => {
           <VTooltip activator="parent">Duplicate</VTooltip>
         </IconBtn>
       </template>
-      <!-- </VDataTableServer> -->
-    </VDataTable>
-    <!-- !SECTION -->
+    </MyDataTable>
   </VCard>
 </template>
 

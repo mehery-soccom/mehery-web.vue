@@ -34,8 +34,8 @@ const onCreate = async () => {
 
     const formData = new FormData();
     formData.append("channel_name", channelData.value.channel_name);
-    formData.append("company_id", channelData.value.company_id);
-    formData.append("company_name", channelData.value.company_name);
+    // formData.append("company_id", channelData.value.company_id);
+    // formData.append("company_name", channelData.value.company_name);
     channelData.value.platforms.map((p) => {
       formData.append(`${p.platform_type}_file`, p.file);
       formData.append(`${p.platform_type}_bundle_id`, p.bundle_id);

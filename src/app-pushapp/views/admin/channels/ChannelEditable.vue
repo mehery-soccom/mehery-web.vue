@@ -79,7 +79,7 @@ const handleFileUpload = (file, index) => {
           <AppTextField v-model="data.channel_id" label="App ID" readonly />
         </VCol>
       </VRow>
-      <VRow>
+      <!-- <VRow>
         <VCol cols="12" md="6">
           <AppTextField
             v-model="data.company_name"
@@ -94,7 +94,7 @@ const handleFileUpload = (file, index) => {
             placeholder="Your Company ID"
           />
         </VCol>
-      </VRow>
+      </VRow> -->
     </VCardText>
 
     <VDivider />

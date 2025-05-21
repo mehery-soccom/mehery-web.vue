@@ -1,30 +1,30 @@
 export default [
   { heading: "Admin" },
   {
-    title: "Apps",
+    title: "Mobile Apps",
     icon: { icon: "tabler-plug" },
-    children: [
-      { title: "List", to: "admin-channels-list" },
-      { title: "Add", to: "admin-channels-add" },
-    ],
+    to: "admin-channels-list",
   },
   {
     title: "Push Notification",
     icon: { icon: "tabler-bell-ringing" },
     children: [
-      { title: "Simple", to: "admin-push-notification-simple-list" },
       {
-        title: "Styled",
-        to: { name: "admin-push-notification-styled" },
+        title: "Templates",
+        to: "admin-push-notification-templates-list",
+      },
+      {
+        title: "Blast",
+        to: "admin-push-notification-campaigns-add",
+      },
+      {
+        title: "Trigger Rules",
+        to: "admin-push-notification-trigger-rules-list",
+      },
+      {
+        title: "Campaigns",
+        to: "admin-push-notification-campaigns-list",
       },
     ],
   },
-  // {
-  //   title: "Templates",
-  //   icon: { icon: "tabler-template" },
-  //   children: [
-  //     { title: "List", to: "admin-templates-list" },
-  //     { title: "Add", to: "admin-templates-add" },
-  //   ],
-  // },
 ];
