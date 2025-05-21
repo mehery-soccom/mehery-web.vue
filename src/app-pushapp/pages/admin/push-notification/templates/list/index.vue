@@ -116,6 +116,7 @@ const deleteTemplate = (id, dialogCloseRef) => {
               </v-card>
             </template>
           </v-dialog>
+          <VTooltip activator="parent">Delete</VTooltip>
         </IconBtn>
 
         <IconBtn
@@ -125,6 +126,17 @@ const deleteTemplate = (id, dialogCloseRef) => {
           }"
         >
           <VIcon icon="mdi-pencil-outline" />
+          <VTooltip activator="parent">Edit</VTooltip>
+        </IconBtn>
+
+        <IconBtn
+          :to="{
+            name: 'admin-push-notification-templates-add',
+            query: { copy: item.raw._id },
+          }"
+        >
+          <VIcon icon="mdi-content-copy" />
+          <VTooltip activator="parent">Duplicate</VTooltip>
         </IconBtn>
       </template>
     </MyDataTable>

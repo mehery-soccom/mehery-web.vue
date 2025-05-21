@@ -1,136 +1,8 @@
-<template>
-  <div :class="['phone-frame', platform]">
-    <!-- Background -->
-    <div :class="[platform + '-wallpaper']"></div>
-
-    <!-- Notch and Top Bar -->
-    <div v-if="platform === 'ios'" class="notch"></div>
-    <div v-if="platform === 'ios'" class="ios-status-bar">
-      <span class="carrier">Jio</span>
-      <div class="status-icons">
-        <span class="icon">📶</span>
-        <span class="icon">📡</span>
-        <span class="icon">🔋</span>
-      </div>
-    </div>
-
-    <!-- Pixel-style Android status bar with camera notch -->
-    <div v-if="platform === 'android'" class="android-notch"></div>
-    <div v-if="platform === 'android'" class="android-status-bar">
-      <div class="left-icons">
-        <span class="icon">📶</span>
-        <span class="icon">📡</span>
-      </div>
-      <div class="right-icons">
-        <span class="icon">🔋</span>
-        <span class="icon">🔔</span>
-      </div>
-    </div>
-
-    <!-- Clock and Date -->
-    <div :class="[platform + '-clock-block']">
-      <div class="date">{{ currentDate }}</div>
-      <div class="clock">{{ currentTime }}</div>
-    </div>
-
-    <!-- Notification Preview -->
-    <transition name="fade-slide">
-      <div v-if="showNotification" :class="['notification-preview', platform]">
-        <div :class="[platform + '-content']">
-          <div class="notification-header">
-            <img
-              v-if="form.logo_url"
-              class="notification-image"
-              :src="form.logo_url"
-              alt="icon"
-            />
-            <div class="notification-text">
-              <div class="notification-title-time">
-                <div class="title" :title="form.title">
-                  {{ (form.title || "Your title comes here").slice(0, 40)
-                  }}{{ (form.title || "").length > 40 ? "..." : "" }}
-                </div>
-                <div class="notification-time">now</div>
-              </div>
-              <div class="notification-message-previ">
-                <div
-                  class="message"
-                  :title="form.message"
-                  :style="view === 'collapse' ? 'max-width:205px' : ''"
-                >
-                  {{ (form.message || "Your message comes here").slice(0, 90)
-                  }}{{ (form.message || "").length > 90 ? "..." : "" }}
-                </div>
-
-                <div class="notification-previ">
-                  <img
-                    v-if="form.image_url && view === 'collapse'"
-                    class="notification-previ-image"
-                    :src="form.image_url"
-                    alt="icon"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Long preview -->
-          <div v-if="view === 'expand'" class="long-preview mt-4">
-            <img
-              v-if="form.image_url"
-              class=""
-              :src="form.image_url"
-              alt="icon"
-            />
-          </div>
-
-          <!-- Expanded content for Android -->
-          <div
-            v-if="
-              ((platform === 'ios' && view === 'expand') ||
-                platform === 'android') &&
-              buttonGroupFields.length
-            "
-            class="expanded-content"
-          >
-            <div class="expanded-actions">
-              <button
-                v-for="item in buttonGroupFields"
-                :key="item.text"
-                class="cta-button"
-              >
-                {{ item.text }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Bottom Icons -->
-    <div v-if="platform === 'ios'" class="bottom-icons">
-      <span class="fingerprint">🔓</span>
-      <span class="camera">📷</span>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { onMounted, ref, watch } from "vue";
-
 const props = defineProps({
-  form: Object,
-  platform: {
-    type: String,
-    default: "ios",
-  },
-  view: {
-    type: String,
-    default: "collapse",
-  },
-  buttonGroupFields: {
-    type: Array,
-    default: [],
+  template: {
+    type: Object,
+    default: {},
   },
 });
 
@@ -158,7 +30,7 @@ onMounted(() => {
 });
 
 watch(
-  () => props.platform,
+  () => props.template.view.platform,
   () => {
     showNotification.value = false;
     setTimeout(() => (showNotification.value = true), 100);
@@ -166,13 +38,151 @@ watch(
 );
 
 watch(
-  () => props.view,
+  () => props.template.view.mode,
   () => {
     showNotification.value = false;
     setTimeout(() => (showNotification.value = true), 100);
   }
 );
 </script>
+
+<template>
+  <div :class="['phone-frame', template.view.platform]">
+    <!-- Background -->
+    <div :class="[template.view.platform + '-wallpaper']"></div>
+
+    <!-- Notch and Top Bar -->
+    <div v-if="template.view.platform === 'ios'" class="notch"></div>
+    <div v-if="template.view.platform === 'ios'" class="ios-status-bar">
+      <span class="carrier">Jio</span>
+      <div class="status-icons">
+        <span class="icon">📶</span>
+        <span class="icon">📡</span>
+        <span class="icon">🔋</span>
+      </div>
+    </div>
+
+    <!-- Pixel-style Android status bar with camera notch -->
+    <div
+      v-if="template.view.platform === 'android'"
+      class="android-notch"
+    ></div>
+    <div v-if="template.view.platform === 'android'" class="android-status-bar">
+      <div class="left-icons">
+        <span class="icon">📶</span>
+        <span class="icon">📡</span>
+      </div>
+      <div class="right-icons">
+        <span class="icon">🔋</span>
+        <span class="icon">🔔</span>
+      </div>
+    </div>
+
+    <!-- Clock and Date -->
+    <div :class="[template.view.platform + '-clock-block']">
+      <div class="date">{{ currentDate }}</div>
+      <div class="clock">{{ currentTime }}</div>
+    </div>
+
+    <!-- Notification Preview -->
+    <transition name="fade-slide">
+      <div
+        v-if="showNotification"
+        :class="['notification-preview', template.view.platform]"
+      >
+        <div :class="[template.view.platform + '-content']">
+          <div class="notification-header">
+            <img
+              v-if="template.style.logo_url"
+              class="notification-image"
+              :src="template.style.logo_url"
+              alt="icon"
+            />
+            <div class="notification-text">
+              <div class="notification-title-time">
+                <div class="title" :title="template.style.title">
+                  {{
+                    (template.style.title || "Your title comes here").slice(
+                      0,
+                      40
+                    )
+                  }}{{ (template.style.title || "").length > 40 ? "..." : "" }}
+                </div>
+                <div class="notification-time">now</div>
+              </div>
+              <div class="notification-message-previ">
+                <div
+                  class="message"
+                  :title="template.style.message"
+                  :style="
+                    template.view.mode === 'collapse' ? 'max-width:205px' : ''
+                  "
+                >
+                  {{
+                    (template.style.message || "Your message comes here").slice(
+                      0,
+                      90
+                    )
+                  }}{{
+                    (template.style.message || "").length > 90 ? "..." : ""
+                  }}
+                </div>
+
+                <div class="notification-previ">
+                  <img
+                    v-if="
+                      template.style.image_url &&
+                      template.view.mode === 'collapse'
+                    "
+                    class="notification-previ-image"
+                    :src="template.style.image_url"
+                    alt="icon"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Long preview -->
+          <div v-if="template.view.mode === 'expand'" class="long-preview mt-4">
+            <img
+              v-if="template.style.image_url"
+              :src="template.style.image_url"
+              alt="icon"
+            />
+          </div>
+
+          <!-- Expanded content for Android -->
+          <div
+            v-if="
+              ((template.view.platform === 'ios' &&
+                template.view.mode === 'expand') ||
+                template.view.platform === 'android') &&
+              template.options.buttons.length
+            "
+            class="expanded-content"
+          >
+            <div class="expanded-actions">
+              <button
+                v-for="item in template.options.buttons"
+                :key="item.text"
+                class="cta-button"
+              >
+                {{ item.text }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Bottom Icons -->
+    <div v-if="template.view.platform === 'ios'" class="bottom-icons">
+      <span class="fingerprint">🔓</span>
+      <span class="camera">📷</span>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .phone-frame {
@@ -349,7 +359,6 @@ watch(
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  // max-width: 205px;
 }
 
 .notification-time {

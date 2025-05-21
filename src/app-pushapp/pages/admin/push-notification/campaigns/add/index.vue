@@ -152,8 +152,6 @@ watch(platform, (newValue) => {
                       />
                     </VCol>
 
-                    <VCol cols="12" md="6"></VCol>
-
                     <VCol cols="12" md="6">
                       <AppSelect
                         v-model="form.template"

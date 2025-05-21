@@ -47,7 +47,6 @@ onMounted(async () => {
     pushNotificationStore
       .fetchTemplate({ id: paramId })
       .then((response) => {
-        console.log(response.data.data);
         const template = response.data.data;
         let _buttonGroupValue = {};
         template.options.buttons.map((b) => {
@@ -93,7 +92,7 @@ onMounted(async () => {
         show({ message: "Something went wrong", color: "error" });
       });
   }
-      */
+  */
 });
 
 const buttonGroupFields = computed(() => {
