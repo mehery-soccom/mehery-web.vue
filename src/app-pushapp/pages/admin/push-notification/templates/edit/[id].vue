@@ -1,6 +1,7 @@
 <script setup>
+import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
-// import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
+import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 
 const route = useRoute();
@@ -14,20 +15,26 @@ const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg
 const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
 
 const form = reactive({
-  channel_id: null,
-  platforms: [],
+  type: "simple",
+  desc: "",
+  code: "",
+
   title: "",
   message: "",
   image_url: DEFAULT_IMAGE_URL,
   logo_url: DEFAULT_LOGO_URL,
   buttonGroup: null,
   buttonGroupValue: {},
+
+  channel_id: null,
+  platforms: [],
 });
 const platform = ref("ios");
 const view = ref("collapse");
 const tab = ref("tab-details");
 const ChannelList = ref([]);
-const TemplateList = ref([]);
+
+const paramId = route.params.id;
 
 onMounted(async () => {
   let res = await channelsStore.fetchChannels();
@@ -36,9 +43,33 @@ onMounted(async () => {
     value: c.channel_id,
   }));
 
-  let templateRes = await pushNotificationStore.fetchTemplates();
-  TemplateList.value = templateRes.results;
+  if (paramId) {
+    pushNotificationStore
+      .fetchTemplate({ id: paramId })
+      .then((response) => {
+        console.log(response.data.data);
+        const template = response.data.data;
+        let _buttonGroupValue = {};
+        template.options.buttons.map((b) => {
+          _buttonGroupValue[b.button_text] = b.button_url;
+        });
+        Object.assign(form, {
+          ...form,
+          ...template,
+          ...template.style,
+          buttonGroup: template.style.category,
+          buttonGroupValue: _buttonGroupValue,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        show({ message: "Something went wrong", color: "error" });
+      });
+  } else {
+    show({ message: "Channel ID missing", color: "error" });
+  }
 
+  /*
   const copy = route.query.copy;
   if (copy) {
     pushNotificationStore
@@ -62,6 +93,7 @@ onMounted(async () => {
         show({ message: "Something went wrong", color: "error" });
       });
   }
+      */
 });
 
 const buttonGroupFields = computed(() => {
@@ -79,33 +111,73 @@ const onSend = async () => {
   try {
     isLoading.value = true;
 
-    let template = TemplateList.value.find((t) => t._id === form.template);
-
     let payload = {
-      ...template.style,
-      buttons: template.options.buttons,
-      // title: form.title,
-      // message: form.message,
-      // image_url: form.image_url,
-      // category: form.buttonGroup,
-      // buttons: buttonGroupFields.value.map((b) => ({
-      //   button_id: b.id,
-      //   button_text: b.text,
-      //   button_url: form.buttonGroupValue[b.text],
-      // })),
-
+      title: form.title,
+      message: form.message,
+      channel_id: form.channel_id,
+      image_url: form.image_url,
+      category: form.buttonGroup,
+      buttons: buttonGroupFields.value.map((b) => ({
+        button_id: b.id,
+        button_text: b.text,
+        button_url: form.buttonGroupValue[b.text],
+      })),
       filter: {
         platform: form.platforms.join(" "),
         session_type: "all",
       },
-      channel_id: form.channel_id,
     };
 
     await pushNotificationStore.sendBulk(payload);
 
     show({ message: "Notification sent successfully", color: "success" });
+  } catch (error) {
+    console.error(error);
 
-    router.push({ name: "admin-push-notification-campaigns-list" });
+    show({ message: "Something went wrong. try again", color: "error" });
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const onUpdate = async () => {
+  try {
+    isLoading.value = true;
+
+    let payload = {
+      type: form.type,
+      desc: form.desc,
+      code: form.code,
+
+      model: {
+        data: {},
+      },
+      style: {
+        title: form.title,
+        message: form.message,
+        image_url: form.image_url,
+        category: form.buttonGroup,
+      },
+      options: {
+        buttons: buttonGroupFields.value.map((b) => ({
+          button_id: b.id,
+          button_text: b.text,
+          button_url: form.buttonGroupValue[b.text],
+        })),
+      },
+
+      // filter: {
+      //   channel_id: form.channel_id,
+      //   platform: form.platforms.join(" "),
+      //   session_type: "all",
+      // },
+    };
+
+    await pushNotificationStore.updateTemplate(form._id, payload);
+
+    show({ message: "Template created successfully", color: "success" });
+
+    router.push({ name: "admin-push-notification-templates-list" });
   } catch (error) {
     console.error(error);
 
@@ -126,16 +198,16 @@ watch(platform, (newValue) => {
     <v-col cols="12" md="7">
       <v-card>
         <v-card-item>
-          <v-card-title>Push Notification</v-card-title>
-          <!-- <v-card-subtitle
+          <v-card-title>Create Template</v-card-title>
+          <v-card-subtitle
             >This template will be used for sending Push
             Notification</v-card-subtitle
-          > -->
+          >
         </v-card-item>
 
         <VTabs v-model="tab">
           <VTab value="tab-details"> Details </VTab>
-          <VTab value="tab-segments"> Segments </VTab>
+          <!-- <VTab value="tab-segments"> Segments </VTab> -->
         </VTabs>
 
         <VCard flat>
@@ -145,28 +217,38 @@ watch(platform, (newValue) => {
                 <VForm>
                   <VRow>
                     <VCol cols="12" md="6">
-                      <AppTextField
-                        v-model="form.name"
-                        label="Notification Name"
-                        placeholder="Enter Notification Name"
+                      <AppSelect
+                        v-model="form.type"
+                        :items="[
+                          { label: 'Simple', value: 'simple' },
+                          { label: 'Styled', value: 'styled' },
+                        ]"
+                        label="Type"
+                        placeholder="Select Type"
+                        item-title="label"
+                        item-value="value"
                       />
                     </VCol>
 
-                    <VCol cols="12" md="6"></VCol>
+                    <VCol cols="12" md="6"> </VCol>
 
                     <VCol cols="12" md="6">
-                      <AppSelect
-                        v-model="form.template"
-                        :items="TemplateList"
-                        label="Template"
-                        placeholder="Select a template"
-                        item-title="code"
-                        item-value="_id"
-                        clearable
+                      <AppTextField
+                        v-model="form.desc"
+                        label="Description"
+                        placeholder="Enter Description"
                       />
                     </VCol>
 
-                    <!-- <VCol cols="12" md="12">
+                    <VCol cols="12" md="6">
+                      <AppTextField
+                        v-model="form.code"
+                        label="Code"
+                        placeholder="Enter Code"
+                      />
+                    </VCol>
+
+                    <VCol cols="12" md="12">
                       <AppTextField
                         v-model="form.title"
                         label="Title"
@@ -216,12 +298,12 @@ watch(platform, (newValue) => {
                         :label="'Button > ' + b.text"
                         placeholder="Enter URL"
                       />
-                    </VCol> -->
+                    </VCol>
                   </VRow>
                 </VForm>
               </VWindowItem>
 
-              <VWindowItem value="tab-segments">
+              <!-- <VWindowItem value="tab-segments">
                 <VForm>
                   <VRow>
                     <VCol cols="12" md="6">
@@ -255,23 +337,20 @@ watch(platform, (newValue) => {
                     </VCol>
                   </VRow>
                 </VForm>
-              </VWindowItem>
+              </VWindowItem> -->
             </VWindow>
           </VCardText>
 
           <VDivider />
 
           <VCardText class="d-flex gap-4">
-            <VBtn
-              v-if="tab === 'tab-segments'"
-              @click="onSend"
-              :disabled="isLoading"
-              >{{ isLoading ? "loading..." : "Send Now" }}</VBtn
-            >
+            <VBtn @click="onUpdate" :disabled="isLoading">{{
+              isLoading ? "loading..." : "update"
+            }}</VBtn>
             <VBtn
               variant="tonal"
               color="secondary"
-              :to="{ name: 'admin-push-notification-campaigns-list' }"
+              :to="{ name: 'admin-push-notification-templates-list' }"
             >
               Cancel
             </VBtn>
@@ -281,7 +360,7 @@ watch(platform, (newValue) => {
     </v-col>
 
     <!-- Preview Column -->
-    <!-- <VCol cols="12" md="5">
+    <VCol cols="12" md="5">
       <VRow>
         <v-col cols="6" class="d-flex justify-center">
           <v-btn-toggle v-model="platform" mandatory density="compact">
@@ -306,7 +385,7 @@ watch(platform, (newValue) => {
           />
         </v-col>
       </VRow>
-    </VCol> -->
+    </VCol>
   </v-row>
 </template>
 

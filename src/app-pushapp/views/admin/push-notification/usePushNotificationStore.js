@@ -77,6 +77,12 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
         ],
       },
     ],
+    templates: [],
+    platformList: [
+      { label: "IOS", value: "ios" },
+      { label: "Android", value: "android" },
+      { label: "Huawei", value: "huawei" },
+    ],
   }),
   getters: {},
   actions: {
@@ -99,6 +105,113 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
     // 👉 Send Bulk Notification
     sendBulk(params) {
       return axios.post("/api/send-notification-bulk", params);
+    },
+
+    // 👉 Fetch all Templates
+    async fetchTemplates() {
+      let apiRes = await axios.get("/api/templates");
+      this.templates = apiRes.data.results;
+      let res = {
+        results: apiRes.data.results || [
+          {
+            id: 1,
+            code: "greeting",
+            desc: "",
+            type: "simple",
+            category: "custom",
+            lang: "en_US",
+            createdBy: "tester",
+            createdStamp: 1746683942788,
+            options: {
+              buttons: [],
+            },
+            model: {
+              data: {
+                user_name: "",
+                rider_name: "",
+                var1: "",
+                var2: "",
+              },
+              contact: {},
+              global: {},
+              session: {},
+            },
+            style: {
+              logo_url: "",
+              image_url: "",
+              line_1: `hi {{ user_name }}`,
+              line_2: `{{ rider_name }} has picked your parcel`,
+              line_3: `will be delivered in {{ var1 }} {{ var2 }}`,
+              bg_color: "",
+              bg_color_gradient: "",
+              bg_color_gradient_dir: "",
+              align: "left" || "right",
+              progress_color: "no_value" || "#ffff",
+            },
+          },
+          {
+            id: 2,
+            code: "delivery",
+            desc: "",
+            type: "styled",
+            category: "custom",
+            lang: "en_US",
+            createdBy: "tester",
+            createdStamp: 1746683942788,
+            options: {
+              buttons: [],
+            },
+            model: {
+              data: {
+                user_name: "",
+                rider_name: "",
+                var1: "",
+                var2: "",
+              },
+              contact: {},
+              global: {},
+              session: {},
+            },
+            style: {
+              logo_url: "",
+              image_url: "",
+              line_1: `hi {{ user_name }}`,
+              line_2: `{{ rider_name }} has picked your parcel`,
+              line_3: `will be delivered in {{ var1 }} {{ var2 }}`,
+              bg_color: "",
+              bg_color_gradient: "",
+              bg_color_gradient_dir: "",
+              align: "left" || "right",
+              progress_color: "no_value" || "#ffff",
+            },
+          },
+        ],
+        data: {
+          total: apiRes.data.pagination?.total,
+          page: apiRes.data.pagination?.pageNo || 1,
+        },
+      };
+      return res;
+    },
+
+    // 👉 Fetch single Template
+    fetchTemplate({ id }) {
+      return axios.get(`/api/templates/${id}`);
+    },
+
+    // 👉 Create Template
+    createTemplate(params) {
+      return axios.post("/api/templates", params);
+    },
+
+    // 👉 Update Template
+    updateTemplate(id, params) {
+      return axios.put(`/api/templates/${id}`, params);
+    },
+
+    // 👉 Delete Template
+    deleteTemplate({ id }) {
+      return axios.delete(`/api/templates/${id}`);
     },
   },
 });
