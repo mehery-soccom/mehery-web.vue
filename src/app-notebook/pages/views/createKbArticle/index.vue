@@ -27,8 +27,8 @@
       </div>
 
       <div class="field">
-        <label>Title:</label>
-        <input type="text" v-model="title" required />
+        <label>Title(Optional):</label>
+        <input type="text" v-model="title" />
       </div>
 
       <button type="submit">Create</button>
@@ -105,7 +105,7 @@
       </thead>
       <tbody>
         <tr v-for="pg in pages" :key="pg._id">
-          <td>{{ pg.title }}</td>
+          <td>{{ pg.title || "Undefined" }}</td>
           <td>{{ pg.content }}</td>
           <td>
             <button @click="openEditModal(pg)">Edit</button>
@@ -394,7 +394,7 @@ export default {
       // You can implement the actual logic here
     },
     async submitForm() {
-      if (!this.type || !this.category.trim() || !this.title.trim()) {
+      if (!this.type || !this.category.trim()) {
         alert("All fields are required.");
         return;
       }
@@ -414,7 +414,7 @@ export default {
             body: JSON.stringify({
               type: this.type,
               category: this.category.trim(),
-              title: this.title.trim(),
+              title: this.title.trim() || null,
             }),
           }
         );

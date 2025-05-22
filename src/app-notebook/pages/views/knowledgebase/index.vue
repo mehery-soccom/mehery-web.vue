@@ -10,20 +10,9 @@
     <div v-if="tenantPartitionKeyIsSet">
       <hr>
       <div class="create-kb-section">
-        <h3>Create New Knowledge Base</h3>
-        <div class="input-group">
-          <label for="kbName">Knowledge Base Name:</label>
-          <input
-            type="text"
-            id="kbName"
-            v-model="newKbName"
-            @input="validateKbName"
-            placeholder="e.g., my_documents_v1"
-          >
-          <p>Only "_" special character is allowed</p>
-          <p>No blank spaces in knowledgebase name</p>
-          <button @click="createKnowledgeBase" :disabled="!isKbNameValid || !newKbName.length">Create</button>
-        </div>
+        <h3>Create New Knowledge Base Rules</h3>
+        <p>Only "_" special character is allowed</p>
+        <p>No blank spaces in knowledgebase name</p>
         <p v-if="kbNameError" class="error-message">{{ kbNameError }}</p>
         <p v-if="!isKbNameValid && newKbName.length" class="error-message">
           Invalid characters. Only letters, numbers, and underscores (_) are allowed. No leading/trailing spaces.
@@ -31,7 +20,7 @@
       </div>
 
       <hr>
-      <div class="kb-table-section">
+      <!-- <div class="kb-table-section">
         <h3>Existing Knowledge Bases</h3>
         <button @click="fetchKnowledgeBases" :disabled="loadingKbs">
           {{ loadingKbs ? 'Loading...' : 'Refresh Knowledge Bases' }}
@@ -46,6 +35,51 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-for="kb in knowledgeBases" :key="kb._id">
+              <td>{{ kb.kb_name }}</td>
+              <td>{{ kb.count !== undefined ? kb.count : 'N/A' }}</td>
+              <td>
+                <button @click="deleteKnowledgeBase(kb._id, kb.kb_name)" class="delete-btn">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else-if="!loadingKbs && !fetchError">No knowledge bases found. Create one above or check your Tenant Key.</p>
+      </div> -->
+      <div class="kb-table-section">
+        <h3>Existing Knowledge Bases</h3>
+        <button @click="fetchKnowledgeBases" :disabled="loadingKbs">
+          {{ loadingKbs ? 'Loading...' : 'Refresh Knowledge Bases' }}
+        </button>
+        <p v-if="fetchError" class="error-message">{{ fetchError }}</p>
+        <table v-if="knowledgeBases.length > 0 || true">
+          <thead>
+            <tr>
+              <th>Knowledge Base Name</th>
+              <th>Number of Entities</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Special create row -->
+            <tr class="create-row">
+              <td colspan="2">
+                <input 
+                  type="text" 
+                  v-model="newKbName" 
+                  placeholder="Create Knowledge Base" 
+                  class="create-kb-input"
+                  @input="validateKbName"
+                  @keyup.enter="createKnowledgeBase"
+                />
+              </td>
+              <td>
+                <button @click="createKnowledgeBase" class="add-btn border" :disabled="!newKbName || newKbName.trim() === ''">
+                  Add Knowledge Base
+                </button>
+              </td>
+            </tr>
+            <!-- Existing knowledge bases -->
             <tr v-for="kb in knowledgeBases" :key="kb._id">
               <td>{{ kb.kb_name }}</td>
               <td>{{ kb.count !== undefined ? kb.count : 'N/A' }}</td>
@@ -367,6 +401,15 @@ th {
 
 .delete-btn {
   background-color: #dc3545;
+  color: white;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-btn {
+  background-color: #89595d;
   color: white;
   padding: 6px 10px;
   border: none;

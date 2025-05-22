@@ -1,75 +1,7 @@
 <!-- src/components/QAPairsTable.vue -->
 <template>
   <div class="qa-table-container">
-    <h1 class="title">QA Pairs Explorer</h1>
-    <!-- Tenant and KB Selection Form -->
-    <div class="selection-form-container" v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId">
-      <form @submit.prevent="submitSelections" class="selection-form">
-        <div class="form-group">
-          <label for="tenantKey">Tenant Partition Key:</label>
-          <input
-            type="text"
-            id="tenantKey"
-            v-model="tempTenantKey"
-            required
-            placeholder="Enter tenant partition key"
-            class="form-input"
-          />
-        </div>
-
-        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-          Set Tenant key
-        </button>
-      </form>
-    </div>
-
-    <div class="selection-form-container" v-if="!selectedKbId && tenantPartitionKey">
-      <form @submit.prevent="submitSelections" class="selection-form">
-        <div
-          class="form-group"
-          v-if="tenantPartitionKey && knowledgeBases.length > 0"
-        >
-          <label for="kbSelection">Knowledge Base:</label>
-          <select
-            id="kbSelection"
-            v-model="tempKbId"
-            required
-            class="form-input"
-          >
-            <option value="" disabled>Select a knowledge base</option>
-            <option v-for="kb in knowledgeBases" :key="kb._id" :value="kb._id">
-              {{ kb.kb_name }}
-            </option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-          Select Knowledge Base
-        </button>
-      </form>
-    </div>
-    <div class="selection-form-container" v-if="!selectedTopicId && selectedKbId">
-      <form @submit.prevent="submitSelections" class="selection-form">
-        <div class="form-group" v-if="selectedKbId && topics.length > 0">
-          <label for="topicSelection">Select Topic:</label>
-          <select
-            id="topicSelection"
-            v-model="tempTopicId"
-            required
-            class="form-input"
-          >
-            <option value="" disabled>
-              Select a Topic from knowledge base
-            </option>
-            <option v-for="tp in topics" :key="tp._id" :value="tp._id">
-              {{ tp.topic_name }}
-            </option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-          Select Topic 
-        </button>
-      </form>
-    </div>
+    <h1 class="title">FQA's</h1>
     <!-- Selection Status Messages -->
     <div
       v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId"
@@ -87,17 +19,14 @@
     </div>
 
     <!-- Tenant and KB Display & Change Option -->
-    <div
-      class="selection-info"
-      v-if="tenantPartitionKey && selectedKbId && selectedTopicId"
-    >
+    <div class="selection-info" v-if="tenantPartitionKey">
       <div class="current-selections">
         <div class="selection-item">
           <span
             >Current Tenant: <strong>{{ tenantPartitionKey }}</strong></span
           >
         </div>
-        <div class="selection-item">
+        <!-- <div class="selection-item">
           <span
             >Knowledge Base: <strong>{{ selectedKbName }}</strong></span
           >
@@ -106,26 +35,91 @@
           <span
             >Topic: <strong>{{ selectedTopicName }}</strong></span
           >
+        </div> -->
+        <div class="selection-form-container" v-if="tenantPartitionKey">
+          <form @submit.prevent="submitSelections" class="selection-form">
+            <div
+              class="form-group"
+              v-if="tenantPartitionKey && knowledgeBases.length > 0"
+            >
+              <label for="kbSelection">Knowledge Base:</label>
+              <p v-if="selectedKbId">
+                Selected Knowledge base : {{ selectedKbName }}
+              </p>
+              <select
+                id="kbSelection"
+                v-model="tempKbId"
+                required
+                class="form-input"
+              >
+                <option value="" disabled>Select a knowledge base</option>
+                <option
+                  v-for="kb in knowledgeBases"
+                  :key="kb._id"
+                  :value="kb._id"
+                >
+                  {{ kb.kb_name }}
+                </option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="!isFormValid"
+            >
+              Select Knowledge Base
+            </button>
+          </form>
         </div>
-        <button @click="changeSelections" class="btn btn-secondary">
+        <div class="selection-form-container" v-if="selectedKbId">
+          <form @submit.prevent="submitSelections" class="selection-form">
+            <div class="form-group" v-if="selectedKbId && topics.length > 0">
+              <label for="topicSelection">Select Topic:</label>
+              <p v-if="selectedTopicId">
+                Selected Topic : {{ selectedTopicName }}
+              </p>
+              <select
+                id="topicSelection"
+                v-model="tempTopicId"
+                required
+                class="form-input"
+              >
+                <option value="" disabled>
+                  Select a Topic from knowledge base
+                </option>
+                <option v-for="tp in topics" :key="tp._id" :value="tp._id">
+                  {{ tp.topic_name }}
+                </option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="!isFormValid"
+            >
+              Select Topic
+            </button>
+          </form>
+        </div>
+        <!-- <button @click="changeSelections" class="btn btn-secondary">
           Change Selections
-        </button>
+        </button> -->
       </div>
 
       <div class="data-controls">
-        <button @click="refreshData" class="btn btn-primary">
+        <button v-if="selectedKbId && selectedTopicId" @click="refreshData" class="btn btn-primary">
           Refresh Data
         </button>
-        <button
+        <button v-if="selectedKbId && selectedTopicId"
           @click="updateEditedItems"
           class="btn btn-success"
           :disabled="getEditedCount() === 0"
         >
           Update {{ getEditedCount() }} Edited Item(s)
         </button>
-        <span v-if="Object.keys(cachedPages).length > 0" class="cache-info">
+        <!-- <span v-if="Object.keys(cachedPages).length > 0" class="cache-info">
           {{ getCacheStatus() }}
-        </span>
+        </span> -->
       </div>
     </div>
 
@@ -134,7 +128,102 @@
       <div class="loading-spinner"></div>
       <p>Loading data...</p>
     </div>
+    <div class="excel-qa-manager p-6 max-w-4xl mx-auto" v-if="selectedKbId && selectedTopicId">
+      <h2 class="text-2xl font-bold mb-6">Question & Answer Excel Upload</h2>
 
+      <!-- Download Template Button -->
+      <div class="mb-6">
+        <button
+          @click="downloadTemplate"
+          class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg border"
+        >
+          Download Sample Template
+        </button>
+      </div>
+
+      <!-- Upload Excel File -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium mb-2">Upload Excel File : </label>
+        <input
+          type="file"
+          ref="fileInput"
+          @change="handleFileUpload"
+          accept=".xlsx,.xls"
+          class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      <!-- Validation Messages -->
+      <div v-if="validationMessage" class="mb-4">
+        <div
+          :class="{
+            'bg-green-100 border-green-400 text-green-700': isValidFile,
+            'bg-red-100 border-red-400 text-red-700': !isValidFile,
+          }"
+          class="border px-4 py-3 rounded"
+        >
+          {{ validationMessage }}
+        </div>
+      </div>
+
+      <!-- Preview of Questions and Answers -->
+      <div v-if="ques.length > 0" class="mb-6">
+        <h3 class="text-lg font-semibold mb-3">
+          Preview ({{ ques.length }} items)
+        </h3>
+        <div class="max-h-60 overflow-y-auto border rounded-lg">
+          <table class="w-full">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-700"
+                >
+                  Question
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-700"
+                >
+                  Answer
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in ques" :key="index" class="border-t">
+                <td class="px-4 py-2 text-sm">{{ item.que }}</td>
+                <td class="px-4 py-2 text-sm">{{ item.ans }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="mb-6" v-if="ques.length > 0">
+        <button
+          @click="saveToBackend"
+          :class="{
+            'bg-green-500 hover:bg-green-600': ques.length > 0 && !isSaving,
+            'bg-gray-400 cursor-not-allowed': ques.length === 0 || isSaving,
+          }"
+          class="px-4 py-2 rounded-lg border"
+        >
+          {{ isSaving ? "Saving..." : "Save" }}
+        </button>
+      </div>
+
+      <!-- Save Status -->
+      <div v-if="saveMessage" class="mb-4">
+        <div
+          :class="{
+            'bg-green-100 border-green-400 text-green-700': saveSuccess,
+            'bg-red-100 border-red-400 text-red-700': !saveSuccess,
+          }"
+          class="border px-4 py-3 rounded"
+        >
+          {{ saveMessage }}
+        </div>
+      </div>
+    </div>
     <!-- Actions Bar - Only show when items are loaded and selections are possible -->
     <div
       v-if="
@@ -343,7 +432,10 @@
 </template>
 
 <script>
+import * as XLSX from "xlsx";
+import zipcelx from "zipcelx";
 export default {
+  name: "ExcelQAManager",
   data() {
     return {
       qaData: [],
@@ -364,7 +456,7 @@ export default {
       pageSize: 25,
       knowledgeBases: [], // List of knowledge bases
       topics: [],
-      tenantPartitionKey: null,
+      tenantPartitionKey: "kedar",
       tempTenantKey: "",
       selectedKbId: null, // Selected knowledge base ID
       selectedKbName: "", // Selected knowledge base name
@@ -378,6 +470,12 @@ export default {
       tempTopicId: "",
       selectedTopicId: null,
       selectedTopicName: "",
+      ques: [],
+      validationMessage: "",
+      isValidFile: false,
+      saveMessage: "",
+      saveSuccess: false,
+      isSaving: false,
     };
   },
 
@@ -391,10 +489,10 @@ export default {
     },
     isFormValid() {
       return (
-        this.tempTenantKey.trim() &&
-        (!this.tenantPartitionKey || // No tenant set yet, so only validate tenant field
-          (this.knowledgeBases.length > 0 && this.tempKbId) || // Tenant set, so validate KB selection
-          (this.topics.length > 0 && this.tempTopicId))
+        // this.tempTenantKey.trim() &&
+        !this.tenantPartitionKey || // No tenant set yet, so only validate tenant field
+        (this.knowledgeBases.length > 0 && this.tempKbId) || // Tenant set, so validate KB selection
+        (this.topics.length > 0 && this.tempTopicId)
       );
     },
   },
@@ -447,7 +545,20 @@ export default {
           // Reset temporary values
           // this.tempTenantKey = "";
           this.tempKbId = "";
-
+          this.tempTopicId = "";
+          this.selectedTopicId = null;
+          this.selectedTopicName = "";
+          this.qaData = [];
+          this.cachedPages = {};
+          this.lastSeenIds = {};
+          this.selectedIdsByPage = {};
+          this.editedItems = {};
+          this.editingContent = {
+            itemId: null,
+            field: null,
+            text: "",
+            originalText: "",
+          };
           // Reset data states
           // this.resetState();
 
@@ -477,7 +588,7 @@ export default {
       this.selectedKbName = "";
       this.selectedTopicId = null;
       this.selectedTopicName = "";
-      this.resetStateComplete();
+      this.resetState();
     },
     resetStateComplete() {
       this.qaData = [];
@@ -503,6 +614,12 @@ export default {
       this.tempTopicId = "";
       this.selectedTopicId = null;
       this.selectedTopicName = "";
+      this.ques = [];
+      this.validationMessage = "";
+      this.isValidFile = false;
+      this.saveMessage = "";
+      this.saveSuccess = false;
+      this.isSaving = false;
     },
     resetState() {
       this.qaData = [];
@@ -520,6 +637,214 @@ export default {
       this.totalPages = 0;
       this.totalItems = 0;
       this.cacheTimestamp = null;
+      this.ques = [];
+      this.validationMessage = "";
+      this.isValidFile = false;
+      this.saveMessage = "";
+      this.saveSuccess = false;
+      this.isSaving = false;
+    },
+    downloadTemplate() {
+      // Create sample data for the template
+      const sampleData = [
+        [
+          { type : "string" , value : "Question" }, 
+          {type : "string" , value : "Answer" }
+        ],
+        [
+          { type : "string" , value : "What is Vue.js?" },
+          { type : "string" , value : "Vue.js is a progressive JavaScript framework for building user interfaces." }
+          
+        ],
+        [
+          { type : "string" , value : "What is Excel?" },
+          { type : "string" , value : "Excel is a spreadsheet application developed by Microsoft." }
+        ],
+        [
+          { type : "string" , value : "Sample Question 3" },
+          { type : "string" , value : "Sample Answer 3" }
+        ],
+      ];
+
+      // Use zipcelx to create and download the Excel file
+      const config = {
+        filename: "qa_template",
+        sheet: {
+          data: sampleData,
+        },
+      };
+
+      zipcelx(config);
+    },
+
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        this.resetValidation();
+        return;
+      }
+
+      this.validateAndParseFile(file);
+    },
+
+    validateAndParseFile(file) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+
+          // Get the first worksheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          // Validate the file format
+          if (!this.validateFileFormat(jsonData)) {
+            return;
+          }
+
+          // Parse the data
+          this.parseQuestionsAndAnswers(jsonData);
+        } catch (error) {
+          this.validationMessage = "Error reading file: " + error.message;
+          this.isValidFile = false;
+          this.ques = [];
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    },
+
+    validateFileFormat(data) {
+      // Check if file has data
+      if (!data || data.length < 2) {
+        this.validationMessage =
+          "File must contain at least a header row and one data row.";
+        this.isValidFile = false;
+        this.ques = [];
+        return false;
+      }
+
+      // Check if header row exists and has correct columns
+      const headers = data[0];
+      if (!headers || headers.length < 2) {
+        this.validationMessage = "File must have at least 2 columns.";
+        this.isValidFile = false;
+        this.ques = [];
+        return false;
+      }
+
+      // Check if headers match expected format (case-insensitive)
+      const expectedHeaders = ["question", "answer"];
+      const actualHeaders = headers
+        .slice(0, 2)
+        .map((h) => (h || "").toString().toLowerCase().trim());
+
+      const headersMatch = expectedHeaders.every(
+        (expected, index) => actualHeaders[index] === expected
+      );
+
+      if (!headersMatch) {
+        this.validationMessage = `Headers must be "Question" and "Answer". Found: "${headers[0]}" and "${headers[1]}"`;
+        this.isValidFile = false;
+        this.ques = [];
+        return false;
+      }
+
+      return true;
+    },
+
+    parseQuestionsAndAnswers(data) {
+      const parsedQues = [];
+
+      // Skip header row (index 0) and process data rows
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+
+        // Skip empty rows
+        if (!row || row.length === 0 || (!row[0] && !row[1])) {
+          continue;
+        }
+
+        const question = (row[0] || "").toString().trim();
+        const answer = (row[1] || "").toString().trim();
+
+        // Only add rows that have both question and answer
+        if (question && answer) {
+          parsedQues.push({
+            que: question,
+            ans: answer,
+          });
+        }
+      }
+
+      if (parsedQues.length === 0) {
+        this.validationMessage =
+          "No valid question-answer pairs found. Make sure both columns have data.";
+        this.isValidFile = false;
+        this.ques = [];
+        return;
+      }
+
+      this.ques = parsedQues;
+      this.validationMessage = `Successfully loaded ${parsedQues.length} question-answer pairs.`;
+      this.isValidFile = true;
+
+      // Clear any previous save messages
+      this.saveMessage = "";
+    },
+
+    resetValidation() {
+      this.ques = [];
+      this.validationMessage = "";
+      this.isValidFile = false;
+      this.saveMessage = "";
+    },
+
+    async saveToBackend() {
+      if (this.ques.length === 0) return;
+
+      this.isSaving = true;
+      this.saveMessage = "";
+
+      try {
+        const payload = {
+          kb_id: this.selectedKbId,
+          topic_id: this.selectedTopicId,
+          ques: this.ques.map((pair) => ({
+            que: pair.que.trim(),
+            ans: pair.ans.trim(),
+          })),
+        };
+        // Replace this URL with your actual backend endpoint
+        const response = await fetch("http://localhost:8090/nexus/notebook/api/qapairs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "tnt": this.tenantPartitionKey,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          this.saveMessage = `Successfully saved ${this.ques.length} question-answer pairs to the backend.`;
+          this.saveSuccess = true;
+          this.loading = true;
+          this.refreshData();
+          this.loading = false;
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } catch (error) {
+        this.saveMessage = `Error saving to backend: ${error.message}`;
+        this.saveSuccess = false;
+      } finally {
+        this.isSaving = false;
+      }
     },
     async fetchTopics() {
       if (!this.selectedKbId) return;
@@ -1581,6 +1906,10 @@ export default {
 
   .modal-content {
     padding: 16px;
+  }
+  .excel-qa-manager {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
   }
 }
 </style>

@@ -6,9 +6,9 @@ export default [
     children: [
       { title: "view two", to: "views-two" },
       { title: "view createfaqs", to: "views-createfaqs" },
-      { title: "view faqsTable", to: "views-faqsTable" },
-      { title: "view knowledge base", to: "views-knowledgebase" },
-      { title: "view topic", to: "views-topic" },
+      { title: "faqs", to: "views-faqsTable" },
+      { title: "knowledge base", to: "views-knowledgebase" },
+      { title: "topic", to: "views-topic" },
       { title: "view 2160 create Kb" , to : "views-createKbArticle"},
     ],
   },

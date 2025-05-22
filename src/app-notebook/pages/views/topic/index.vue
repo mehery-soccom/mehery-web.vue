@@ -41,25 +41,28 @@
       <div class="create-tp-section">
         <h3>Create New Topic</h3>
         <div class="input-group">
-          <label for="topicName">Knowledge Base Name:</label>
-          <input
+          <label for="topicName">Knowledge Base Name: {{ selectedKbName }}</label>
+          <!-- <input
             type="text"
             id="topicName"
             v-model="newTopicName"
             @input="validateTopicName"
             placeholder="e.g., my_documents_v1"
-          />
+          /> -->
           <p>Only "_" special character is allowed</p>
           <p>No blank spaces in topic name</p>
-          <button
+          <!-- <button
             @click="createTopic"
             :disabled="!isTopicNameValid || !newTopicName.length"
           >
             Create
-          </button>
+          </button> -->
         </div>
         <p v-if="TopicNameError" class="error-message">{{ TopicNameError }}</p>
-        <p v-if="!isTopicNameValid && newTopicName.length" class="error-message">
+        <p
+          v-if="!isTopicNameValid && newTopicName.length"
+          class="error-message"
+        >
           Invalid characters. Only letters, numbers, and underscores (_) are
           allowed. No leading/trailing spaces.
         </p>
@@ -72,7 +75,7 @@
           {{ loadingKbs ? "Loading..." : "Refresh Topics" }}
         </button>
         <p v-if="fetchError" class="error-message">{{ fetchError }}</p>
-        <table v-if="topics.length > 0">
+        <!-- <table >
           <thead>
             <tr>
               <th>Topic Name</th>
@@ -81,6 +84,53 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="topics.length > 0" v-for="tp in topics" :key="tp._id" >
+              <td>{{ tp.topic_name }}</td>
+              <td>{{ tp.count !== undefined ? tp.count : "N/A" }}</td>
+              <td>
+                <button
+                  @click="deleteTopic(tp._id, tp.topic_name)"
+                  class="delete-btn"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table> -->
+
+        <table>
+          <thead>
+            <tr>
+              <th>Topic Name</th>
+              <th>Number of Entities</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Special create row -->
+            <tr class="create-row">
+              <td colspan="2">
+                <input
+                  type="text"
+                  v-model="newTopicName"
+                  @input="validateTopicName"
+                  placeholder="Create Topic"
+                  class="create-topic-input"
+                  @keyup.enter="createTopic"
+                />
+              </td>
+              <td>
+                <button
+                  @click="createTopic"
+                  class="add-btn"
+                  :disabled="!newTopicName || newTopicName.trim() === ''"
+                >
+                  Add Topic
+                </button>
+              </td>
+            </tr>
+            <!-- Existing topics -->
             <tr v-for="tp in topics" :key="tp._id">
               <td>{{ tp.topic_name }}</td>
               <td>{{ tp.count !== undefined ? tp.count : "N/A" }}</td>
@@ -95,9 +145,9 @@
             </tr>
           </tbody>
         </table>
-        <p v-else-if="!loadingKbs && !fetchError">
+        <!-- <p v-else-if="!loadingKbs && !fetchError">
           No topics found in {{ selectedKbName }}. Create one above or check your Tenant Key.
-        </p>
+        </p> -->
       </div>
     </div>
     <div v-else>
@@ -149,20 +199,22 @@ export default {
         this.fetchError = null;
       }
     },
-    selectedKbId(newValue){
-        this.kbSelected = !!newValue;
-        if(this.kbSelected){
-            this.fetchTopics();
-        } else {
-            this.topics=[];
-            this.fetchError = null
-        }
-    }
+    selectedKbId(newValue) {
+      this.kbSelected = !!newValue;
+      if (this.kbSelected) {
+        this.fetchTopics();
+      } else {
+        this.topics = [];
+        this.fetchError = null;
+      }
+    },
   },
   methods: {
-    kbChanged(){
-      const selectedKb = this.knowledgeBases.find(kb => kb._id === this.selectedKbId);
-      this.selectedKbName = selectedKb.kb_name
+    kbChanged() {
+      const selectedKb = this.knowledgeBases.find(
+        (kb) => kb._id === this.selectedKbId
+      );
+      this.selectedKbName = selectedKb.kb_name;
     },
     handleTenantKeyInput() {
       // This method is called on input, watcher handles the logic
@@ -212,8 +264,7 @@ export default {
     async createTopic() {
       const trimmedTopicName = this.newTopicName.trim();
       if (!this.isTopicNameValid || !trimmedTopicName) {
-        this.TopicNameError =
-          "Topic name is invalid or empty after trimming.";
+        this.TopicNameError = "Topic name is invalid or empty after trimming.";
         return;
       }
 
@@ -232,7 +283,10 @@ export default {
               "Content-Type": "application/json",
               tnt: this.tenantPartitionKey,
             },
-            body: JSON.stringify({ topic_name: trimmedTopicName , kb_id : this.selectedKbId }),
+            body: JSON.stringify({
+              topic_name: trimmedTopicName,
+              kb_id: this.selectedKbId,
+            }),
           }
         );
         if (!response.ok) {
@@ -242,12 +296,17 @@ export default {
           );
         }
         const newKbData = await response.json();
+        console.log(`topic : ${JSON.stringify(newKbData)}`);
         // Assuming backend returns the new KB object
         // this.knowledgeBases.push(newKbData);
+        const message = newKbData.result.message;
+        const success = newKbData.result.success;
+        console.log(`message : ${message}`);
+        console.log(`success : ${success}`);
         this.newTopicName = ""; // Clear input
         this.isTopicNameValid = false;
-        this.setApiMessage(newKbData.message, newKbData.success);
-        this.fetchKnowledgeBases(); // Refresh list from backend
+        this.setApiMessage(message, success);
+        this.fetchTopics(); // Refresh list from backend
       } catch (error) {
         console.error("Error creating knowledge base:", error);
         this.setApiMessage(
@@ -256,29 +315,32 @@ export default {
         );
       }
     },
-    async fetchTopics(){
+    async fetchTopics() {
       if (!this.selectedKbId) return;
       this.loadingKbs = true;
-      try{  
-        const response = await fetch(`http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=true&kb_id=${this.selectedKbId}`,{
-          method : "GET",
-          headers: {
-            'Content-Type': 'application/json',
-            'tnt': this.tenantPartitionKey
+      try {
+        const response = await fetch(
+          `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=true&kb_id=${this.selectedKbId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              tnt: this.tenantPartitionKey,
+            },
           }
-        });
+        );
         if (!response.ok) {
           throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         this.topics = data.result || [];
         console.log(this.topics);
-        
+
         if (this.topics.length === 0) {
           this.showStatus("No knowledge bases found for this tenant", "info");
         }
-      }catch (error) {
+      } catch (error) {
         console.error("Error fetching topics:", error);
         this.showStatus("Failed to load topics: " + error.message, "error");
         this.knowledgeBases = [];
@@ -352,7 +414,9 @@ export default {
       }
 
       this.clearApiMessage();
-      console.log(`Attempting to delete topic ID: ${topic_id}, Name: ${topic_name}`);
+      console.log(
+        `Attempting to delete topic ID: ${topic_id}, Name: ${topic_name}`
+      );
 
       try {
         const response = await fetch(
@@ -364,18 +428,23 @@ export default {
               "Content-Type": "application/json",
               tnt: this.tenantPartitionKey,
             },
-            body: JSON.stringify({ topic_id : topic_id , topic_name : topic_name , kb_id : this.selectedKbId , kb_name : this.selectedKbName }),
+            body: JSON.stringify({
+              topic_id: topic_id,
+              topic_name: topic_name,
+              kb_id: this.selectedKbId,
+              kb_name: this.selectedKbName,
+            }),
           }
         );
 
         const responseData = await response.json();
-        
+
         if (responseData.success) {
-          this.knowledgeBases = this.knowledgeBases.filter(
-            (kb) => kb._id !== kbId
-          );
+          // this.knowledgeBases = this.knowledgeBases.filter(
+          //   (kb) => kb._id !== kbId
+          // );
           this.setApiMessage(
-            `Knowledge base "${topicName}" deleted successfully. Children deleted: ${responseData.deleteChildren}, KB deleted: ${responseData.deleteKb}`,
+            `Topic "${topic_name}" deleted successfully`,
             true
           );
           // Optionally, re-fetch the list if you want to be absolutely sure
@@ -497,6 +566,14 @@ th {
 
 .delete-btn {
   background-color: #dc3545;
+  color: white;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-btn {
+  background-color: #8f474e;
   color: white;
   padding: 6px 10px;
   border: none;
