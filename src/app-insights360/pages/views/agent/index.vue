@@ -61,7 +61,7 @@ const onDateClosed = (selectedDates, dateStr) => {
 }
 
 const formatDuration = (seconds) => {
-  console.log("time vals", seconds)
+  // console.log("time vals", seconds)
   if (!seconds || isNaN(seconds)) return '-';
   seconds = seconds / 1000;
 

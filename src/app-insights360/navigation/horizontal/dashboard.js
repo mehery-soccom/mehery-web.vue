@@ -1,6 +1,6 @@
 export default [
   {
-    title: "Dashboards",
+    title: "Dashboard",
     icon: { icon: "tabler-smart-home" },
     children: [
       {

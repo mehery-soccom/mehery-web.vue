@@ -1,6 +1,6 @@
 export default [
   {
-    title: "Dashboards",
+    title: "Dashboard",
     icon: { icon: "tabler-smart-home" },
     children: [
       {
@@ -8,7 +8,7 @@ export default [
         to: "dashboards-analytics",
       },
     ],
-    badgeContent: "3",
-    badgeClass: "bg-primary",
+    // badgeContent: "3",
+    // badgeClass: "bg-primary",
   },
 ];

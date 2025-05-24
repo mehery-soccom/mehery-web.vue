@@ -15,6 +15,18 @@ const props = defineProps({
 });
 const search = ref('')
 const columnSearch = reactive({})
+const sortBy = ref([])
+const currentSortKey = ref(null)
+const currentSortOrder = ref('asc')
+
+const toggleSort = (key) => {
+  if (currentSortKey.value === key) {
+    currentSortOrder.value = currentSortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    currentSortKey.value = key
+    currentSortOrder.value = 'asc'
+  }
+}
 
 watchEffect(() => {
   props.headers?.forEach(header => {
@@ -24,20 +36,44 @@ watchEffect(() => {
   })
 })
 
-// Filtered items based on per-column search
 const filteredItems = computed(() => {
   const searchableKeys = props.headers
     ?.filter(header => header.searchable)
     .map(header => header.key) || []
 
-  return props.productList?.filter(item =>
+  let items = props.productList?.filter(item =>
     searchableKeys.every(key => {
       const searchValue = columnSearch[key]?.toLowerCase?.() || ''
       const itemValue = String(item[key] ?? '').toLowerCase()
       return itemValue.includes(searchValue)
     })
   ) || []
+
+  if (currentSortKey.value) {
+    items = [...items].sort((a, b) => {
+      const valA = a[currentSortKey.value] ?? ''
+      const valB = b[currentSortKey.value] ?? ''
+      return currentSortOrder.value === 'asc'
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA))
+    })
+  }
+
+  return items
 })
+// const filteredItems = computed(() => {
+//   const searchableKeys = props.headers
+//     ?.filter(header => header.searchable)
+//     .map(header => header.key) || []
+
+//   return props.productList?.filter(item =>
+//     searchableKeys.every(key => {
+//       const searchValue = columnSearch[key]?.toLowerCase?.() || ''
+//       const itemValue = String(item[key] ?? '').toLowerCase()
+//       return itemValue.includes(searchValue)
+//     })
+//   ) || []
+// })
 
 // onMounted(() => {
 //   setInterval(()=>{
@@ -76,12 +112,19 @@ const filteredItems = computed(() => {
       :headers="toRaw(props.headers)"
       :items="filteredItems"
       :search="search"
+      v-model:sort-by="sortBy"
       :items-per-page="10"
       class="text-no-wrap"
     >
-      <!-- <template #headers="{ columns }">
+      <template #headers="{ columns }">
         <tr>
-          <th v-for="column in columns" :key="column.key"> {{ column.title }}</th>
+          <th v-for="col in columns" :key="col.key"
+            @click="col.sortable && toggleSort(col.key)" class="sortable-th">
+            {{ col.title }}
+            <VIcon v-if="col.sortable && currentSortKey === col.key" class="sort-icon" size="14">
+              {{ currentSortOrder === 'asc' ? 'mdi-chevron-down' : 'mdi-chevron-up' }}
+            </VIcon>
+          </th>
         </tr>
         <tr>
           <th v-for="column in columns" :key="column.key">
@@ -94,7 +137,7 @@ const filteredItems = computed(() => {
             />
           </th>
         </tr>
-      </template> -->
+      </template>
       <template #item="{ item }">
         <tr>
           <td v-for="header in props.headers" :key="header.key">
@@ -133,5 +176,12 @@ input.form-control-sm:focus {
   border-color: #5c6bc0; /* soft blue */
   box-shadow: 0 0 3px rgba(92, 107, 192, 0.4);
   background-color: #fff;
+}
+.sort-icon {
+  visibility: hidden;
+  margin-left: 6px;
+}
+.sortable-th:hover .sort-icon {
+  visibility: visible;
 }
 </style>

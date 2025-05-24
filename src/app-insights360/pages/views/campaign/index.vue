@@ -100,7 +100,7 @@ const allAnalytics = () => {
   console.log("no date", startDate, endDate)
   fetchCampaignData(startDate.getTime(), endDate.getTime(), selectedChannelItem.value, true, selectedStatuses.value)
 }
-const statusOptions = [ "COMPLETED", "EXECUTING", "RESOLVED", "CREATED", "READING", "CANCELLED" ]
+const statusOptions = [ "COMPLETED", "EXECUTING", "CREATED", "READING", "CANCELLED" ]
 const selectedStatuses = ref([])
 const menuOpen = ref(false)
 
@@ -124,7 +124,7 @@ onMounted( async () => {
   <VRow>
     <div style="width: 100%;display: flex; justify-content: flex-end;">
       <VSelect v-model="selectedStatuses" :items="statusOptions" multiple
-        placeholder="Choose channels" persistent-placeholder class="compact-multiselect" v-model:menu="menuOpen">
+        placeholder="Choose Statuses" persistent-placeholder class="compact-multiselect" v-model:menu="menuOpen">
         <template #selection="{ item, index }">
           <span style="background-color: #ddd; border: 0.5px solid gray; padding: 0 8px 3px 8px;margin-right: 10px;border-radius: 3px;" v-if="index === 0"> {{ statusOptions.find(c => c === selectedStatuses[0]) || selectedStatuses[0] }} </span>
           <span v-else-if="index === 1" class="text-muted"> +{{ selectedStatuses.length - 1 }}</span>

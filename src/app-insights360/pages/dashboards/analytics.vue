@@ -652,7 +652,7 @@ onMounted( async () => {
     <VCol cols="12">
       <VCard title="Conversation Statistics" subtitle="Number of Chats per agent">
         <VCardText>
-          <ChartJsLineChart :colors="chartJsCustomColors" :chartOption="chartOptions" :data="chartData"/>
+          <ChartJsLineChart style="width: 100%;height: 80%;" :colors="chartJsCustomColors" :chartOption="chartOptions" :data="chartData"/>
         </VCardText>
       </VCard>
     </VCol>
