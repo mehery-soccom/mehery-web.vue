@@ -13,7 +13,7 @@ import { WEBAPP } from "@core/constants";
 
 (async (cmap, cname) => {
   let c = cmap[cname];
-
+  console.log(`app name : ${JSON.stringify(cname)}`);
   if (!c) return console.log("Invalid APP", { cname });
 
   const _app = await c.app();
@@ -64,6 +64,11 @@ import { WEBAPP } from "@core/constants";
       router: () => import("@app-notebook/router"),
       layoutsPlugin: () => import("@app-notebook/plugins/layouts"),
     },
+    phone: {
+      app: () => import("@app-phone/App.vue"),
+      router:() => import("@app-phone/router"),
+      layoutsPlugin: () => import("@app-phone/plugins/layouts"),
+    }
   },
   WEBAPP
 );

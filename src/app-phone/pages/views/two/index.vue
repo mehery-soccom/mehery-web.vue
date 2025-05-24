@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <div>One</div>
+  <div>Two</div>
 </template>
 
 <style lang="scss"></style>
