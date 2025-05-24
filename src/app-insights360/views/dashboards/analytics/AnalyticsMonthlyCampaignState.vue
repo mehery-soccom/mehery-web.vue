@@ -55,7 +55,7 @@ const monthlyCampaignState = computed(() => [
 
 <template>
   <VCard
-    :title="`${title} Campaign State`"
+    :title="`${title}`"
   >
     <!-- <template #append>
       <div class="mt-n4 me-n2">

@@ -68,7 +68,7 @@ var statsBot = ref([
     stats: '0',
   },
   {
-    title: 'Bot - Expired',
+    title: 'Bot - Closed',
     color: 'error',
     icon: 'tabler-square-x',
     stats: '0',
@@ -101,7 +101,7 @@ var statsLead = ref([
     stats: '0',
   },
   {
-    title: 'Agent Conversation Duration',
+    title: 'Average Conversation Duration',
     color: 'warning',
     icon: 'tabler-hourglass-empty',
     stats: '0',
@@ -136,13 +136,13 @@ const statsCamp = ref([
 ])
 const convoStats = ref([
   {
-    title: 'All Chats',
+    title: 'Total Conversations',
     color: 'warning',
     stats: '0',
     icon: 'tabler-list-details',
   },
   {
-    title: 'Unique Chats',
+    title: 'Unique Conversations',
     color: 'success',
     stats: '0',
     icon: 'tabler-list-numbers',
@@ -292,7 +292,7 @@ const fetchSatScore = async (start, end, chan, agent, type) => {
   try {
     const response = await projectStore.fetchSatScores(start, end, chan, agent, type);
     const total = response?.data?.results?.[0]?.avgScore;
-    if (total != null) statsAgent.value[3].stats = String(total);
+    if (total != null) statsAgent.value[3].stats = String(Math.round(total * 100) / 100);
   } catch (error) { console.error("analytics error", error); }
 };
 const fetchBotOpenChat = async (start, end, chan) => {
@@ -306,9 +306,9 @@ const fetchBotResolvedChat = async (start, end, chan) => {
   try {
     const response = await projectStore.fetchBotResolvedChats(start, end, chan);
     const data = response?.data?.results?.[0];
-    if (data?.resolvedCount != null && data?.expiredCount != null) {
+    if (data?.resolvedCount != null && data?.closedCount != null) {
       statsBot.value[1].stats = String(data.resolvedCount);
-      statsBot.value[2].stats = String(data.expiredCount);
+      statsBot.value[2].stats = String(data.closedCount);
     }
   } catch (error) { console.error("analytics error", error); }
 };
@@ -316,7 +316,7 @@ const fetchBotSatScore = async (start, end, chan) => {
   try {
     const response = await projectStore.fetchBotSatScores(start, end, chan);
     const total = response?.data?.results?.[0]?.avgScore;
-    if (total != null) statsBot.value[3].stats = String(total);
+    if (total != null) statsBot.value[3].stats = String(Math.round(total * 100) / 100);
   } catch (error) { console.error("analytics error", error); }
 };
 

@@ -15,10 +15,10 @@ const headers = [
   { title: 'Av Start Lag', key: 'averageStartLag'},
   { title: 'Av Response Time', key: 'averageResponseTime'},
   { title: 'Duration', key: 'averageAssignedDuration'},
-  { title: 'Open', key: 'openConversations', sortable: false },
-  { title: 'Resolved', key: 'resolvedConversations', sortable: false },
-  { title: 'Expired', key: 'expiredConversations', sortable: false },
-  { title: 'Feedback', key: 'averageSatisfaction', sortable: false },
+  { title: 'Open', key: 'openConversations', sortable: true },
+  { title: 'Resolved', key: 'resolvedConversations', sortable: true },
+  { title: 'Expired', key: 'expiredConversations', sortable: true },
+  { title: 'Feedback', key: 'averageSatisfaction', sortable: true },
 ]
 
 const fetchAgentData = async (start, end) => {

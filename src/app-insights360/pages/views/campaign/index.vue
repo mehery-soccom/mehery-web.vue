@@ -17,12 +17,12 @@ const headers = [
   { title: 'Channel', key: 'channelId', searchable: true },
   { title: 'Template', key: 'templateName', searchable: true },
   { title: 'Status', key: 'status', searchable: true },
-  { title: 'Total', key: 'total'},
-  { title: 'Sent', key: 'sent'},
-  { title: 'Delivered', key: 'delivered', sortable: false },
-  { title: 'Read', key: 'read', sortable: false },
-  { title: 'Replied', key: 'responded', sortable: false },
-  { title: 'Failed', key: 'failed', sortable: false },
+  { title: 'Total', key: 'total', sortable: true},
+  { title: 'Sent', key: 'sent', sortable: true},
+  { title: 'Delivered', key: 'delivered', sortable: true },
+  { title: 'Read', key: 'read', sortable: true },
+  { title: 'Replied', key: 'responded', sortable: true },
+  { title: 'Failed', key: 'failed', sortable: true },
 ]
 const statsCamp = ref([
   {
@@ -139,9 +139,8 @@ onMounted( async () => {
     <VCol cols="12" md="12">
       <CardStatisticsTransactions :statistics="statsCamp" :title="'Campaign Statistics'" />
     </VCol>
-    <VCol v-for="(campaign, index) in campCharts"
-      :key="index" cols="12" :sm="campCharts.length === 3 ? 4 : 6">
-      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="campaign.title" />
+    <VCol v-for="(campaign, index) in campCharts" :key="index" cols="12" :sm="campCharts.length === 3 ? 4 : 6">
+      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} campaign state`" />
     </VCol>
     <VCol cols="12">
       <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Data'" />

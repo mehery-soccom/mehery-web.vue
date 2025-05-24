@@ -15,11 +15,11 @@ const headers = [
   { title: 'Template', key: 'templateCode', searchable: true },
   { title: 'Channel', key: 'channelId', searchable: true },
   { title: 'Category', key: 'templateType', searchable: true },
-  { title: 'Sent', key: 'total'},
-  { title: 'Delivered', key: 'delivered', sortable: false },
-  { title: 'Read', key: 'read', sortable: false },
-  { title: 'Replied', key: 'responded', sortable: false },
-  { title: 'Failed', key: 'failed', sortable: false },
+  { title: 'Sent', key: 'total', sortable: true},
+  { title: 'Delivered', key: 'delivered', sortable: true },
+  { title: 'Read', key: 'read', sortable: true },
+  { title: 'Replied', key: 'responded', sortable: true },
+  { title: 'Failed', key: 'failed', sortable: true },
 ]
 
 const fetchTemplateData = async (start, end, chan, bool) => {
@@ -110,9 +110,8 @@ onMounted( async () => {
           onValueUpdate: onDateUpdate, onClose: onDateClosed, plugins: [customPlugin] }"
       />
     </div>
-    <VCol v-for="(campaign, index) in tempCharts"
-      :key="index" cols="12" :sm="tempCharts.length <= 2 ? 6 : 4">
-      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="campaign.title" />
+    <VCol v-for="(campaign, index) in tempCharts" :key="index" cols="12" :sm="tempCharts.length <= 2 ? 6 : 4">
+      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} template state`" />
     </VCol>
     <VCol cols="12">
       <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Template Data'" />
