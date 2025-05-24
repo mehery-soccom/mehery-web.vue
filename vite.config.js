@@ -129,6 +129,8 @@ export default defineConfig({
         "src/app-pushapp/components",
         "src/app-notebook/views/demos",
         "src/app-notebook/components",
+        "src/app-phone/views/demos",
+        "src/app-phone/components",
       ],
       dts: false,
     }),
@@ -227,6 +229,9 @@ export default defineConfig({
       "@app-notebook": fileURLToPath(
         new URL("./src/app-notebook", import.meta.url)
       ),
+      "@app-phone": fileURLToPath(
+        new URL("./src/app-phone",import.meta.url)
+      )
     },
   },
   build: {

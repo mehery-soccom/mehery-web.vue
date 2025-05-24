@@ -62,6 +62,11 @@ import ability from "@app/plugins/casl/ability"; // TODO - not needed
       router: () => import("@app-notebook/router"),
       layoutsPlugin: () => import("@app-notebook/plugins/layouts"),
     },
+    phone: {
+      app: () => import("@app-phone/App.vue"),
+      router:() => import("@app-phone/router"),
+      layoutsPlugin: () => import("@app-phone/plugins/layouts"),
+    }
   },
   window.CONST.APP // WEBAPP
 );

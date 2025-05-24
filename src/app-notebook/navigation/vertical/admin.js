@@ -10,6 +10,7 @@ export default [
       { title: "knowledge base", to: "views-knowledgebase" },
       { title: "topic", to: "views-topic" },
       { title: "view 2160 create Kb" , to : "views-createKbArticle"},
+      { title: "view faqs2" , to : "views-faqs2"}
     ],
   },
 ];
