@@ -34,3 +34,4 @@ dist-ssr
 src/@iconify/icons-bundle.js
 
 package-lock.json
+.env
