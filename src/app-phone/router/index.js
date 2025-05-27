@@ -1,4 +1,4 @@
-import { APP, APP_CONTEXT } from "@core/constants";
+import { CDN_CONTEXT, WEBAPP } from "@core/constants";
 import { canNavigate } from "@layouts/plugins/casl";
 import { createRouter, createWebHistory } from "vue-router";
 
@@ -32,7 +32,7 @@ const _routes = routes
     return _r;
   })
   .filter((r) => {
-    return r.appName === `app_${APP}`;
+    return r.appName === `app_${WEBAPP}`;
   });
 /*
 console.log(_routes);
@@ -63,7 +63,7 @@ console.log(routesWithLayout);
 */
 
 const router = createRouter({
-  history: createWebHistory(APP_CONTEXT),
+  history: createWebHistory(CDN_CONTEXT),
   routes: [
     // ℹ️ We are redirecting to different pages based on role.
     // NOTE: Role is just for UI purposes. ACL is based on abilities.
