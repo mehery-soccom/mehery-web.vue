@@ -5,7 +5,7 @@ export default [
     icon: { icon: "tabler-report-search" },
     children: [
       { title: "view two", to: "views-two" },
-      { title : "view phone" , to : "views-phoneV1"}
+      // { title : "view phone" , to : "views-phoneV1"}
     ],
   },
 ];
