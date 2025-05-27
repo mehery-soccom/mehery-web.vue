@@ -9,8 +9,9 @@ export default [
       { title: "faqs", to: "views-faqsTable" },
       { title: "knowledge base", to: "views-knowledgebase" },
       { title: "topic", to: "views-topic" },
-      { title: "view 2160 create Kb" , to : "views-createKbArticle"},
-      { title: "view faqs2" , to : "views-faqs2"}
+      { title: "view articles" , to : "views-articles"},
+      { title: "view faqs2" , to : "views-faqs2"},
+      { title: "view articles2" , to : "views-articles2"}
     ],
   },
 ];

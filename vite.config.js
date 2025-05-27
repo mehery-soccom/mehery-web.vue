@@ -32,7 +32,22 @@ export default defineConfig({
   // base: process.env.NODE_ENV === "production" ? `${CONTEXT}/` : "/",
   base: `${CONTEXT}/`,
   plugins: [
-    vue(),
+    vue(
+  //     {
+  //   template: {
+  //     compilerOptions: {
+  //       isCustomElement: (tag) => tag === 'VDataTable'
+  //     }
+  //   }
+  // }
+    //   {
+    //   template: {
+    //     compilerOptions: {
+    //       isCustomElement: (tag) => ['md-linedivider'].includes(tag),
+    //     }
+    //   }
+    // }
+  ),
     vueJsx(),
 
     dynamicBase({
