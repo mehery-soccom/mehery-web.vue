@@ -1,5 +1,6 @@
 const { CONST = {} } = window;
 
+window.__dynamic_base__ = CONST.CDN_URL;
 export const APP = CONST.APP;
 export const WEBAPP = CONST.WEBAPP?.split("/").pop() || APP;
 export const APP_CONTEXT =
