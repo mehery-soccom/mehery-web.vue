@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from "vue";
 import Dailer from "./views/Dailer.vue";
-import Phone from "./views/Phone.vue";
+// import Phone from "./views/Phone.vue";
 // import Home from "./views/Home.vue";
 
 onMounted(() => {
@@ -12,7 +12,9 @@ onMounted(() => {
 <template>
   <Dailer></Dailer>
   <br />
-  <Phone />
+  <!-- <Home /> -->
+  <br />
+  <!-- <Phone /> -->
 </template>
 
 <style lang="scss">
