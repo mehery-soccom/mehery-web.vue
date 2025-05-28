@@ -1,5 +1,5 @@
+import { createVueApp } from "@/bootstrap.js";
 import { WEBAPP } from "@core/constants";
-import { createVueApp } from "./bootstrap.js";
 
 if (!window.__VUE_APP_MOUNTED__) {
   window.__VUE_APP_MOUNTED__ = true;
