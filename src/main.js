@@ -36,7 +36,9 @@ import { WEBAPP } from "@core/constants";
     useGlobalProperties: true,
   });
 
-  app.mount("#app");
+  document.addEventListener("DOMContentLoaded", () => {
+    app.mount("#app");
+  });
 
   try {
     console.log(`
