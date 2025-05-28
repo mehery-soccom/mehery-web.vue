@@ -36,10 +36,11 @@ import { WEBAPP } from "@core/constants";
     useGlobalProperties: true,
   });
 
-  setTimeout(() => {
+  if (!window.__VUE_APP_MOUNTED__) {
+    window.__VUE_APP_MOUNTED__ = true;
     console.log("loading app");
     app.mount("#app");
-  }, 500);
+  }
 
   try {
     console.log(`
