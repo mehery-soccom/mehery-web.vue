@@ -5,3 +5,8 @@ import Phone from './views/Phone.vue';
 <template>
   <Phone />
 </template>
+<style lang="scss">
+.body {
+  background-color: white;
+}
+</style>
