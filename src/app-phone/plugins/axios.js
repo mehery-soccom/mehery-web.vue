@@ -1,4 +1,3 @@
-import router from "@app-phone/router";
 import axios from "axios";
 
 import { REMOTE_SERVER_URL } from "@core/constants";
@@ -47,7 +46,7 @@ axiosIns.interceptors.response.use(
       localStorage.removeItem("userAbilities");
 
       // If 401 response returned from api
-      router.push("/login");
+      // router.push("/login");
     } else {
       return Promise.reject(error);
     }

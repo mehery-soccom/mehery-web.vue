@@ -13,17 +13,22 @@ import { WEBAPP } from "@core/constants";
 
 (async (cmap, cname) => {
   let c = cmap[cname];
-  console.log(`app name : ${JSON.stringify(cname)}`);
   if (!c) return console.log("Invalid APP", { cname });
 
   const _app = await c.app();
-  const _router = await c.router();
-  const _layoutsPlugin = await c.layoutsPlugin();
 
   const app = createApp(_app.default);
 
-  app.use(_router.default);
-  app.use(_layoutsPlugin.default);
+  if (c.router) {
+    const _router = await c.router();
+    app.use(_router.default);
+  }
+
+  if (c.layoutsPlugin) {
+    const _layoutsPlugin = await c.layoutsPlugin();
+    app.use(_layoutsPlugin.default);
+  }
+
   app.use(vuetify);
   app.use(createPinia());
   // app.use(i18n);
@@ -36,6 +41,7 @@ import { WEBAPP } from "@core/constants";
   try {
     console.log(`
     ################################# CDN DETAILS #################################
+    APP :: ${WEBAPP}
     VERSION :: ${process.env?.VUE_APP_VERSION || "-"}
     BUILD TIME :: ${
       process.env?.VUE_APP_TIMESTAMP
@@ -66,9 +72,7 @@ import { WEBAPP } from "@core/constants";
     },
     phone: {
       app: () => import("@app-phone/App.vue"),
-      router:() => import("@app-phone/router"),
-      layoutsPlugin: () => import("@app-phone/plugins/layouts"),
-    }
+    },
   },
   WEBAPP
 );

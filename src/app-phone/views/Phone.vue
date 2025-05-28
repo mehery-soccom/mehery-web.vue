@@ -1,16 +1,14 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { REMOTE_JS_URL } from "@core/constants";
 import axios from "@/app-phone/plugins/axios";
-import ringtone from '@/app-phone/assets/sounds/ringtone.wav';
-import ringbacktone from '@/app-phone/assets/sounds/ringbacktone.wav';
-import dtmfTone from '@/app-phone/assets/sounds/dtmf.wav';
+import { REMOTE_JS_URL } from "@core/constants";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
-// console.log(`axisos defaults : ${JSON.stringify(axios.defaults)}`);
+import dtmfTone from "@/app-phone/assets/sounds/dtmf.wav";
+import ringbacktone from "@/app-phone/assets/sounds/ringbacktone.wav";
+import ringtone from "@/app-phone/assets/sounds/ringtone.wav";
 
-// Define emits
 const emit = defineEmits(["call-ended", "ivr-input", "call-initiated"]);
-// Reactive data
+
 const dialedNumber = ref("");
 const callState = ref("idle"); // 'idle', 'ringing', 'talking'
 const tenantPartitionKey = ref("kedar");
@@ -121,34 +119,41 @@ const getSecrets = async () => {
   //       },
   //     }
   //   );
-
   //   if (!response.ok) {
   //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
   //   }
 
-  // const data = await axios.get("/v1/register",{
-  //     headers: {
-  //     "Content-Type": "application/json",
-  //     tnt: tenantPartitionKey.value,
-  //   },
-  // });
-  const response = await axios.get("v1/register", {
-    headers: {
-      "Content-Type": "application/json",
-      tnt: tenantPartitionKey.value,
-    },
-  });
-  const data = await response.data;
-  // console.log(data);
-  //   console.log(data);
+  try {
+    const response = await axios.get("/v1/register", {
+      headers: {
+        tnt: tenantPartitionKey.value,
+      },
+    });
+    const data = response.data;
+    bullforcePstn.value = {
+      ...data.bullforcePstn,
+      FS_DISPLAY: "kedar",
+    };
+  } catch (error) {
+    console.error(error);
 
-  bullforcePstn.value = {
-    ...data.bullforcePstn,
-    FS_DISPLAY: "kedar",
-  };
-  console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
-  //   bullforcePstn.value = data.bullforcePstn;
-  callSipRegister();
+    bullforcePstn.value = {
+      FS_DISPLAY: "kedar",
+      FS_IMPU: "sip:90099@bullforce",
+      FS_IMPI: "90099",
+      FS_SECRET: "1234",
+      FS_REALM: "bullforce",
+      FS_WS_PROXY_URL_INT: "wss://fs-bullforce.fortiddns.com:7443",
+      FS_WS_PROXY_URL_EXT: "wss://fs-bullforce.fortiddns.com:7443",
+      FS_OUTBOUND_PROXY_URL: "tcp://fs-bullforce.fortiddns.com:5080",
+      FS_ICE_SERVERS:
+        "[{urls:'stun:fs-bullforce.fortiddns.com'},{urls:'turn:fs-bullforce.fortiddns.com',username:'bullforce',credential:'bullForce'}]",
+    };
+  } finally {
+    console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
+
+    callSipRegister();
+  }
 };
 
 const callSipRegister = () => {
@@ -490,8 +495,12 @@ const addAudioElements = async () => {
 };
 // Lifecycle hooks
 onMounted(async () => {
+  console.log("Phone onMounted");
+
   await addPreloads();
+
   initializeSIPBridge();
+
   nextTick(() => {
     setTimeout(() => {
       getSecrets();
@@ -501,6 +510,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   cleanupSIPBridge();
+
   for (var i = 0; i < preloads.length; i++) {
     var item = preloads[i];
     // var childNode = document.createElement(item.tagName);
@@ -515,17 +525,19 @@ onBeforeUnmount(() => {
       document.body.removeChild(script);
     }
   }
+
   if (callTimer.value) {
     clearInterval(callTimer.value);
   }
 });
 </script>
+
 <template>
   <div class="sip-client">
     <audio id="audio-remote" autoplay="autoplay"></audio>
-    <audio id="ringtone" loop :src="ringtone"> </audio>
-    <audio id="ringbacktone" loop :src="ringbacktone"> </audio>
-    <audio id="dtmfTone" :src="dtmfTone"> </audio>
+    <audio id="ringtone" loop :src="ringtone"></audio>
+    <audio id="ringbacktone" loop :src="ringbacktone"></audio>
+    <audio id="dtmfTone" :src="dtmfTone"></audio>
     <!-- <audio id="audio-remote" autoplay></audio>
     <audio id="ringtone" loop src="../assets/sounds/ringtone.wav"></audio>
     <audio id="ringbacktone" loop src="../assets/sounds/ringbacktone.wav"></audio>
@@ -718,7 +730,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-
 .call-history {
   margin-top: 30px;
 }
