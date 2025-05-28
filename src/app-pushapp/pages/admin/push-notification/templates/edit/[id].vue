@@ -1,64 +1,74 @@
 <script setup>
-import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
-import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
-import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
-
-const route = useRoute();
-const router = useRouter();
-const pushNotificationStore = usePushNotificationStore();
-const channelsStore = useChannelsStore();
 const { show } = inject("snackbar");
-const isLoading = ref(false);
 
 const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg9Iw/feedshare-shrink_800/B4DZX.a7mYH4Ag-/0/1743730228531?e=1748476800&v=beta&t=836J66x0qjuiwEVD7ZgCUCxLm8z7QI5JI3qD6y_4ROY`;
 const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
 
-const form = reactive({
+const route = useRoute();
+const router = useRouter();
+const pushNotificationStore = usePushNotificationStore();
+
+const tab = ref("tab-details");
+const isLoading = ref(false);
+const template = reactive({
   type: "simple",
+  subType: null,
   desc: "",
   code: "",
-
-  title: "",
-  message: "",
-  image_url: DEFAULT_IMAGE_URL,
-  logo_url: DEFAULT_LOGO_URL,
-  buttonGroup: null,
-  buttonGroupValue: {},
-
-  channel_id: null,
-  platforms: [],
+  style: {
+    title: "",
+    message: "",
+    image_url: DEFAULT_IMAGE_URL,
+    logo_url: DEFAULT_LOGO_URL,
+    category: null,
+  },
 });
-const platform = ref("ios");
-const view = ref("collapse");
-const tab = ref("tab-details");
-const ChannelList = ref([]);
-
-const paramId = route.params.id;
+const view = ref({
+  platform: "ios",
+  mode: "collapse",
+  appearance: "light",
+});
+const buttonGroupValue = ref({});
+const buttonGroupFields = computed(() => {
+  if (template.style.category) {
+    return (
+      pushNotificationStore.buttonGroupList.find(
+        (b) => b.value === template.style.category
+      )?.fields || []
+    );
+  }
+  return [];
+});
+const templatePreview = computed(() => {
+  return {
+    view: view.value,
+    ...template,
+    options: {
+      buttons: buttonGroupFields.value,
+    },
+    model: {
+      data: {},
+    },
+  };
+});
 
 onMounted(async () => {
-  let res = await channelsStore.fetchChannels();
-  ChannelList.value = res.results.map((c) => ({
-    label: c.channel_name || c.channel_id,
-    value: c.channel_id,
-  }));
-
-  if (paramId) {
+  const id = route.params.id;
+  if (id) {
     pushNotificationStore
-      .fetchTemplate({ id: paramId })
+      .fetchTemplate({ id })
       .then((response) => {
-        const template = response.data.data;
+        const _template = response.data.data;
+        Object.assign(template, {
+          ...template,
+          ..._template,
+        });
         let _buttonGroupValue = {};
-        template.options.buttons.map((b) => {
+        _template.options.buttons.map((b) => {
           _buttonGroupValue[b.button_text] = b.button_url;
         });
-        Object.assign(form, {
-          ...form,
-          ...template,
-          ...template.style,
-          buttonGroup: template.style.category,
-          buttonGroupValue: _buttonGroupValue,
-        });
+        buttonGroupValue.value = _buttonGroupValue;
       })
       .catch((error) => {
         console.log(error);
@@ -67,114 +77,29 @@ onMounted(async () => {
   } else {
     show({ message: "Channel ID missing", color: "error" });
   }
-
-  /*
-  const copy = route.query.copy;
-  if (copy) {
-    pushNotificationStore
-      .fetchSimpleNotification({ id: copy })
-      .then((response) => {
-        console.log(response.data.notification);
-        const notification = response.data.notification;
-        let _buttonGroupValue = {};
-        notification.buttons.map((b) => {
-          _buttonGroupValue[b.button_text] = b.button_url;
-        });
-        Object.assign(form, {
-          ...form,
-          ...notification,
-          buttonGroup: notification.category,
-          buttonGroupValue: _buttonGroupValue,
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-        show({ message: "Something went wrong", color: "error" });
-      });
-  }
-  */
 });
-
-const buttonGroupFields = computed(() => {
-  if (form.buttonGroup) {
-    return (
-      pushNotificationStore.buttonGroupList.find(
-        (b) => b.value === form.buttonGroup
-      )?.fields || []
-    );
-  }
-  return [];
-});
-
-const onSend = async () => {
-  try {
-    isLoading.value = true;
-
-    let payload = {
-      title: form.title,
-      message: form.message,
-      channel_id: form.channel_id,
-      image_url: form.image_url,
-      category: form.buttonGroup,
-      buttons: buttonGroupFields.value.map((b) => ({
-        button_id: b.id,
-        button_text: b.text,
-        button_url: form.buttonGroupValue[b.text],
-      })),
-      filter: {
-        platform: form.platforms.join(" "),
-        session_type: "all",
-      },
-    };
-
-    await pushNotificationStore.sendBulk(payload);
-
-    show({ message: "Notification sent successfully", color: "success" });
-  } catch (error) {
-    console.error(error);
-
-    show({ message: "Something went wrong. try again", color: "error" });
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 const onUpdate = async () => {
   try {
     isLoading.value = true;
 
     let payload = {
-      type: form.type,
-      desc: form.desc,
-      code: form.code,
-
-      model: {
-        data: {},
-      },
-      style: {
-        title: form.title,
-        message: form.message,
-        image_url: form.image_url,
-        category: form.buttonGroup,
-      },
+      ...template,
       options: {
         buttons: buttonGroupFields.value.map((b) => ({
           button_id: b.id,
           button_text: b.text,
-          button_url: form.buttonGroupValue[b.text],
+          button_url: buttonGroupValue.value[b.text],
         })),
       },
-
-      // filter: {
-      //   channel_id: form.channel_id,
-      //   platform: form.platforms.join(" "),
-      //   session_type: "all",
-      // },
+      model: {
+        data: {},
+      },
     };
 
-    await pushNotificationStore.updateTemplate(form._id, payload);
+    await pushNotificationStore.updateTemplate(template._id, payload);
 
-    show({ message: "Template created successfully", color: "success" });
+    show({ message: "Template updated successfully", color: "success" });
 
     router.push({ name: "admin-push-notification-templates-list" });
   } catch (error) {
@@ -186,14 +111,17 @@ const onUpdate = async () => {
   }
 };
 
-watch(platform, (newValue) => {
-  view.value = "collapse";
-});
+watch(
+  () => view.value.platform,
+  () => {
+    view.value.mode = "collapse";
+  }
+);
 </script>
 
 <template>
   <v-row>
-    <!-- Form Column -->
+    <!-- template Column -->
     <v-col cols="12" md="7">
       <v-card>
         <v-card-item>
@@ -206,7 +134,6 @@ watch(platform, (newValue) => {
 
         <VTabs v-model="tab">
           <VTab value="tab-details"> Details </VTab>
-          <!-- <VTab value="tab-segments"> Segments </VTab> -->
         </VTabs>
 
         <VCard flat>
@@ -217,7 +144,7 @@ watch(platform, (newValue) => {
                   <VRow>
                     <VCol cols="12" md="6">
                       <AppSelect
-                        v-model="form.type"
+                        v-model="template.type"
                         :items="[
                           { label: 'Simple', value: 'simple' },
                           { label: 'Styled', value: 'styled' },
@@ -229,11 +156,21 @@ watch(platform, (newValue) => {
                       />
                     </VCol>
 
-                    <VCol cols="12" md="6"> </VCol>
+                    <VCol cols="12" md="6">
+                      <AppSelect
+                        v-if="template.type === 'styled'"
+                        v-model="template.subType"
+                        :items="[{ label: 'Delivery', value: 'delivery' }]"
+                        label="Sub Type"
+                        placeholder="Select Sub Type"
+                        item-title="label"
+                        item-value="value"
+                      />
+                    </VCol>
 
                     <VCol cols="12" md="6">
                       <AppTextField
-                        v-model="form.desc"
+                        v-model="template.desc"
                         label="Description"
                         placeholder="Enter Description"
                       />
@@ -241,15 +178,17 @@ watch(platform, (newValue) => {
 
                     <VCol cols="12" md="6">
                       <AppTextField
-                        v-model="form.code"
+                        v-model="template.code"
                         label="Code"
                         placeholder="Enter Code"
                       />
                     </VCol>
 
+                    <VDivider class="mt-4" />
+
                     <VCol cols="12" md="12">
                       <AppTextField
-                        v-model="form.title"
+                        v-model="template.style.title"
                         label="Title"
                         placeholder="Enter Notification Title"
                       />
@@ -257,26 +196,29 @@ watch(platform, (newValue) => {
 
                     <VCol cols="12" md="12">
                       <AppTextarea
-                        v-model="form.message"
+                        v-model="template.style.message"
                         label="Message"
                         placeholder="Enter Notification Message"
                       />
                     </VCol>
 
                     <VCol cols="12" md="12">
-                      <AppTextField v-model="form.logo_url" label="Logo URL" />
+                      <AppTextField
+                        v-model="template.style.logo_url"
+                        label="Logo URL ( public )"
+                      />
                     </VCol>
 
                     <VCol cols="12" md="12">
                       <AppTextField
-                        v-model="form.image_url"
-                        label="Image URL"
+                        v-model="template.style.image_url"
+                        label="Image URL ( public )"
                       />
                     </VCol>
 
                     <VCol cols="12" md="6">
                       <AppSelect
-                        v-model="form.buttonGroup"
+                        v-model="template.style.category"
                         :items="pushNotificationStore.buttonGroupList"
                         label="CTA Group"
                         placeholder="Select Button Group"
@@ -293,7 +235,7 @@ watch(platform, (newValue) => {
                       v-for="b in buttonGroupFields"
                     >
                       <AppTextField
-                        v-model="form.buttonGroupValue[b.text]"
+                        v-model="buttonGroupValue[b.text]"
                         :label="'Button > ' + b.text"
                         placeholder="Enter URL"
                       />
@@ -301,42 +243,6 @@ watch(platform, (newValue) => {
                   </VRow>
                 </VForm>
               </VWindowItem>
-
-              <!-- <VWindowItem value="tab-segments">
-                <VForm>
-                  <VRow>
-                    <VCol cols="12" md="6">
-                      <AppSelect
-                        v-model="form.channel_id"
-                        :items="ChannelList"
-                        label="App"
-                        placeholder="Select App"
-                        item-title="label"
-                        item-value="value"
-                        clearable
-                      />
-                    </VCol>
-
-                    <VCol cols="12" md="6">
-                      <AppSelect
-                        v-model="form.platforms"
-                        :items="pushNotificationStore.platformList"
-                        label="Platform"
-                        placeholder="Select Platforms"
-                        item-title="label"
-                        item-value="value"
-                        clearable
-                        multiple
-                        chips
-                      />
-                    </VCol>
-
-                    <VCol cols="12" md="6">
-                      <AppTextField label="Target" value="All Users" disabled />
-                    </VCol>
-                  </VRow>
-                </VForm>
-              </VWindowItem> -->
             </VWindow>
           </VCardText>
 
@@ -344,7 +250,7 @@ watch(platform, (newValue) => {
 
           <VCardText class="d-flex gap-4">
             <VBtn @click="onUpdate" :disabled="isLoading">{{
-              isLoading ? "loading..." : "update"
+              isLoading ? "loading..." : "Update"
             }}</VBtn>
             <VBtn
               variant="tonal"
@@ -362,13 +268,13 @@ watch(platform, (newValue) => {
     <VCol cols="12" md="5">
       <VRow>
         <v-col cols="6" class="d-flex justify-center">
-          <v-btn-toggle v-model="platform" mandatory density="compact">
+          <v-btn-toggle v-model="view.platform" mandatory density="compact">
             <v-btn value="ios">iOS</v-btn>
             <v-btn value="android">Android</v-btn>
           </v-btn-toggle>
         </v-col>
         <v-col cols="6">
-          <v-btn-toggle v-model="view" mandatory density="compact">
+          <v-btn-toggle v-model="view.mode" mandatory density="compact">
             <v-btn value="collapse">Collapse</v-btn>
             <v-btn value="expand">Expand</v-btn>
           </v-btn-toggle>
@@ -376,12 +282,7 @@ watch(platform, (newValue) => {
       </VRow>
       <VRow>
         <v-col cols="12" class="d-flex justify-center">
-          <NotificationPreview
-            :platform="platform"
-            :view="view"
-            :form="form"
-            :buttonGroupFields="buttonGroupFields"
-          />
+          <NotificationPreview :template="templatePreview" />
         </v-col>
       </VRow>
     </VCol>

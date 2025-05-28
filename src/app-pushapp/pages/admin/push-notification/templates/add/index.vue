@@ -55,10 +55,10 @@ const templatePreview = computed(() => {
 });
 
 onMounted(async () => {
-  const copy = route.query.copy;
-  if (copy) {
+  const id = route.query.copy;
+  if (id) {
     pushNotificationStore
-      .fetchTemplate({ id: copy })
+      .fetchTemplate({ id })
       .then((response) => {
         const _template = response.data.data;
         Object.assign(template, {
