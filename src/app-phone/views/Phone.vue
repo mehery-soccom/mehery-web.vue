@@ -1,13 +1,19 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { REMOTE_JS_URL } from "@core/constants";
+import axios from "@/app-phone/plugins/axios";
+import ringtone from '@/app-phone/assets/sounds/ringtone.wav';
+import ringbacktone from '@/app-phone/assets/sounds/ringbacktone.wav';
+import dtmfTone from '@/app-phone/assets/sounds/dtmf.wav';
+
+// console.log(`axisos defaults : ${JSON.stringify(axios.defaults)}`);
 
 // Define emits
-const emit = defineEmits(['call-ended', 'ivr-input', 'call-initiated'])
-
+const emit = defineEmits(["call-ended", "ivr-input", "call-initiated"]);
 // Reactive data
-const dialedNumber = ref("")
-const callState = ref("idle") // 'idle', 'ringing', 'talking'
-const tenantPartitionKey = ref("kedar")
+const dialedNumber = ref("");
+const callState = ref("idle"); // 'idle', 'ringing', 'talking'
+const tenantPartitionKey = ref("kedar");
 const bullforcePstn = ref({
   FS_DISPLAY: "",
   FS_IMPU: "",
@@ -18,59 +24,59 @@ const bullforcePstn = ref({
   FS_WS_PROXY_URL_EXT: "",
   FS_OUTBOUND_PROXY_URL: "",
   FS_ICE_SERVERS: "",
-})
+});
 const incomingCall = ref({
   show: false,
   remoteNumber: "",
   timestamp: null,
   sessionId: null,
-})
+});
 
 // Active call state
 const activeCall = ref({
   show: false,
   remoteNumber: "",
   startTime: null,
-})
+});
 
 // Call controls state
-const callProcessing = ref(false)
-const isMuted = ref(false)
-const isOnHold = ref(false)
-const callDuration = ref("00:00")
+const callProcessing = ref(false);
+const isMuted = ref(false);
+const isOnHold = ref(false);
+const callDuration = ref("00:00");
 
 // Registration state
-const registrationStatus = ref("Disconnected")
+const registrationStatus = ref("Disconnected");
 
 // Call history
-const callHistory = ref([])
-const callTimer = ref(null)
+const callHistory = ref([]);
+const callTimer = ref(null);
 
 // Computed properties
 const canUseKeypad = computed(() => {
-  return callState.value === "idle" || callState.value === "talking"
-})
+  return callState.value === "idle" || callState.value === "talking";
+});
 
 const statusText = computed(() => {
   switch (callState.value) {
     case "idle":
-      return "Ready to dial"
+      return "Ready to dial";
     case "ringing":
-      return "Calling..."
+      return "Calling...";
     case "talking":
-      return "Connected - Use keypad for IVR"
+      return "Connected - Use keypad for IVR";
     default:
-      return "Ready to dial"
+      return "Ready to dial";
   }
-})
+});
 
 const statusClass = computed(() => {
   return {
     "status-idle": callState.value === "idle",
     "status-ringing": callState.value === "ringing",
     "status-talking": callState.value === "talking",
-  }
-})
+  };
+});
 
 // Methods
 const initializeSIPBridge = () => {
@@ -78,264 +84,277 @@ const initializeSIPBridge = () => {
   if (!window.sipEventBridge) {
     console.error(
       "SIP Event Bridge not available. Make sure server.js is loaded."
-    )
-    return
+    );
+    return;
   }
 
   // Register event listeners
-  window.sipEventBridge.on("incomingCall", handleIncomingCall)
-  window.sipEventBridge.on("callAnswered", handleCallAnswered)
-  window.sipEventBridge.on("callRejected", handleCallRejected)
-  window.sipEventBridge.on("callTerminated", handleCallTerminated)
-  window.sipEventBridge.on("connectionStatus", handleConnectionStatus)
-  window.sipEventBridge.on(
-    "registrationAttempt",
-    handleRegistrationAttempt
-  )
+  window.sipEventBridge.on("incomingCall", handleIncomingCall);
+  window.sipEventBridge.on("callAnswered", handleCallAnswered);
+  window.sipEventBridge.on("callRejected", handleCallRejected);
+  window.sipEventBridge.on("callTerminated", handleCallTerminated);
+  window.sipEventBridge.on("connectionStatus", handleConnectionStatus);
+  window.sipEventBridge.on("registrationAttempt", handleRegistrationAttempt);
 
-  console.log("SIP Bridge initialized successfully")
-}
+  console.log("SIP Bridge initialized successfully");
+};
 
 const cleanupSIPBridge = () => {
   if (window.sipEventBridge) {
-    window.sipEventBridge.off("incomingCall", handleIncomingCall)
-    window.sipEventBridge.off("callAnswered", handleCallAnswered)
-    window.sipEventBridge.off("callRejected", handleCallRejected)
-    window.sipEventBridge.off("callTerminated", handleCallTerminated)
-    window.sipEventBridge.off(
-      "connectionStatus",
-      handleConnectionStatus
-    )
-    window.sipEventBridge.off(
-      "registrationAttempt",
-      handleRegistrationAttempt
-    )
+    window.sipEventBridge.off("incomingCall", handleIncomingCall);
+    window.sipEventBridge.off("callAnswered", handleCallAnswered);
+    window.sipEventBridge.off("callRejected", handleCallRejected);
+    window.sipEventBridge.off("callTerminated", handleCallTerminated);
+    window.sipEventBridge.off("connectionStatus", handleConnectionStatus);
+    window.sipEventBridge.off("registrationAttempt", handleRegistrationAttempt);
   }
-}
+};
 
 const getSecrets = async () => {
-  const response = await fetch(
-    "http://localhost:8090/nexus/phone/v1/register",
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        tnt: tenantPartitionKey.value,
-      },
-    }
-  )
-  if (!response.ok) {
-    throw new Error(`Error: ${response.status} - ${response.statusText}`)
-  }
-  const data = await response.json()
-  data.bullforcePstn.FS_DISPLAY = "kedar"
+  //   const response = await fetch(
+  //     "http://localhost:8090/nexus/phone/v1/register",
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         tnt: tenantPartitionKey.value,
+  //       },
+  //     }
+  //   );
 
-  bullforcePstn.value = data.bullforcePstn
-  callSipRegister()
-}
+  //   if (!response.ok) {
+  //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
+  //   }
+
+  // const data = await axios.get("/v1/register",{
+  //     headers: {
+  //     "Content-Type": "application/json",
+  //     tnt: tenantPartitionKey.value,
+  //   },
+  // });
+  const response = await axios.get("v1/register", {
+    headers: {
+      "Content-Type": "application/json",
+      tnt: tenantPartitionKey.value,
+    },
+  });
+  const data = await response.data;
+  // console.log(data);
+  //   console.log(data);
+
+  bullforcePstn.value = {
+    ...data.bullforcePstn,
+    FS_DISPLAY: "kedar",
+  };
+  console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
+  //   bullforcePstn.value = data.bullforcePstn;
+  callSipRegister();
+};
 
 const callSipRegister = () => {
   try {
     if (typeof window.sipRegister === "function") {
-      window.sipRegister(bullforcePstn.value)
+      window.sipRegister(bullforcePstn.value);
     } else {
-      console.warn("sipRegister function is not available")
+      console.warn("sipRegister function is not available");
     }
   } catch (error) {
-    console.error("Error calling sipRegister:", error)
+    console.error("Error calling sipRegister:", error);
   }
-}
+};
 
 const handleIncomingCall = (data) => {
-  console.log("Incoming call received:", data)
+  console.log("Incoming call received:", data);
 
   incomingCall.value = {
     show: true,
     remoteNumber: data.remoteNumber,
     timestamp: data.timestamp,
     sessionId: data.sessionId,
-  }
+  };
 
   // Add to call history
-  addToCallHistory(data.remoteNumber, "incoming", data.timestamp)
-}
+  addToCallHistory(data.remoteNumber, "incoming", data.timestamp);
+};
 
 const handleCallAnswered = (data) => {
-  console.log("Call answered:", data)
+  console.log("Call answered:", data);
 
-  incomingCall.value.show = false
+  incomingCall.value.show = false;
   activeCall.value = {
     show: true,
     remoteNumber: incomingCall.value.remoteNumber,
     startTime: new Date(),
-  }
+  };
 
-  callProcessing.value = false
-  startCallTimer()
+  callProcessing.value = false;
+  startCallTimer();
 
   // Update call history
-  updateCallHistory("answered")
-}
+  updateCallHistory("answered");
+};
 
 const handleCallRejected = (data) => {
-  console.log("Call rejected:", data)
+  console.log("Call rejected:", data);
 
-  incomingCall.value.show = false
-  callProcessing.value = false
+  incomingCall.value.show = false;
+  callProcessing.value = false;
 
   // Update call history
-  updateCallHistory("rejected")
-}
+  updateCallHistory("rejected");
+};
 
 const handleCallTerminated = (data) => {
-  console.log("Call terminated:", data)
+  console.log("Call terminated:", data);
 
-  incomingCall.value.show = false
-  activeCall.value.show = false
-  callProcessing.value = false
-  isMuted.value = false
-  isOnHold.value = false
+  incomingCall.value.show = false;
+  activeCall.value.show = false;
+  callProcessing.value = false;
+  isMuted.value = false;
+  isOnHold.value = false;
 
   if (callTimer.value) {
-    clearInterval(callTimer.value)
-    callTimer.value = null
+    clearInterval(callTimer.value);
+    callTimer.value = null;
   }
 
   // Update call history
-  updateCallHistory("terminated")
-}
+  updateCallHistory("terminated");
+};
 
 const handleConnectionStatus = (data) => {
-  console.log("Connection status:", data)
-  registrationStatus.value = data.connected ? "Connected" : "Disconnected"
-}
+  console.log("Connection status:", data);
+  registrationStatus.value = data.connected ? "Connected" : "Disconnected";
+};
 
 const handleRegistrationAttempt = (data) => {
-  console.log("Registration attempt:", data)
-  registrationStatus.value = "Connecting..."
-}
+  console.log("Registration attempt:", data);
+  registrationStatus.value = "Connecting...";
+};
 
 // === CALL ACTIONS ===
 const answerCall = () => {
-  console.log("Answering call...")
-  callProcessing.value = true
+  console.log("Answering call...");
+  callProcessing.value = true;
   try {
     if (typeof window.answercall === "function") {
-      window.answercall()
+      window.answercall();
     } else {
-      console.warn("answercall function is not available")
-      callProcessing.value = false
+      console.warn("answercall function is not available");
+      callProcessing.value = false;
     }
   } catch (error) {
-    console.error("Error calling answercall:", error)
+    console.error("Error calling answercall:", error);
   }
-}
+};
 
 const rejectCall = () => {
-  console.log("Rejecting call...")
-  callProcessing.value = true
+  console.log("Rejecting call...");
+  callProcessing.value = true;
   try {
     if (typeof window.rejectcall === "function") {
-      window.rejectcall()
+      window.rejectcall();
     } else {
-      console.warn("rejectcall function is not available")
+      console.warn("rejectcall function is not available");
     }
   } catch (error) {
-    console.error("Error calling rejectcall:", error)
+    console.error("Error calling rejectcall:", error);
   }
-}
+};
 
 const hangupCall = () => {
-  console.log("Hanging up call...")
+  console.log("Hanging up call...");
 
   if (typeof window.sipHangUp === "function") {
-    window.sipHangUp()
+    window.sipHangUp();
   } else {
-    console.error("Hangup function not available")
+    console.error("Hangup function not available");
   }
-  callState.value = "idle"
-  emit("call-ended", dialedNumber.value)
-}
+  callState.value = "idle";
+  emit("call-ended", dialedNumber.value);
+};
 
 const toggleMute = () => {
   try {
     if (typeof window.sipToggleMute === "function") {
-      window.sipToggleMute()
-      isMuted.value = !isMuted.value
+      window.sipToggleMute();
+      isMuted.value = !isMuted.value;
     } else {
-      console.warn("sipToggleMute function is not available")
+      console.warn("sipToggleMute function is not available");
     }
   } catch (error) {
-    console.error("Error calling sipToggleMute:", error)
+    console.error("Error calling sipToggleMute:", error);
   }
-}
+};
 
 const toggleHold = () => {
   try {
     if (typeof window.sipToggleHoldResume === "function") {
-      window.sipToggleHoldResume()
-      isOnHold.value = !isOnHold.value
+      window.sipToggleHoldResume();
+      isOnHold.value = !isOnHold.value;
     } else {
-      console.warn("sipToggleHoldResume function is not available")
+      console.warn("sipToggleHoldResume function is not available");
     }
   } catch (error) {
-    console.error("Error calling sipToggleHoldResume:", error)
+    console.error("Error calling sipToggleHoldResume:", error);
   }
-}
+};
 
 const addDigit = (digit) => {
   if (callState.value === "talking") {
     // IVR response - you can emit an event or handle IVR logic here
-    emit("ivr-input", digit)
-    console.log("IVR input:", digit)
+    emit("ivr-input", digit);
+    console.log("IVR input:", digit);
   } else if (callState.value === "idle") {
-    dialedNumber.value += digit
+    console.log(`I am clicked : ${digit}`);
+    dialedNumber.value = `${dialedNumber.value}${digit}`;
+    console.log(dialedNumber.value);
   }
-}
+};
 
 const removeDigit = () => {
   if (callState.value === "idle" && dialedNumber.value.length > 0) {
-    dialedNumber.value = dialedNumber.value.slice(0, -1)
+    dialedNumber.value = dialedNumber.value.slice(0, -1);
   }
-}
+};
 
 const makeCall = () => {
   if (dialedNumber.value && callState.value === "idle") {
-    callState.value = "ringing"
-    emit("call-initiated", dialedNumber.value)
+    callState.value = "ringing";
+    emit("call-initiated", dialedNumber.value);
     try {
       if (typeof window.sipCall === "function") {
-        window.sipCall("call-audio", dialedNumber.value)
+        window.sipCall("call-audio", dialedNumber.value);
       } else {
-        console.warn("sipCall function is not available")
+        console.warn("sipCall function is not available");
       }
     } catch (error) {
-      console.error("Error calling sipCall:", error)
+      console.error("Error calling sipCall:", error);
     }
   }
-}
+};
 
 // === UTILITY METHODS ===
 const formatCallTime = (timestamp) => {
-  if (!timestamp) return ""
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString()
-}
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
+};
 
 const startCallTimer = () => {
   callTimer.value = setInterval(() => {
     if (activeCall.value.startTime) {
       const duration = Math.floor(
         (new Date() - activeCall.value.startTime) / 1000
-      )
+      );
       const minutes = Math.floor(duration / 60)
         .toString()
-        .padStart(2, "0")
-      const seconds = (duration % 60).toString().padStart(2, "0")
-      callDuration.value = `${minutes}:${seconds}`
+        .padStart(2, "0");
+      const seconds = (duration % 60).toString().padStart(2, "0");
+      callDuration.value = `${minutes}:${seconds}`;
     }
-  }, 1000)
-}
+  }, 1000);
+};
 
 const addToCallHistory = (remoteNumber, status, timestamp) => {
   callHistory.value.unshift({
@@ -343,39 +362,174 @@ const addToCallHistory = (remoteNumber, status, timestamp) => {
     remoteNumber,
     status,
     timestamp,
-  })
+  });
 
   // Keep only last 10 calls
   if (callHistory.value.length > 10) {
-    callHistory.value = callHistory.value.slice(0, 10)
+    callHistory.value = callHistory.value.slice(0, 10);
   }
-}
+};
 
 const updateCallHistory = (newStatus) => {
   if (callHistory.value.length > 0) {
-    callHistory.value[0].status = newStatus
+    callHistory.value[0].status = newStatus;
   }
-}
+};
+const setAttribute = (target, attrs) => {
+  for (var key in attrs) {
+    if (key == "href" || key == "src") {
+      attrs[key] = window.__dynamic_base__ + attrs[key];
+    }
+    target.setAttribute(key, attrs[key]);
+  }
+  return target;
+};
+// const addPreloads = () => {
+//   for (var i = 0; i < preloads.length; i++) {
+//     var item = preloads[i];
+//     var childNode = document.createElement(item.tagName);
+//     setAttribute(childNode, item.attrs);
 
+//     var parentElements = document.getElementsByTagName(item.parentTagName);
+//     if (parentElements && parentElements.length > 0) {
+//       parentElements[0].appendChild(childNode);
+//     }
+//   }
+// };
+// const preloads = [
+//   {
+//     parentTagName: "head",
+//     tagName: "script",
+//     attrs: { src: "/javascript/adapter.js" },
+//   },
+//   {
+//     parentTagName: "head",
+//     tagName: "script",
+//     attrs: { src: "/javascript/SIPml-api-altered.js" },
+//   },
+//   {
+//     parentTagName: "head",
+//     tagName: "script",
+//     attrs: { src: "/javascript/server.js" },
+//   },
+// ];
+const preloads = [
+  { src: "/javascript/adapter.js" },
+  { src: "/javascript/SIPml-api-altered.js" },
+  { src: "/javascript/server.js" },
+];
+const audioElements = [
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "ringtone",
+      loop: "",
+      src: "/javascript/sounds/ringtone.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "ringbacktone",
+      loop: "",
+      src: "/javascript/sounds/ringbacktone.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "dtmfTone",
+      src: "/javascript/sounds/dtmf.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "audio-remote",
+      autoplay: "autoplay",
+      // src: "/javascript/sounds/dtmf.wav"
+    },
+  },
+];
+const addPreloads = async () => {
+  const loadScript = (src) =>
+    new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `${REMOTE_JS_URL}${src}`;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+
+  // Wait for all scripts to load
+  await Promise.all(preloads.map((s) => loadScript(s.src)));
+};
+const addAudioElements = async () => {
+  for (const elementDef of audioElements) {
+    const { parentTagName, tagName, attrs } = elementDef;
+
+    const parent = document.querySelector(parentTagName);
+    if (!parent) continue;
+
+    const el = document.createElement(tagName);
+
+    for (const [key, value] of Object.entries(attrs)) {
+      if (value === "") {
+        el.setAttribute(key, ""); // For boolean attrs like loop
+      } else {
+        el.setAttribute(key, value);
+      }
+    }
+
+    parent.appendChild(el);
+  }
+};
 // Lifecycle hooks
-onMounted(() => {
-  initializeSIPBridge()
+onMounted(async () => {
+  await addPreloads();
+  initializeSIPBridge();
   nextTick(() => {
     setTimeout(() => {
-      getSecrets()
-    }, 100)
-  })
-})
+      getSecrets();
+    }, 100);
+  });
+});
 
 onBeforeUnmount(() => {
-  cleanupSIPBridge()
-  if (callTimer.value) {
-    clearInterval(callTimer.value)
+  cleanupSIPBridge();
+  for (var i = 0; i < preloads.length; i++) {
+    var item = preloads[i];
+    // var childNode = document.createElement(item.tagName);
+    // setAttribute(childNode, item.attrs);
+
+    // var parentElements = document.getElementsByTagName(item.parentTagName);
+    // if (parentElements && parentElements.length > 0) {
+    //   parentElements[0].appendChild(childNode);
+    // }
+    const script = document.querySelector(`script[src="${item.src}"]`);
+    if (script) {
+      document.body.removeChild(script);
+    }
   }
-})
+  if (callTimer.value) {
+    clearInterval(callTimer.value);
+  }
+});
 </script>
 <template>
   <div class="sip-client">
+    <audio id="audio-remote" autoplay="autoplay"></audio>
+    <audio id="ringtone" loop :src="ringtone"> </audio>
+    <audio id="ringbacktone" loop :src="ringbacktone"> </audio>
+    <audio id="dtmfTone" :src="dtmfTone"> </audio>
+    <!-- <audio id="audio-remote" autoplay></audio>
+    <audio id="ringtone" loop src="../assets/sounds/ringtone.wav"></audio>
+    <audio id="ringbacktone" loop src="../assets/sounds/ringbacktone.wav"></audio>
+    <audio id="dtmfTone" src="../assets/sounds/dtmf.wav"></audio> -->
     <!-- Registration Status -->
     <div class="registration-status">
       <p>Status: {{ registrationStatus }}</p>
@@ -388,19 +542,19 @@ onBeforeUnmount(() => {
           <strong>From: {{ incomingCall.remoteNumber }}</strong>
         </p>
         <p class="call-time">{{ formatCallTime(incomingCall.timestamp) }}</p>
-        
+
         <div class="call-actions">
-          <button 
-            @click="answerCall" 
+          <button
+            @click="answerCall"
             class="btn btn-success answer-btn"
             :disabled="callProcessing"
           >
             <span v-if="!callProcessing">📞 Answer</span>
             <span v-else>Connecting...</span>
           </button>
-          
-          <button 
-            @click="rejectCall" 
+
+          <button
+            @click="rejectCall"
             class="btn btn-danger reject-btn"
             :disabled="callProcessing"
           >
@@ -410,23 +564,21 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    
+
     <!-- Active Call Status -->
     <div v-if="activeCall.show" class="active-call-status">
       <h4>Call Active</h4>
-      
+
       <p>Connected to: {{ activeCall.remoteNumber }}</p>
       <p>Duration: {{ callDuration }}</p>
-      
+
       <div class="call-controls">
-        <button @click="hangupCall" class="btn btn-danger">
-          📞 Hang Up
-        </button>
+        <button @click="hangupCall" class="btn btn-danger">📞 Hang Up</button>
         <button @click="toggleMute" class="btn btn-secondary">
-          {{ isMuted ? '🔊 Unmute' : '🔇 Mute' }}
+          {{ isMuted ? "🔊 Unmute" : "🔇 Mute" }}
         </button>
         <button @click="toggleHold" class="btn btn-secondary">
-          {{ isOnHold ? '▶️ Resume' : '⏸️ Hold' }}
+          {{ isOnHold ? "▶️ Resume" : "⏸️ Hold" }}
         </button>
       </div>
     </div>
@@ -435,7 +587,8 @@ onBeforeUnmount(() => {
       <h4>Recent Calls</h4>
       <ul>
         <li v-for="call in callHistory" :key="call.id">
-          {{ call.remoteNumber }} - {{ call.status }} - {{ formatCallTime(call.timestamp) }}
+          {{ call.remoteNumber }} - {{ call.status }} -
+          {{ formatCallTime(call.timestamp) }}
         </li>
       </ul>
     </div>
@@ -564,9 +717,8 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
+<style>
 
-
-<style scoped>
 .call-history {
   margin-top: 30px;
 }

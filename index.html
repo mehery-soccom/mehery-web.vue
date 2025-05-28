@@ -1,276 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard</title>
-    <!-- configs -->
-    <script>
-      window.CONST = {
-        // APP:  "pushapp", // "insights360"  "pushapp" 
-        // APP_CONTEXT: "/pushapp", // "/insights360"  "/pushapp"
-        // APP_TITLE: "PushApp", // "Insights360" "Notebook"
-        // APP:  "notebook", // "insights360"  "pushapp" 
-        // APP_CONTEXT: "/notebook", // "/insights360"  "/pushapp"
-        // APP_TITLE: "PushApp", // "Insights360" "Notebook"
-        APP:  "phone", // "insights360"  "pushapp" 
-        APP_CONTEXT: "/phone", // "/insights360"  "/pushapp"
-        APP_TITLE: "Phone", // "Insights360" "Notebook"         
-        CDN_URL:
-          location.hostname === "localhost"
-            ? "http://localhost:5173"
-            : "https://mehery-web-vue.pages.dev",
-        CDN_VERSION: "1",
-        SERVER_URL: "",
-      };
-      function getJson(str) {
-        var json;
-        try {
-          json = JSON.parse(str);
-        } catch (e) {
-          console.error("Error in config: ", e);
-          return false;
-        }
-        return json;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <!-- configs -->
+  <script>
+    window.CONST = {
+      // APP:  "pushapp", 
+      // APP_CONTEXT: "/pushapp", 
+      // APP_TITLE: "PushApp", 
+      // APP:  "notebook", 
+      // APP_CONTEXT: "/notebook", 
+      // APP_TITLE: "Notebook", 
+      APP: "phone", 
+      APP_CONTEXT: "/phone", 
+      APP_TITLE: "Phone", 
+      CDN_URL:
+        location.hostname === "localhost"
+          ? "http://localhost:5173"
+          : "https://mehery-web-vue.pages.dev",
+      CDN_VERSION: "1",
+      SERVER_URL: "",
+    };
+    function getJson(str) {
+      var json;
+      try {
+        json = JSON.parse(str);
+      } catch (e) {
+        console.error("Error in config: ", e);
+        return false;
       }
-      var localConfig = getJson(window.localStorage.getItem("debugConfig"));
-      if (localConfig) {
-        window.CONST.CDN_URL =
-          localConfig.remoteJsUrl ||
-          localConfig.CDN_URL ||
-          window.CONST.CDN_URL;
-        window.CONST.SERVER_URL =
-          localConfig.remoteServerUrl ||
-          localConfig.SERVER_URL ||
-          window.CONST.SERVER_URL;
+      return json;
+    }
+    var localConfig = getJson(window.localStorage.getItem("debugConfig"));
+    if (localConfig) {
+      window.CONST.CDN_URL =
+        localConfig.remoteJsUrl ||
+        localConfig.CDN_URL ||
+        window.CONST.CDN_URL;
+      window.CONST.SERVER_URL =
+        localConfig.remoteServerUrl ||
+        localConfig.SERVER_URL ||
+        window.CONST.SERVER_URL;
+    }
+    var CONTEXT =
+      location.hostname === "localhost" ? window.CONST.APP_CONTEXT : "";
+    // var CONTEXT = "/__dynamic_base__";
+    window.__dynamic_base__ = window.CONST.CDN_URL + CONTEXT;
+  </script>
+  <!-- preloads -->
+  <script>
+    (function () {
+      var preloads = [
+        {
+          parentTagName: "head",
+          tagName: "link",
+          attrs: {
+            rel: "shortcut icon",
+            type: "image/x-icon",
+            href: "/favicon.ico",
+          },
+        },
+        {
+          parentTagName: "head",
+          tagName: "link",
+          attrs: { rel: "stylesheet", href: "/loader.css" },
+        },
+        {
+          parentTagName: "head",
+          tagName: "link",
+          attrs: { rel: "stylesheet", href: "/index.css" },
+        },
+        {
+          parentTagName: "head",
+          tagName: "script",
+          attrs: { type: "module", crossorigin: "", src: "/index.js" },
+        },
+      ];
+      function setAttribute(target, attrs) {
+        for (var key in attrs) {
+          if (key == "href" || key == "src") {
+            attrs[key] = window.__dynamic_base__ + attrs[key];
+          }
+          target.setAttribute(key, attrs[key]);
+        }
+        return target;
       }
-      var CONTEXT =
-        location.hostname === "localhost" ? window.CONST.APP_CONTEXT : "";
-      // var CONTEXT = "/__dynamic_base__";
-      window.__dynamic_base__ = window.CONST.CDN_URL + CONTEXT;
-    </script>
-    <!-- preloads -->
-    <script>
-      (function () {
-        var preloads = [
-          {
-            parentTagName: "head",
-            tagName: "link",
-            attrs: {
-              rel: "shortcut icon",
-              type: "image/x-icon",
-              href: "/favicon.ico",
-            },
-          },
-          {
-            parentTagName: "head",
-            tagName: "link",
-            attrs: { rel: "stylesheet", href: "/loader.css" },
-          },
-          {
-            parentTagName: "head",
-            tagName: "link",
-            attrs: { rel: "stylesheet", href: "/index.css" },
-          },
-          {
-            parentTagName: "head",
-            tagName: "script",
-            attrs: { type: "module", crossorigin: "", src: "/index.js" },
-          },
-        ];
 
-        // Conditionally add scripts for specific apps
-        if (window.CONST.APP === "phone" || window.CONST.APP === "app-name2") {
-          preloads.push(
-            {
-              parentTagName: "head",
-              tagName: "script",
-              attrs: { src: "/javascript/adapter.js" },
-            },
-            {
-              parentTagName: "head", 
-              tagName: "script",
-              attrs: { src: "/javascript/SIPml-api-altered.js" },
-            },
-            {
-              parentTagName: "head",
-              tagName: "script", 
-              attrs: { src: "/javascript/server.js" },
-            }
-          );
+      // Load head elements immediately
+      for (var i = 0; i < preloads.length; i++) {
+        var item = preloads[i];
+        var childNode = document.createElement(item.tagName);
+        setAttribute(childNode, item.attrs);
+
+        var parentElements = document.getElementsByTagName(item.parentTagName);
+        if (parentElements && parentElements.length > 0) {
+          parentElements[0].appendChild(childNode);
         }
+      }
+    })();
+  </script>
+</head>
 
-        // Audio elements that need to be added to body (will be added after DOM is ready)
-        var audioElements = [];
-        if (window.CONST.APP === "phone" || window.CONST.APP === "app-name2") {
-          audioElements = [
-            {
-              parentTagName: "body",
-              tagName: "audio",
-              attrs: { 
-                id: "ringtone", 
-                loop: "", 
-                src: "/javascript/sounds/ringtone.wav" 
-              },
-            },
-            {
-              parentTagName: "body",
-              tagName: "audio",
-              attrs: { 
-                id: "ringbacktone", 
-                loop: "", 
-                src: "/javascript/sounds/ringbacktone.wav" 
-              },
-            },
-            {
-              parentTagName: "body",
-              tagName: "audio",
-              attrs: { 
-                id: "dtmfTone", 
-                src: "/javascript/sounds/dtmf.wav" 
-              },
-            },
-            {
-              parentTagName: "body",
-              tagName: "audio",
-              attrs: { 
-                id: "audio-remote", 
-                autoplay: "autoplay"
-                // src: "/javascript/sounds/dtmf.wav" 
-              }
-            }
-          ];
-        }
-
-        // function setAttribute(target, attrs) {
-        //   for (var key in attrs) {
-        //     if (key == "href" || key == "src") {
-        //       attrs[key] = window.__dynamic_base__ + attrs[key];
-        //     }
-        //     target.setAttribute(key, attrs[key]);
-        //   }
-        //   return target;
-        // }
-        // for (var i = 0; i < preloads.length; i++) {
-        //   var item = preloads[i];
-        //   var childNode = document.createElement(item.tagName);
-        //   setAttribute(childNode, item.attrs);
-        //   document
-        //     .getElementsByTagName(item.parentTagName)[0]
-        //     .appendChild(childNode);
-        // }
-        function setAttribute(target, attrs) {
-          for (var key in attrs) {
-            if (key == "href" || key == "src") {
-              attrs[key] = window.__dynamic_base__ + attrs[key];
-            }
-            target.setAttribute(key, attrs[key]);
-          }
-          return target;
-        }
-
-        // Load head elements immediately
-        for (var i = 0; i < preloads.length; i++) {
-          var item = preloads[i];
-          var childNode = document.createElement(item.tagName);
-          setAttribute(childNode, item.attrs);
-          
-          var parentElements = document.getElementsByTagName(item.parentTagName);
-          if (parentElements && parentElements.length > 0) {
-            parentElements[0].appendChild(childNode);
-          }
-        }
-
-        // Load body elements after DOM is ready
-        function loadAudioElements() {
-          for (var i = 0; i < audioElements.length; i++) {
-            var item = audioElements[i];
-            var childNode = document.createElement(item.tagName);
-            setAttribute(childNode, item.attrs);
-            
-            var parentElements = document.getElementsByTagName(item.parentTagName);
-            if (parentElements && parentElements.length > 0) {
-              parentElements[0].appendChild(childNode);
-            }
-          }
-        }
-
-        // Wait for DOM to be ready before adding audio elements
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', loadAudioElements);
-        } else {
-          loadAudioElements();
-        }
-      })();
-    </script>
-  </head>
-
-  <body>
-    <div id="app">
-      <div id="loading-bg">
-        <div class="loading-logo">
-          <!-- SVG Logo -->
-          <svg
-            width="86"
-            height="48"
-            viewBox="0 0 34 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M0.00183571 0.3125V7.59485C0.00183571 7.59485 -0.141502 9.88783 2.10473 11.8288L14.5469 23.6837L21.0172 23.6005L19.9794 10.8126L17.5261 7.93369L9.81536 0.3125H0.00183571Z"
-              fill="var(--initial-loader-color)"
-            ></path>
-            <path
-              opacity="0.06"
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M8.17969 17.7762L13.3027 3.75173L17.589 8.02192L8.17969 17.7762Z"
-              fill="#161616"
-            ></path>
-            <path
-              opacity="0.06"
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M8.58203 17.2248L14.8129 5.24231L17.6211 8.05247L8.58203 17.2248Z"
-              fill="#161616"
-            ></path>
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M8.25781 17.6914L25.1339 0.3125H33.9991V7.62657C33.9991 7.62657 33.8144 10.0645 32.5743 11.3686L21.0179 23.6875H14.5487L8.25781 17.6914Z"
-              fill="var(--initial-loader-color)"
-            ></path>
-          </svg>
-        </div>
-        <div class="loading">
-          <div class="effect-1 effects"></div>
-          <div class="effect-2 effects"></div>
-          <div class="effect-3 effects"></div>
-        </div>
+<body>
+  <div id="app">
+    <div id="loading-bg">
+      <div class="loading-logo">
+        <!-- SVG Logo -->
+        <svg width="86" height="48" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M0.00183571 0.3125V7.59485C0.00183571 7.59485 -0.141502 9.88783 2.10473 11.8288L14.5469 23.6837L21.0172 23.6005L19.9794 10.8126L17.5261 7.93369L9.81536 0.3125H0.00183571Z"
+            fill="var(--initial-loader-color)"></path>
+          <path opacity="0.06" fill-rule="evenodd" clip-rule="evenodd"
+            d="M8.17969 17.7762L13.3027 3.75173L17.589 8.02192L8.17969 17.7762Z" fill="#161616"></path>
+          <path opacity="0.06" fill-rule="evenodd" clip-rule="evenodd"
+            d="M8.58203 17.2248L14.8129 5.24231L17.6211 8.05247L8.58203 17.2248Z" fill="#161616"></path>
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M8.25781 17.6914L25.1339 0.3125H33.9991V7.62657C33.9991 7.62657 33.8144 10.0645 32.5743 11.3686L21.0179 23.6875H14.5487L8.25781 17.6914Z"
+            fill="var(--initial-loader-color)"></path>
+        </svg>
+      </div>
+      <div class="loading">
+        <div class="effect-1 effects"></div>
+        <div class="effect-2 effects"></div>
+        <div class="effect-3 effects"></div>
       </div>
     </div>
-    <!-- entry -->
-    <script type="module" src="/src/main.js"></script>
-    <!-- loader -->
-    <script>
-      const loaderColor =
-        localStorage.getItem("vuexy-initial-loader-bg") || "#FFFFFF";
-      const primaryColor =
-        localStorage.getItem("vuexy-initial-loader-color") || "#7367F0";
+  </div>
+  <!-- entry -->
+  <script type="module" src="/src/main.js"></script>
+  <!-- loader -->
+  <script>
+    const loaderColor =
+      localStorage.getItem("vuexy-initial-loader-bg") || "#FFFFFF";
+    const primaryColor =
+      localStorage.getItem("vuexy-initial-loader-color") || "#7367F0";
 
-      if (loaderColor)
-        document.documentElement.style.setProperty(
-          "--initial-loader-bg",
-          loaderColor
-        );
-      if (primaryColor)
-        document.documentElement.style.setProperty(
-          "--initial-loader-color",
-          primaryColor
-        );
-    </script>
-  </body>
+    if (loaderColor)
+      document.documentElement.style.setProperty(
+        "--initial-loader-bg",
+        loaderColor
+      );
+    if (primaryColor)
+      document.documentElement.style.setProperty(
+        "--initial-loader-color",
+        primaryColor
+      );
+  </script>
+</body>
+
 </html>
