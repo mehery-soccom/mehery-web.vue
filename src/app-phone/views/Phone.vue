@@ -137,18 +137,7 @@ const getSecrets = async () => {
   } catch (error) {
     console.error(error);
 
-    bullforcePstn.value = {
-      FS_DISPLAY: "kedar",
-      FS_IMPU: "sip:90099@bullforce",
-      FS_IMPI: "90099",
-      FS_SECRET: "1234",
-      FS_REALM: "bullforce",
-      FS_WS_PROXY_URL_INT: "wss://fs-bullforce.fortiddns.com:7443",
-      FS_WS_PROXY_URL_EXT: "wss://fs-bullforce.fortiddns.com:7443",
-      FS_OUTBOUND_PROXY_URL: "tcp://fs-bullforce.fortiddns.com:5080",
-      FS_ICE_SERVERS:
-        "[{urls:'stun:fs-bullforce.fortiddns.com'},{urls:'turn:fs-bullforce.fortiddns.com',username:'bullforce',credential:'bullForce'}]",
-    };
+    bullforcePstn.value = {};
   } finally {
     console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
 
