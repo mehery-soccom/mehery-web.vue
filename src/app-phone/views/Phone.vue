@@ -7,7 +7,7 @@ import dtmfTone from "@/app-phone/assets/sounds/dtmf.wav";
 import ringbacktone from "@/app-phone/assets/sounds/ringbacktone.wav";
 import ringtone from "@/app-phone/assets/sounds/ringtone.wav";
 
-const emit = defineEmits(["call-ended", "ivr-input", "call-initiated"]);
+
 
 const dialedNumber = ref("");
 const callState = ref("idle"); // 'idle', 'ringing', 'talking'
@@ -140,8 +140,8 @@ const getSecrets = async () => {
     bullforcePstn.value = {};
   } finally {
     console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
-
-    callSipRegister();
+    console.log(`Sip registered called`);
+    // callSipRegister();
   }
 };
 
@@ -265,7 +265,6 @@ const hangupCall = () => {
     console.error("Hangup function not available");
   }
   callState.value = "idle";
-  emit("call-ended", dialedNumber.value);
 };
 
 const toggleMute = () => {
@@ -297,7 +296,6 @@ const toggleHold = () => {
 const addDigit = (digit) => {
   if (callState.value === "talking") {
     // IVR response - you can emit an event or handle IVR logic here
-    emit("ivr-input", digit);
     console.log("IVR input:", digit);
   } else if (callState.value === "idle") {
     console.log(`I am clicked : ${digit}`);
@@ -315,7 +313,6 @@ const removeDigit = () => {
 const makeCall = () => {
   if (dialedNumber.value && callState.value === "idle") {
     callState.value = "ringing";
-    emit("call-initiated", dialedNumber.value);
     try {
       if (typeof window.sipCall === "function") {
         window.sipCall("call-audio", dialedNumber.value);
