@@ -141,7 +141,7 @@ const getSecrets = async () => {
   } finally {
     console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
     console.log(`Sip registered called`);
-    // callSipRegister();
+    callSipRegister();
   }
 };
 
