@@ -1,0 +1,31 @@
+import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
+
+export const usePushNotification = () => {
+  const route = useRoute();
+  const router = useRouter();
+
+  const pushNotificationStore = usePushNotificationStore();
+
+  const DEFAULT_IMAGE_URL = ``;
+  const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
+  const FONT_SIZES = [
+    { title: "10px", value: 10 },
+    { title: "12px", value: 12 },
+    { title: "14px", value: 14 },
+    { title: "16px", value: 16 },
+    { title: "18px", value: 18 },
+  ];
+  const GRADIENT_DIRS = ["to right", "to bottom", "to top", "to left"];
+  const TEMPLATE_ALIGN = [
+    { title: "left to right", value: "left" },
+    { title: "right to left", value: "right" },
+  ];
+
+  return {
+    DEFAULT_IMAGE_URL,
+    DEFAULT_LOGO_URL,
+    FONT_SIZES,
+    GRADIENT_DIRS,
+    TEMPLATE_ALIGN,
+  };
+};

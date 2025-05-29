@@ -1,14 +1,21 @@
 <script setup>
+import MyColorPicker from "@app/components/Form/MyColorPicker.vue";
 import NotificationPreview from "@app/views/admin/push-notification/NotificationPreview.vue";
+import { usePushNotification } from "@app/views/admin/push-notification/usePushNotification";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 const { show } = inject("snackbar");
-
-const DEFAULT_IMAGE_URL = `https://media.licdn.com/dms/image/v2/D4D22AQFUmh8m0Xg9Iw/feedshare-shrink_800/B4DZX.a7mYH4Ag-/0/1743730228531?e=1748476800&v=beta&t=836J66x0qjuiwEVD7ZgCUCxLm8z7QI5JI3qD6y_4ROY`;
-const DEFAULT_LOGO_URL = `https://cdn.jsdelivr.net/gh/mehery-soccom/mehery-content@main/static/app/logo/bg-x-icon.png`;
 
 const route = useRoute();
 const router = useRouter();
 const pushNotificationStore = usePushNotificationStore();
+
+const {
+  DEFAULT_IMAGE_URL,
+  DEFAULT_LOGO_URL,
+  FONT_SIZES,
+  GRADIENT_DIRS,
+  TEMPLATE_ALIGN,
+} = usePushNotification();
 
 const tab = ref("tab-details");
 const isLoading = ref(false);
@@ -18,11 +25,31 @@ const template = reactive({
   desc: "",
   code: "",
   style: {
+    /** simple */
     title: "",
     message: "",
+    category: null,
+
     image_url: DEFAULT_IMAGE_URL,
     logo_url: DEFAULT_LOGO_URL,
-    category: null,
+
+    /** styled */
+    line_1: "",
+    line_2: "",
+    line_3: "",
+    line1_font_size: null,
+    line2_font_size: null,
+    line3_font_size: null,
+    line1_font_color: "",
+    line2_font_color: "",
+    line3_font_color: "",
+    bg_color: "",
+    bg_color_gradient: "",
+    bg_color_gradient_dir: null,
+    progress_color: "",
+    align: "left",
+
+    progress_percent: 0.25,
   },
 });
 const view = ref({
@@ -82,19 +109,30 @@ const onCreate = async () => {
   try {
     isLoading.value = true;
 
-    let payload = {
-      ...template,
-      options: {
-        buttons: buttonGroupFields.value.map((b) => ({
-          button_id: b.id,
-          button_text: b.text,
-          button_url: buttonGroupValue.value[b.text],
-        })),
-      },
-      model: {
-        data: {},
-      },
-    };
+    let payload = {};
+    if (payload.type === "simple") {
+      payload = {
+        ...template,
+        options: {
+          buttons: buttonGroupFields.value.map((b) => ({
+            button_id: b.id,
+            button_text: b.text,
+            button_url: buttonGroupValue.value[b.text],
+          })),
+        },
+        model: {
+          data: {},
+        },
+      };
+    } else {
+      payload = {
+        ...template,
+        options: {},
+        model: {
+          data: {},
+        },
+      };
+    }
 
     await pushNotificationStore.createTemplate(payload);
 
@@ -141,103 +179,230 @@ watch(
               <VWindowItem value="tab-details">
                 <VForm>
                   <VRow>
-                    <VCol cols="12" md="6">
-                      <AppSelect
-                        v-model="template.type"
-                        :items="[
-                          { label: 'Simple', value: 'simple' },
-                          { label: 'Styled', value: 'styled' },
-                        ]"
-                        label="Type"
-                        placeholder="Select Type"
-                        item-title="label"
-                        item-value="value"
-                      />
-                    </VCol>
+                    <VCol cols="12" md="12">
+                      <VRow>
+                        <VCol cols="12" md="6">
+                          <AppSelect
+                            v-model="template.type"
+                            :items="[
+                              { label: 'Simple', value: 'simple' },
+                              { label: 'Styled', value: 'styled' },
+                            ]"
+                            label="Type"
+                            placeholder="Select Type"
+                            item-title="label"
+                            item-value="value"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="6">
-                      <AppSelect
-                        v-if="template.type === 'styled'"
-                        v-model="template.subType"
-                        :items="[{ label: 'Delivery', value: 'delivery' }]"
-                        label="Sub Type"
-                        placeholder="Select Sub Type"
-                        item-title="label"
-                        item-value="value"
-                      />
-                    </VCol>
+                        <VCol cols="12" md="6">
+                          <AppSelect
+                            v-if="template.type === 'styled'"
+                            v-model="template.subType"
+                            :items="[{ label: 'Delivery', value: 'delivery' }]"
+                            label="Sub Type"
+                            placeholder="Select Sub Type"
+                            item-title="label"
+                            item-value="value"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="6">
-                      <AppTextField
-                        v-model="template.desc"
-                        label="Description"
-                        placeholder="Enter Description"
-                      />
-                    </VCol>
+                        <VCol cols="12" md="6">
+                          <AppTextField
+                            v-model="template.desc"
+                            label="Description"
+                            placeholder="Enter Description"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="6">
-                      <AppTextField
-                        v-model="template.code"
-                        label="Code"
-                        placeholder="Enter Code"
-                      />
+                        <VCol cols="12" md="6">
+                          <AppTextField
+                            v-model="template.code"
+                            label="Code"
+                            placeholder="Enter Code"
+                          />
+                        </VCol>
+                      </VRow>
                     </VCol>
 
                     <VDivider class="mt-4" />
 
                     <VCol cols="12" md="12">
-                      <AppTextField
-                        v-model="template.style.title"
-                        label="Title"
-                        placeholder="Enter Notification Title"
-                      />
-                    </VCol>
+                      <VRow v-if="template.type === 'simple'">
+                        <VCol cols="12" md="12">
+                          <AppTextField
+                            v-model="template.style.title"
+                            label="Title"
+                            placeholder="Enter Notification Title"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="12">
-                      <AppTextarea
-                        v-model="template.style.message"
-                        label="Message"
-                        placeholder="Enter Notification Message"
-                      />
-                    </VCol>
+                        <VCol cols="12" md="12">
+                          <AppTextarea
+                            v-model="template.style.message"
+                            label="Message"
+                            placeholder="Enter Notification Message"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="12">
-                      <AppTextField
-                        v-model="template.style.logo_url"
-                        label="Logo URL ( public )"
-                      />
-                    </VCol>
+                        <VCol cols="12" md="12">
+                          <AppTextField
+                            v-model="template.style.logo_url"
+                            label="Logo URL ( public )"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="12">
-                      <AppTextField
-                        v-model="template.style.image_url"
-                        label="Image URL ( public )"
-                      />
-                    </VCol>
+                        <VCol cols="12" md="12">
+                          <AppTextField
+                            v-model="template.style.image_url"
+                            label="Image URL ( public )"
+                          />
+                        </VCol>
 
-                    <VCol cols="12" md="6">
-                      <AppSelect
-                        v-model="template.style.category"
-                        :items="pushNotificationStore.buttonGroupList"
-                        label="CTA Group"
-                        placeholder="Select Button Group"
-                        item-title="label"
-                        item-value="value"
-                        clearable
-                      />
-                    </VCol>
+                        <VCol cols="12" md="6">
+                          <AppSelect
+                            v-model="template.style.category"
+                            :items="pushNotificationStore.buttonGroupList"
+                            label="CTA Group"
+                            placeholder="Select Button Group"
+                            item-title="label"
+                            item-value="value"
+                            clearable
+                          />
+                        </VCol>
 
-                    <VCol
-                      cols="12"
-                      md="12"
-                      v-if="buttonGroupFields.length"
-                      v-for="b in buttonGroupFields"
-                    >
-                      <AppTextField
-                        v-model="buttonGroupValue[b.text]"
-                        :label="'Button > ' + b.text"
-                        placeholder="Enter URL"
-                      />
+                        <VCol
+                          cols="12"
+                          md="12"
+                          v-if="buttonGroupFields.length"
+                          v-for="b in buttonGroupFields"
+                        >
+                          <AppTextField
+                            v-model="buttonGroupValue[b.text]"
+                            :label="'Button > ' + b.text"
+                            placeholder="Enter URL"
+                          />
+                        </VCol>
+                      </VRow>
+
+                      <VRow v-else>
+                        <!-- Line 1 -->
+                        <VCol cols="12" md="7">
+                          <AppTextField
+                            v-model="template.style.line_1"
+                            label="Title"
+                            placeholder="Enter Title"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="2">
+                          <AppSelect
+                            v-model="template.style.line1_font_size"
+                            :items="FONT_SIZES"
+                            label="Font Size"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="3">
+                          <MyColorPicker
+                            v-model="template.style.line1_font_color"
+                            label="Font Color"
+                          />
+                        </VCol>
+
+                        <!-- Line 2 -->
+                        <VCol cols="12" md="7">
+                          <AppTextField
+                            v-model="template.style.line_2"
+                            label="Text"
+                            placeholder="Enter Text"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="2">
+                          <AppSelect
+                            v-model="template.style.line2_font_size"
+                            :items="FONT_SIZES"
+                            label="Font Size"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="3">
+                          <MyColorPicker
+                            v-model="template.style.line2_font_color"
+                            label="Font Color"
+                          />
+                        </VCol>
+
+                        <!-- Line 3 -->
+                        <VCol cols="12" md="7">
+                          <AppTextField
+                            v-model="template.style.line_3"
+                            label="Message"
+                            placeholder="Enter Message"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="2">
+                          <AppSelect
+                            v-model="template.style.line3_font_size"
+                            :items="FONT_SIZES"
+                            label="Font Size"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="3">
+                          <MyColorPicker
+                            v-model="template.style.line3_font_color"
+                            label="Font Color"
+                          />
+                        </VCol>
+
+                        <!-- Images -->
+                        <VCol cols="12" md="12">
+                          <AppTextField
+                            v-model="template.style.logo_url"
+                            label="Logo URL ( public )"
+                          />
+                        </VCol>
+                        <VCol cols="12" md="12">
+                          <AppTextField
+                            v-model="template.style.image_url"
+                            label="Image URL ( public )"
+                          />
+
+                          <!-- Background -->
+                        </VCol>
+
+                        <!-- Backgroud -->
+                        <VCol cols="12" md="3"
+                          ><MyColorPicker
+                            v-model="template.style.bg_color"
+                            label="Background Color"
+                        /></VCol>
+                        <VCol cols="12" md="3">
+                          <MyColorPicker
+                            v-model="template.style.bg_color_gradient"
+                            label="Gradient Color"
+                        /></VCol>
+                        <VCol cols="12" md="3"
+                          ><AppSelect
+                            v-model="template.style.bg_color_gradient_dir"
+                            :items="GRADIENT_DIRS"
+                            label="Gradient Direction"
+                        /></VCol>
+                        <VCol cols="12" md="3"></VCol>
+
+                        <!-- Progress Bar -->
+                        <VCol cols="12" md="3"
+                          ><MyColorPicker
+                            v-model="template.style.progress_color"
+                            label="Progress Color"
+                        /></VCol>
+                        <VCol cols="12" md="9"></VCol>
+
+                        <!-- Alignment -->
+                        <VCol cols="12" md="4"
+                          ><AppSelect
+                            v-model="template.style.align"
+                            :items="TEMPLATE_ALIGN"
+                            label="Direction"
+                        /></VCol>
+                      </VRow>
                     </VCol>
                   </VRow>
                 </VForm>

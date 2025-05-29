@@ -199,7 +199,5 @@ const onSend = async () => {
   top: 0;
   right: 0;
   padding: 0.5rem;
-  display: flex;
-  justify-content: center;
 }
 </style>
