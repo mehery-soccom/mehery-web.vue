@@ -161,7 +161,7 @@ function sipRegister(bullforcePstn) {
   console.log("txtWebsocketServerUrl", txtWebsocketServerUrl.value);
   btnRegister.disabled = true;
   */
-  sipURI = bullforcePstn.FS_IMPU.toString();
+  sipURI = bullforcePstn.FS_IMPU;
   // sipURI = document.getElementById('impu').value;
   const StackInitialize = {
     // realm: 'conf.nitoville.com', // mandatory: domain name
@@ -179,33 +179,33 @@ function sipRegister(bullforcePstn) {
     // websocket_proxy_url: document.getElementById('websocket_proxy_url').value,
     // outbound_proxy_url: document.getElementById('outbound_proxy_url').value,
     // ice_servers: document.getElementById('ice_servers').value,
-    // enable_rtcweb_breaker: document.getElementById('enable_rtcweb_breaker').value, // optional
-    // enable_media_stream_cache: document.getElementById('enable_media_stream_cache').value, // optional
+    
     realm:  bullforcePstn.FS_REALM,  // "lcc-default", // mandatory: domain name
-    impi: bullforcePstn.FS_IMPI.toString(), // mandatory: authorization name (IMS Private Identity)
+    impi: bullforcePstn.FS_IMPI, // mandatory: authorization name (IMS Private Identity)
     impu: bullforcePstn.FS_IMPU, // mandatory: valid SIP Uri (IMS Public Identity)
-    password: bullforcePstn.FS_SECRET.toString(), // optional
+    password: bullforcePstn.FS_SECRET, // optional
     display_name:  bullforcePstn.FS_DISPLAY, // optional
     websocket_proxy_url: bullforcePstn.FS_WS_PROXY_URL_INT,
-    outbound_proxy_url: bullforcePstn.FS_WS_PROXY_URL_EXT,
+    // outbound_proxy_url: bullforcePstn.FS_WS_PROXY_URL_EXT,
+    outbound_proxy_url: bullforcePstn.FS_OUTBOUND_PROXY_URL,
     ice_servers: bullforcePstn.FS_ICE_SERVERS,
-    enable_rtcweb_breaker: true, // optional
-    enable_media_stream_cache: true, // optional
     events_listener: { events: "*", listener: onSipEventStack }, // optional: '*' means all events
     sip_headers: [
       // optional
       { name: "User-Agent", value: "IM-client/OMA1.0 sipML5-v1.0.0.0" },
       { name: "Organization", value: "PRABHAT SERVICES" },
     ],
+    enable_rtcweb_breaker: "on", // optional
+    enable_media_stream_cache: "on", // optional
   }
   // console.log("Stack Initialize : ",StackInitialize);
   oSipStack = new SIPml.Stack(StackInitialize);
+  oSipStack.start();
   window.sipEventBridge.emit('registrationAttempt', {
     impu: bullforcePstn.FS_IMPU,
     realm: bullforcePstn.FS_REALM,
     timestamp: new Date().toISOString()
-  });
-  oSipStack.start();
+  }); 
 }
 
 // Mute or Unmute the call
