@@ -1,4 +1,6 @@
 <script setup>
+import { usePushNotification } from "@app/views/admin/push-notification/usePushNotification";
+
 const props = defineProps({
   template: {
     type: Object,
@@ -9,6 +11,36 @@ const props = defineProps({
 const showNotification = ref(false);
 const currentTime = ref("");
 const currentDate = ref("");
+const intervalId = ref(null);
+const { TEMPLATES_CONFIG } = usePushNotification();
+const templateConfig = computed(() => {
+  let r =
+    TEMPLATES_CONFIG[props.template.type][
+      props.template.subType || "default"
+    ] || {};
+  return r;
+});
+const backgroundStyle = computed(() => {
+  let r = props.template.style.bg_color;
+  if (props.template.style.bg_color_gradient) {
+    r = `linear-gradient(${props.template.style.bg_color_gradient_dir}, ${props.template.style.bg_color}, ${props.template.style.bg_color_gradient})`;
+  }
+  return r;
+});
+
+onMounted(() => {
+  initClock();
+  loadNotification();
+});
+
+onUnmounted(() => {
+  clearInterval(intervalId.value);
+});
+
+const initClock = () => {
+  updateClock();
+  intervalId.value = setInterval(updateClock, 30000);
+};
 
 const updateClock = () => {
   const now = new Date();
@@ -23,26 +55,17 @@ const updateClock = () => {
   });
 };
 
-onMounted(() => {
-  updateClock();
-  setInterval(updateClock, 30000);
-  showNotification.value = true;
-});
+const loadNotification = () => {
+  showNotification.value = false;
+  setTimeout(() => (showNotification.value = true), 100);
+};
 
 watch(
-  () => props.template.view.platform,
+  props.template.view,
   () => {
-    showNotification.value = false;
-    setTimeout(() => (showNotification.value = true), 100);
-  }
-);
-
-watch(
-  () => props.template.view.mode,
-  () => {
-    showNotification.value = false;
-    setTimeout(() => (showNotification.value = true), 100);
-  }
+    loadNotification();
+  },
+  { deep: true }
 );
 </script>
 
@@ -87,7 +110,7 @@ watch(
     <!-- Notification Preview -->
     <transition name="fade-slide">
       <div
-        v-if="showNotification"
+        v-if="showNotification && template.type === 'simple'"
         :class="['notification-preview', template.view.platform]"
       >
         <div :class="[template.view.platform + '-content']">
@@ -96,7 +119,7 @@ watch(
               v-if="template.style.logo_url"
               class="notification-image"
               :src="template.style.logo_url"
-              alt="icon"
+              alt="logo"
             />
             <div class="notification-text">
               <div class="notification-title-time">
@@ -136,7 +159,7 @@ watch(
                     "
                     class="notification-previ-image"
                     :src="template.style.image_url"
-                    alt="icon"
+                    alt=""
                   />
                 </div>
               </div>
@@ -148,7 +171,7 @@ watch(
             <img
               v-if="template.style.image_url"
               :src="template.style.image_url"
-              alt="icon"
+              alt=""
             />
           </div>
 
@@ -172,6 +195,68 @@ watch(
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade-slide">
+      <div
+        v-if="showNotification && template.type === 'styled'"
+        class="preview-wrapper mt-3"
+        :style="{
+          background: backgroundStyle,
+          direction: template.style.align === 'right' ? 'rtl' : 'ltr',
+        }"
+      >
+        <div class="content">
+          <div
+            class="text-block"
+            :style="{
+              textAlign: template.style.align === 'right' ? 'right' : 'left',
+            }"
+          >
+            <div
+              class="line1 ellipsis"
+              :style="{
+                color: template.style.line1_font_color,
+                fontSize: template.style.line1_font_size + 'px',
+              }"
+            >
+              {{ template.style.line_1 || "Your title comes here" }}
+            </div>
+            <div
+              class="line2 ellipsis"
+              :style="{
+                color: template.style.line2_font_color,
+                fontSize: template.style.line2_font_size + 'px',
+              }"
+            >
+              {{ template.style.line_2 || "Your text comes here" }}
+            </div>
+            <div
+              class="line3 ellipsis"
+              :style="{
+                color: template.style.line3_font_color,
+                fontSize: template.style.line3_font_size + 'px',
+              }"
+            >
+              {{ template.style.line_3 || "Your message comes here" }}
+            </div>
+            <v-progress-linear
+              :color="template.style.progress_color"
+              height="4"
+              class="mt-2"
+              :model-value="40"
+              rounded
+              background-color="#ccc"
+            />
+          </div>
+          <img
+            v-if="template.style.image_url || templateConfig.image_url"
+            :src="template.style.image_url || templateConfig.image_url"
+            alt=""
+            class="notification-image"
+          />
         </div>
       </div>
     </transition>
@@ -298,103 +383,103 @@ watch(
   flex-direction: column;
   gap: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
 
-.notification-header {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
+  .notification-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
 
-.notification-image {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-}
+  .notification-image {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
 
-.notification-previ {
-  height: 30px;
-  // min-width: 30px;
-}
+  .notification-previ {
+    height: 30px;
+    // min-width: 30px;
+  }
 
-.notification-previ-image {
-  width: 30px;
-  height: 30px;
-  border-radius: 12px;
-}
+  .notification-previ-image {
+    width: 30px;
+    height: 30px;
+    border-radius: 12px;
+  }
 
-.notification-text {
-  flex: 1;
-}
+  .notification-text {
+    flex: 1;
+  }
 
-.notification-title-time {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  // margin-bottom: 4px;
-}
-.notification-message-previ {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  // margin-bottom: 4px;
-}
+  .notification-title-time {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    // margin-bottom: 4px;
+  }
+  .notification-message-previ {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    // margin-bottom: 4px;
+  }
 
-.notification-text .title {
-  font-weight: 600;
-  font-size: 15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 205px;
-}
+  .notification-text .title {
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 205px;
+  }
 
-.notification-text .message {
-  font-size: 13.5px;
-  color: #ddd;
-  line-height: 1.3;
-  display: -webkit-box;
-  line-clamp: 3;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .notification-text .message {
+    font-size: 13.5px;
+    color: #ddd;
+    line-height: 1.3;
+    display: -webkit-box;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.notification-time {
-  font-size: 12px;
-  color: #aaa;
-  white-space: nowrap;
-  width: 30px;
-  height: 22.5px;
-  text-align: center;
-}
+  .notification-time {
+    font-size: 12px;
+    color: #aaa;
+    white-space: nowrap;
+    width: 30px;
+    height: 22.5px;
+    text-align: center;
+  }
 
-.expanded-content {
-  margin-top: 12px;
-}
+  .expanded-content {
+    margin-top: 12px;
+  }
 
-.expanded-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
+  .expanded-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
 
-.cta-button {
-  width: 100%;
-  padding: 6px 12px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.long-preview {
-  img {
+  .cta-button {
     width: 100%;
-    height: 150px;
+    padding: 6px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .long-preview {
+    img {
+      width: 100%;
+      height: 150px;
+    }
   }
 }
 
@@ -423,6 +508,51 @@ watch(
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.preview-wrapper {
+  z-index: 2;
+  border-radius: 18px;
+  width: 92%;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background-color: rgba(30, 30, 30, 0.94);
+  color: white;
+  padding: 14px 16px;
+
+  .content {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+  .notification-image {
+    width: 30%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .text-block {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .line1,
+  .line2,
+  .line3 {
+    margin-bottom: 2px;
+  }
+  .ellipsis {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>

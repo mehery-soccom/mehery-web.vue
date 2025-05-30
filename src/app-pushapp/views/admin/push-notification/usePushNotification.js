@@ -20,6 +20,21 @@ export const usePushNotification = () => {
     { title: "left to right", value: "left" },
     { title: "right to left", value: "right" },
   ];
+  const TEMPLATES_CONFIG = {
+    simple: {
+      default: {
+        logo_url: DEFAULT_LOGO_URL,
+        image_url: "",
+      },
+    },
+    styled: {
+      delivery: {
+        logo_url: DEFAULT_LOGO_URL,
+        image_url:
+          "https://play-lh.googleusercontent.com/s0JLCfh27w6kxCd81YnGGZeGIc8KdKx_7d2QEZSlMdXPBYFsN8mAUzW9p1s47QCVGb4",
+      },
+    },
+  };
 
   return {
     DEFAULT_IMAGE_URL,
@@ -27,5 +42,6 @@ export const usePushNotification = () => {
     FONT_SIZES,
     GRADIENT_DIRS,
     TEMPLATE_ALIGN,
+    TEMPLATES_CONFIG,
   };
 };

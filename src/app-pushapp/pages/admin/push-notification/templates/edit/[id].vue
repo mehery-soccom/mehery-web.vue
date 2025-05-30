@@ -9,18 +9,13 @@ const route = useRoute();
 const router = useRouter();
 const pushNotificationStore = usePushNotificationStore();
 
-const {
-  DEFAULT_IMAGE_URL,
-  DEFAULT_LOGO_URL,
-  FONT_SIZES,
-  GRADIENT_DIRS,
-  TEMPLATE_ALIGN,
-} = usePushNotification();
+const { FONT_SIZES, GRADIENT_DIRS, TEMPLATE_ALIGN, TEMPLATES_CONFIG } =
+  usePushNotification();
 
 const tab = ref("tab-details");
 const isLoading = ref(false);
 const template = reactive({
-  type: "simple",
+  type: null,
   subType: null,
   desc: "",
   code: "",
@@ -30,8 +25,8 @@ const template = reactive({
     message: "",
     category: null,
 
-    image_url: DEFAULT_IMAGE_URL,
-    logo_url: DEFAULT_LOGO_URL,
+    image_url: "",
+    logo_url: "",
 
     /** styled */
     line_1: "",
@@ -48,8 +43,6 @@ const template = reactive({
     bg_color_gradient_dir: null,
     progress_color: "",
     align: "left",
-
-    progress_percent: 0.25,
   },
 });
 const view = ref({
