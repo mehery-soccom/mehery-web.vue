@@ -7,9 +7,9 @@ import dtmfTone from "@/app-phone/assets/sounds/dtmf.wav";
 import ringbacktone from "@/app-phone/assets/sounds/ringbacktone.wav";
 import ringtone from "@/app-phone/assets/sounds/ringtone.wav";
 
-
-
 const dialedNumber = ref("");
+const isCallHistory = ref(false);
+const isDialer = ref(true);
 const callState = ref("idle"); // 'idle', 'ringing', 'talking'
 const tenantPartitionKey = ref("kedar");
 const bullforcePstn = ref({
@@ -109,38 +109,39 @@ const cleanupSIPBridge = () => {
 };
 
 const getSecrets = async () => {
-  //   const response = await fetch(
-  //     "http://localhost:8090/nexus/phone/v1/register",
-  //     {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         tnt: tenantPartitionKey.value,
-  //       },
-  //     }
-  //   );
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
-  //   }
-
   try {
     const response = await axios.get("/v1/register", {
       headers: {
         tnt: tenantPartitionKey.value,
       },
     });
-    const data = response.data;
+    const data = await response.data;
+    // const response = await fetch(
+    //   // "http://localhost:8090/nexus/phone/v1/register",
+    //   "http://localhost:8090/scriptus/phone/v1/register",
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // const data = await response.json();
     bullforcePstn.value = {
       ...data.bullforcePstn,
       FS_DISPLAY: "kedar",
     };
   } catch (error) {
     console.error(error);
-
     bullforcePstn.value = {};
   } finally {
-    console.log(`bullforcePstn : ${JSON.stringify(bullforcePstn.value)}`);
-    console.log(`Sip registered called`);
+    console.log(`bullforcePstn : `, bullforcePstn.value);
+    bullforcePstn.value.FS_IMPI = bullforcePstn.value.FS_IMPI.toString();
+    bullforcePstn.value.FS_SECRET = bullforcePstn.value.FS_SECRET.toString();
+    bullforcePstn.value.FS_ICE_SERVERS = eval('(' + bullforcePstn.value.FS_ICE_SERVERS + ')');
+    console.log(`bullforcePstn changed : `, bullforcePstn.value);
+    console.log(`Sip register called`);
     callSipRegister();
   }
 };
@@ -298,9 +299,7 @@ const addDigit = (digit) => {
     // IVR response - you can emit an event or handle IVR logic here
     console.log("IVR input:", digit);
   } else if (callState.value === "idle") {
-    console.log(`I am clicked : ${digit}`);
     dialedNumber.value = `${dialedNumber.value}${digit}`;
-    console.log(dialedNumber.value);
   }
 };
 
@@ -459,28 +458,27 @@ const addPreloads = async () => {
   // Wait for all scripts to load
   await Promise.all(preloads.map((s) => loadScript(s.src)));
 };
-const addAudioElements = async () => {
-  for (const elementDef of audioElements) {
-    const { parentTagName, tagName, attrs } = elementDef;
-
-    const parent = document.querySelector(parentTagName);
-    if (!parent) continue;
-
-    const el = document.createElement(tagName);
-
-    for (const [key, value] of Object.entries(attrs)) {
-      if (value === "") {
-        el.setAttribute(key, ""); // For boolean attrs like loop
-      } else {
-        el.setAttribute(key, value);
-      }
-    }
-
-    parent.appendChild(el);
-  }
-};
+const openRecents = async () => {
+  isCallHistory.value = true;
+  isDialer.value = false;
+}
+const openDialer = async () => {
+  isCallHistory.value = false;
+  isDialer.value = true;
+}
+function handleKeydown(event) {
+  const allowedKeys = ['Backspace', 'Delete'];
+  const isDigit = /^[0-9]$/.test(event.key);
+  if(isDigit){
+    addDigit(event.key);
+  } else if (allowedKeys.includes(event.key)) {
+    // Do something for Backspace, Delete, or digit 0–9
+    removeDigit();
+  } 
+}
 // Lifecycle hooks
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown);
   console.log("Phone onMounted");
 
   await addPreloads();
@@ -495,6 +493,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
   cleanupSIPBridge();
 
   for (var i = 0; i < preloads.length; i++) {
@@ -519,203 +518,270 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="sip-client">
-    <audio id="audio-remote" autoplay="autoplay"></audio>
-    <audio id="ringtone" loop :src="ringtone"></audio>
-    <audio id="ringbacktone" loop :src="ringbacktone"></audio>
-    <audio id="dtmfTone" :src="dtmfTone"></audio>
-    <!-- <audio id="audio-remote" autoplay></audio>
-    <audio id="ringtone" loop src="../assets/sounds/ringtone.wav"></audio>
-    <audio id="ringbacktone" loop src="../assets/sounds/ringbacktone.wav"></audio>
-    <audio id="dtmfTone" src="../assets/sounds/dtmf.wav"></audio> -->
-    <!-- Registration Status -->
-    <div class="registration-status">
-      <p>Status: {{ registrationStatus }}</p>
-    </div>
-    <!-- Incoming Call Modal/Alert -->
-    <div v-if="incomingCall.show" class="incoming-call-overlay">
-      <div class="incoming-call-modal">
-        <h3>Incoming Call</h3>
-        <p class="caller-info">
-          <strong>From: {{ incomingCall.remoteNumber }}</strong>
-        </p>
-        <p class="call-time">{{ formatCallTime(incomingCall.timestamp) }}</p>
+  
+  <div class="container">
+    <div class="sip-client">
+      <audio id="audio-remote" autoplay="autoplay"></audio>
+      <audio id="ringtone" loop :src="ringtone"></audio>
+      <audio id="ringbacktone" loop :src="ringbacktone"></audio>
+      <audio id="dtmfTone" :src="dtmfTone"></audio>
+      <!-- Incoming Call Modal/Alert -->
+      <div v-if="incomingCall.show" class="incoming-call-overlay">
+        <div class="incoming-call-modal">
+          <h3>Incoming Call</h3>
+          <p class="caller-info">
+            <strong>From: {{ incomingCall.remoteNumber }}</strong>
+          </p>
+          <p class="call-time">{{ formatCallTime(incomingCall.timestamp) }}</p>
 
-        <div class="call-actions">
-          <button
-            @click="answerCall"
-            class="btn btn-success answer-btn"
-            :disabled="callProcessing"
-          >
-            <span v-if="!callProcessing">📞 Answer</span>
-            <span v-else>Connecting...</span>
+          <div class="call-actions">
+            <button
+              @click="answerCall"
+              class="btn btn-success answer-btn"
+              :disabled="callProcessing"
+            >
+              <span v-if="!callProcessing">📞 Answer</span>
+              <span v-else>Connecting...</span>
+            </button>
+
+            <button
+              @click="rejectCall"
+              class="btn btn-danger reject-btn"
+              :disabled="callProcessing"
+            >
+              <span v-if="!callProcessing">❌ Reject</span>
+              <span v-else>Rejecting...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Call Status -->
+      <div v-if="activeCall.show" class="active-call-status">
+        <h4>Call Active</h4>
+
+        <p>Connected to: {{ activeCall.remoteNumber }}</p>
+        <p>Duration: {{ callDuration }}</p>
+
+        <div class="call-controls">
+          <button @click="hangupCall" class="btn btn-danger">📞 Hang Up</button>
+          <button @click="toggleMute" class="btn btn-secondary">
+            {{ isMuted ? "🔊 Unmute" : "🔇 Mute" }}
           </button>
-
-          <button
-            @click="rejectCall"
-            class="btn btn-danger reject-btn"
-            :disabled="callProcessing"
-          >
-            <span v-if="!callProcessing">❌ Reject</span>
-            <span v-else>Rejecting...</span>
+          <button @click="toggleHold" class="btn btn-secondary">
+            {{ isOnHold ? "▶️ Resume" : "⏸️ Hold" }}
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Active Call Status -->
-    <div v-if="activeCall.show" class="active-call-status">
-      <h4>Call Active</h4>
-
-      <p>Connected to: {{ activeCall.remoteNumber }}</p>
-      <p>Duration: {{ callDuration }}</p>
-
-      <div class="call-controls">
-        <button @click="hangupCall" class="btn btn-danger">📞 Hang Up</button>
-        <button @click="toggleMute" class="btn btn-secondary">
-          {{ isMuted ? "🔊 Unmute" : "🔇 Mute" }}
-        </button>
-        <button @click="toggleHold" class="btn btn-secondary">
-          {{ isOnHold ? "▶️ Resume" : "⏸️ Hold" }}
-        </button>
+      <!-- Call History -->
+      <div class="call-history" v-if="isCallHistory">
+        <h4>Recent Calls</h4>
+        <ul>
+          <li v-for="call in callHistory" :key="call.id">
+            {{ call.remoteNumber }} - {{ call.status }} -
+            {{ formatCallTime(call.timestamp) }}
+          </li>
+        </ul>
       </div>
-    </div>
-    <!-- Call History -->
-    <div class="call-history">
-      <h4>Recent Calls</h4>
-      <ul>
-        <li v-for="call in callHistory" :key="call.id">
-          {{ call.remoteNumber }} - {{ call.status }} -
-          {{ formatCallTime(call.timestamp) }}
+      <div class="dialer-container" v-if="isDialer">
+        <!-- Registration Status -->
+        <div class="registration-status">
+          <p>Status: {{ registrationStatus }}</p>
+        </div>
+        <div class="display">
+          <div class="number-display">{{ dialedNumber }}</div>
+          <div class="status-display" :class="statusClass">
+            {{ statusText }}
+          </div>
+        </div>
+        <div class="keypad">
+          <div class="keypad-row">
+            <button
+              class="key-button"
+              @click="addDigit('1')"
+              :disabled="!canUseKeypad"
+            >
+              1
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('2')"
+              :disabled="!canUseKeypad"
+            >
+              2
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('3')"
+              :disabled="!canUseKeypad"
+            >
+              3
+            </button>
+          </div>
+
+          <div class="keypad-row">
+            <button
+              class="key-button"
+              @click="addDigit('4')"
+              :disabled="!canUseKeypad"
+            >
+              4
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('5')"
+              :disabled="!canUseKeypad"
+            >
+              5
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('6')"
+              :disabled="!canUseKeypad"
+            >
+              6
+            </button>
+          </div>
+
+          <div class="keypad-row">
+            <button
+              class="key-button"
+              @click="addDigit('7')"
+              :disabled="!canUseKeypad"
+            >
+              7
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('8')"
+              :disabled="!canUseKeypad"
+            >
+              8
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('9')"
+              :disabled="!canUseKeypad"
+            >
+              9
+            </button>
+          </div>
+
+          <div class="keypad-row">
+            <button
+              class="key-button"
+              @click="addDigit('+')"
+              :disabled="!canUseKeypad"
+            >
+              +
+            </button>
+            <button
+              class="key-button"
+              @click="addDigit('0')"
+              :disabled="!canUseKeypad"
+            >
+              0
+            </button>
+            <button
+              class="key-button backspace"
+              @click="removeDigit"
+              :disabled="callState !== 'idle'"
+            >
+              ⌫
+            </button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button
+            class="action-button call-button"
+            @click="makeCall"
+            :disabled="callState === 'ringing' || !dialedNumber"
+          >
+            📞 Call
+          </button>
+
+          <button
+            class="action-button hangup-button"
+            @click="hangupCall"
+            :disabled="callState === 'idle'"
+          >
+            📱 Hang Up
+          </button>
+        </div>
+      </div>
+      <ul class="tab-nav-container">
+        <li class="tab tab-purple active" @click="openDialer">
+          <p>Dialer</p>
         </li>
+        <li class="tab tab-pink" @click="openRecents">
+          <p>Recents</p>
+        </li>
+        <!-- <li class="tab tab-yellow">
+          <p></p>
+        </li> -->
       </ul>
-    </div>
-    <div class="dialer-container">
-      <div class="display">
-        <div class="number-display">{{ dialedNumber }}</div>
-        <div class="status-display" :class="statusClass">{{ statusText }}</div>
-      </div>
-
-      <div class="keypad">
-        <div class="keypad-row">
-          <button
-            class="key-button"
-            @click="addDigit('1')"
-            :disabled="!canUseKeypad"
-          >
-            1
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('2')"
-            :disabled="!canUseKeypad"
-          >
-            2
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('3')"
-            :disabled="!canUseKeypad"
-          >
-            3
-          </button>
-        </div>
-
-        <div class="keypad-row">
-          <button
-            class="key-button"
-            @click="addDigit('4')"
-            :disabled="!canUseKeypad"
-          >
-            4
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('5')"
-            :disabled="!canUseKeypad"
-          >
-            5
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('6')"
-            :disabled="!canUseKeypad"
-          >
-            6
-          </button>
-        </div>
-
-        <div class="keypad-row">
-          <button
-            class="key-button"
-            @click="addDigit('7')"
-            :disabled="!canUseKeypad"
-          >
-            7
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('8')"
-            :disabled="!canUseKeypad"
-          >
-            8
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('9')"
-            :disabled="!canUseKeypad"
-          >
-            9
-          </button>
-        </div>
-
-        <div class="keypad-row">
-          <button
-            class="key-button"
-            @click="addDigit('+')"
-            :disabled="!canUseKeypad"
-          >
-            +
-          </button>
-          <button
-            class="key-button"
-            @click="addDigit('0')"
-            :disabled="!canUseKeypad"
-          >
-            0
-          </button>
-          <button
-            class="key-button backspace"
-            @click="removeDigit"
-            :disabled="callState !== 'idle'"
-          >
-            ⌫
-          </button>
-        </div>
-      </div>
-
-      <div class="action-buttons">
-        <button
-          class="action-button call-button"
-          @click="makeCall"
-          :disabled="callState === 'ringing' || !dialedNumber"
-        >
-          📞 Call
-        </button>
-
-        <button
-          class="action-button hangup-button"
-          @click="hangupCall"
-          :disabled="callState === 'idle'"
-        >
-          📱 Hang Up
-        </button>
-      </div>
     </div>
   </div>
 </template>
 
 <style>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  height: 100vh;
+}
+.tab-nav-container {
+  display: flex;
+  justify-content: space-between;
+
+  /* width: 450px; */
+  margin: 0;
+  padding: 30px;
+  background: #fff;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  border-bottom-right-radius: 30px;
+  border-bottom-left-radius: 30px;
+  list-style: none;
+}
+
+.tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+
+  border-radius: 50px;
+  cursor: pointer;
+}
+
+.tab-purple {
+  background-color: #ce93d8;
+  color: #4a148c;
+}
+
+.tab-pink {
+  background-color: #f8bbd0;
+  color: #880e4f;
+}
+
+.tab-yellow {
+  background-color: #ffe082;
+  color: #f57f17;
+}
+
+.tab p {
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  overflow: hidden;
+  max-width: 0;
+  margin-left: 10px;
+  max-width: 200px;
+  transition: max-width 0.4s linear;
+}
 .call-history {
   margin-top: 30px;
 }
@@ -741,7 +807,7 @@ onBeforeUnmount(() => {
   margin-top: 15px;
 }
 .sip-client {
-  max-width: 600px;
+  max-width: 360px;
   margin: 0 auto;
   padding: 20px;
 }
