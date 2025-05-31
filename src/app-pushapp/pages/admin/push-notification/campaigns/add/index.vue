@@ -4,6 +4,7 @@ import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 const { show } = inject("snackbar");
 
+/*
 const DEFAULT_TEST_NOTIFICATION = {
   data: `{
     "progress_percent": "0.25"
@@ -13,6 +14,7 @@ const DEFAULT_TEST_NOTIFICATION = {
   user_id: "",
   activity_id: "",
 };
+*/
 
 const route = useRoute();
 const router = useRouter();
@@ -27,12 +29,16 @@ const notification = reactive({
   channel_id: null,
   platforms: [],
 });
+/*
 const testNotification = reactive({
   ...DEFAULT_TEST_NOTIFICATION,
 });
+*/
 const ChannelList = ref([]);
 const TemplateListSimple = ref([]);
+/*
 const TemplateListStyled = ref([]);
+*/
 
 onMounted(async () => {
   let channelsRes = await channelsStore.fetchChannels();
@@ -42,9 +48,11 @@ onMounted(async () => {
   TemplateListSimple.value = templatesRes.results.filter(
     (t) => t.type === "simple"
   );
+  /*
   TemplateListStyled.value = templatesRes.results.filter(
     (t) => t.type === "styled"
   );
+  */
 
   const copy = route.query.copy;
   if (copy) {
@@ -97,6 +105,7 @@ const onSendSimple = async () => {
   }
 };
 
+/*
 const onSendStyled = async (update) => {
   try {
     isLoading.value = true;
@@ -134,10 +143,10 @@ const onSendStyled = async (update) => {
 
     let res = await pushNotificationStore.sendSingle(payload);
     if (update) {
-      show({ message: "Notification sent successfully", color: "success" });
+      show({ message: "Notification updated successfully", color: "success" });
     } else {
       testNotification.activity_id = res.data.activity_id;
-      show({ message: "Notification updated successfully", color: "success" });
+      show({ message: "Notification sent successfully", color: "success" });
     }
   } catch (error) {
     console.error(error);
@@ -151,6 +160,7 @@ const onSendStyled = async (update) => {
 const onDialogChange = (val) => {
   if (!val) Object.assign(testNotification, DEFAULT_TEST_NOTIFICATION);
 };
+*/
 </script>
 
 <template>
@@ -158,7 +168,7 @@ const onDialogChange = (val) => {
     <!-- Form Column -->
     <v-col cols="12" md="7">
       <v-card title="Push Notification">
-        <template v-slot:append>
+        <!-- <template v-slot:append>
           <v-tooltip text="Test">
             <template #activator="{ props }">
               <v-btn
@@ -167,7 +177,6 @@ const onDialogChange = (val) => {
                 @click="handleTestClick"
                 density="compact"
               >
-                <!-- <v-icon size="16">mdi-run-fast</v-icon> -->
                 <v-icon size="16">mdi-monitor-eye</v-icon>
               </v-btn>
             </template>
@@ -259,7 +268,7 @@ const onDialogChange = (val) => {
               </v-card>
             </template>
           </v-dialog>
-        </template>
+        </template> -->
 
         <VTabs v-model="tab">
           <VTab value="tab-details"> Details </VTab>
