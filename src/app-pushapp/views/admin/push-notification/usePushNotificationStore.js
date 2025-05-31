@@ -107,6 +107,14 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
       return axios.post("/api/send-notification-bulk", params);
     },
 
+    // 👉 Send Single Notification
+    sendSingle(params) {
+      return axios.post(
+        `/api/live-activity/${params.activity_id ? "start" : "update"}`,
+        params
+      );
+    },
+
     // 👉 Fetch all Templates
     async fetchTemplates() {
       let apiRes = await axios.get("/api/templates");
