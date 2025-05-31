@@ -60,6 +60,23 @@ const loadNotification = () => {
   setTimeout(() => (showNotification.value = true), 100);
 };
 
+function getValueByPath(obj, path) {
+  return path
+    .split(".")
+    .reduce(
+      (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+      obj
+    );
+}
+
+function _bind(template) {
+  let data = props.template?.model?.data || {};
+  return template.replace(/{{\s*data\.([\w$.]+)\s*}}/g, (_, path) => {
+    const value = getValueByPath(data, path);
+    return value !== undefined ? value : `{{data.${path}}}`;
+  });
+}
+
 watch(
   props.template.view,
   () => {
@@ -123,31 +140,32 @@ watch(
             />
             <div class="notification-text">
               <div class="notification-title-time">
-                <div class="title" :title="template.style.title">
+                <div class="title">
                   {{
-                    (template.style.title || "Your title comes here").slice(
-                      0,
-                      40
-                    )
-                  }}{{ (template.style.title || "").length > 40 ? "..." : "" }}
+                    (
+                      _bind(template.style.title) || "Your title comes here"
+                    ).slice(0, 40)
+                  }}{{
+                    (_bind(template.style.title) || "").length > 40 ? "..." : ""
+                  }}
                 </div>
                 <div class="notification-time">now</div>
               </div>
               <div class="notification-message-previ">
                 <div
                   class="message"
-                  :title="template.style.message"
                   :style="
                     template.view.mode === 'collapse' ? 'max-width:205px' : ''
                   "
                 >
                   {{
-                    (template.style.message || "Your message comes here").slice(
-                      0,
-                      90
-                    )
+                    (
+                      _bind(template.style.message) || "Your message comes here"
+                    ).slice(0, 90)
                   }}{{
-                    (template.style.message || "").length > 90 ? "..." : ""
+                    (_bind(template.style.message) || "").length > 90
+                      ? "..."
+                      : ""
                   }}
                 </div>
 
@@ -222,7 +240,7 @@ watch(
                 fontSize: template.style.line1_font_size + 'px',
               }"
             >
-              {{ template.style.line_1 || "Your title comes here" }}
+              {{ _bind(template.style.line_1) || "Your title comes here" }}
             </div>
             <div
               class="line2 ellipsis"
@@ -231,7 +249,7 @@ watch(
                 fontSize: template.style.line2_font_size + 'px',
               }"
             >
-              {{ template.style.line_2 || "Your text comes here" }}
+              {{ _bind(template.style.line_2) || "Your text comes here" }}
             </div>
             <div
               class="line3 ellipsis"
@@ -240,7 +258,7 @@ watch(
                 fontSize: template.style.line3_font_size + 'px',
               }"
             >
-              {{ template.style.line_3 || "Your message comes here" }}
+              {{ _bind(template.style.line_3) || "Your message comes here" }}
             </div>
             <v-progress-linear
               :color="template.style.progress_color"
