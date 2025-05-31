@@ -110,7 +110,7 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
     // 👉 Send Single Notification
     sendSingle(params) {
       return axios.post(
-        `/api/live-activity/${params.activity_id ? "start" : "update"}`,
+        `/api/live-activity/${params.activity_id ? "update" : "start"}`,
         params
       );
     },

@@ -24,12 +24,12 @@ const testNotification = reactive({
 });
 const headers = [
   {
-    title: "Template",
-    key: "code",
+    title: "Name",
+    key: "desc",
   },
   {
-    title: "Description",
-    key: "desc",
+    title: "Code",
+    key: "code",
   },
   {
     title: "Type",
@@ -210,7 +210,7 @@ const deleteTemplate = (id, dialogCloseRef) => {
 
         <IconBtn v-if="item.raw.type === 'styled'">
           <VIcon icon="mdi-monitor-eye" />
-          <VTooltip activator="parent">Live Activity</VTooltip>
+          <VTooltip activator="parent">Test</VTooltip>
           <v-dialog
             activator="parent"
             transition="dialog-bottom-transition"

@@ -153,9 +153,9 @@ watch(
 <template>
   <v-row>
     <!-- template Column -->
-    <v-col cols="12" md="7">
+    <v-col cols="12" md="8" class="template-form">
       <v-card>
-        <v-card-item>
+        <v-card-item class="pb-0">
           <v-card-title>Create Template</v-card-title>
           <v-card-subtitle
             >This template will be used for sending Push
@@ -204,8 +204,8 @@ watch(
                         <VCol cols="12" md="6">
                           <AppTextField
                             v-model="template.desc"
-                            label="Description"
-                            placeholder="Enter Description"
+                            label="Name"
+                            placeholder="Enter Name"
                           />
                         </VCol>
 
@@ -423,15 +423,15 @@ watch(
     </v-col>
 
     <!-- Preview Column -->
-    <VCol cols="12" md="5">
+    <VCol cols="12" md="4">
       <VRow>
-        <v-col cols="6" class="d-flex justify-center">
+        <v-col cols="5" class="px-0">
           <v-btn-toggle v-model="view.platform" mandatory density="compact">
             <v-btn value="ios">iOS</v-btn>
             <v-btn value="android">Android</v-btn>
           </v-btn-toggle>
         </v-col>
-        <v-col cols="6">
+        <v-col cols="7" class="pl-3">
           <v-btn-toggle v-model="view.mode" mandatory density="compact">
             <v-btn value="collapse">Collapse</v-btn>
             <v-btn value="expand">Expand</v-btn>
@@ -439,7 +439,7 @@ watch(
         </v-col>
       </VRow>
       <VRow>
-        <v-col cols="12" class="d-flex justify-center">
+        <v-col cols="12" class="d-flex justify-center pt-0">
           <NotificationPreview :template="templatePreview" />
         </v-col>
       </VRow>
@@ -447,4 +447,9 @@ watch(
   </v-row>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.template-form {
+  height: 688px;
+  overflow: scroll;
+}
+</style>

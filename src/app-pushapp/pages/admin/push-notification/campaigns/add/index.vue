@@ -166,7 +166,7 @@ const onDialogChange = (val) => {
 <template>
   <v-row>
     <!-- Form Column -->
-    <v-col cols="12" md="7">
+    <v-col cols="12" md="8">
       <v-card title="Push Notification">
         <!-- <template v-slot:append>
           <v-tooltip text="Test">
