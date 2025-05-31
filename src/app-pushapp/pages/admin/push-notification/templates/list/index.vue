@@ -1,5 +1,6 @@
 <script setup>
 import MyDataTable from "@/@common/components/MyDataTable.vue";
+import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 const { show } = inject("snackbar");
 
@@ -12,10 +13,12 @@ const DEFAULT_TEST_NOTIFICATION = {
   activity_id: "",
 };
 
+const channelsStore = useChannelsStore();
 const pushNotificationStore = usePushNotificationStore();
 const isLoading = ref(false);
 const items = ref([]);
 // const totalItems = ref(0);
+const ChannelList = ref([]);
 const testNotification = reactive({
   ...DEFAULT_TEST_NOTIFICATION,
 });
@@ -40,6 +43,9 @@ const headers = [
 ];
 
 onMounted(async () => {
+  let channelsRes = await channelsStore.fetchChannels();
+  ChannelList.value = channelsRes.results;
+
   fetchTemplates();
 });
 
