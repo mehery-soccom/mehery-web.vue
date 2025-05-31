@@ -103,7 +103,7 @@ const onCreate = async () => {
     isLoading.value = true;
 
     let payload = {};
-    if (payload.type === "simple") {
+    if (template.type === "simple") {
       payload = {
         ...template,
         options: {
