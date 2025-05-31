@@ -202,7 +202,7 @@ watch(
     <transition name="fade-slide">
       <div
         v-if="showNotification && template.type === 'styled'"
-        class="preview-wrapper mt-3"
+        class="preview-wrapper"
         :style="{
           background: backgroundStyle,
           direction: template.style.align === 'right' ? 'rtl' : 'ltr',
@@ -272,7 +272,7 @@ watch(
 <style scoped lang="scss">
 .phone-frame {
   width: 360px;
-  height: 740px;
+  height: 618px;
   border-radius: 42px;
   overflow: hidden;
   position: relative;
@@ -378,7 +378,6 @@ watch(
   background-color: rgba(30, 30, 30, 0.94);
   color: white;
   padding: 14px 16px;
-  margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -523,6 +522,7 @@ watch(
   background-color: rgba(30, 30, 30, 0.94);
   color: white;
   padding: 14px 16px;
+  margin-top: 220px;
 
   .content {
     display: flex;
