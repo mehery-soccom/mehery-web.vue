@@ -75,7 +75,7 @@ const onSendStyled = async (template, update) => {
     try {
       _data = JSON.parse(testNotification.data);
     } catch (error) {
-      return show({ message: "invalid json data", color: "error" });
+      return show({ message: "Invalid json data", color: "error" });
     }
     const { progress_percent, ...data } = _data;
 

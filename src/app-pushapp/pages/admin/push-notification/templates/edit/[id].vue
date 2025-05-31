@@ -5,6 +5,10 @@ import { usePushNotification } from "@app/views/admin/push-notification/usePushN
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 const { show } = inject("snackbar");
 
+const DEFAULT_VARIABLES_DATA = `{
+
+}`;
+
 const route = useRoute();
 const router = useRouter();
 const pushNotificationStore = usePushNotificationStore();
@@ -44,6 +48,9 @@ const template = reactive({
     progress_color: "",
     align: "left",
   },
+  model: {
+    data: DEFAULT_VARIABLES_DATA,
+  },
 });
 const view = ref({
   platform: "ios",
@@ -62,6 +69,10 @@ const buttonGroupFields = computed(() => {
   return [];
 });
 const templatePreview = computed(() => {
+  let data = {};
+  try {
+    data = JSON.parse(template.model.data);
+  } catch (error) {}
   return {
     view: view.value,
     ...template,
@@ -69,7 +80,7 @@ const templatePreview = computed(() => {
       buttons: buttonGroupFields.value,
     },
     model: {
-      data: {},
+      data,
     },
   };
 });
@@ -84,6 +95,10 @@ onMounted(async () => {
         Object.assign(template, {
           ...template,
           ..._template,
+          model: {
+            ..._template.model,
+            data: JSON.stringify(_template.model.data, null, 2),
+          },
         });
         let _buttonGroupValue = {};
         _template.options.buttons.map((b) => {
@@ -103,11 +118,20 @@ onMounted(async () => {
 const onUpdate = async () => {
   try {
     isLoading.value = true;
+
+    let data = {};
+    try {
+      data = JSON.parse(template.model.data || DEFAULT_VARIABLES_DATA);
+    } catch (error) {
+      return show({ message: "Invalid variables json", color: "error" });
+    }
+
     let payload = {};
     if (template.type === "simple") {
       payload = {
         ...template,
         options: {
+          ...(template.options || {}),
           buttons: buttonGroupFields.value.map((b) => ({
             button_id: b.id,
             button_text: b.text,
@@ -115,7 +139,8 @@ const onUpdate = async () => {
           })),
         },
         model: {
-          data: {},
+          ...(template.model || {}),
+          data,
         },
       };
     } else {
@@ -123,7 +148,8 @@ const onUpdate = async () => {
         ...template,
         options: {},
         model: {
-          data: {},
+          ...(template.model || {}),
+          data,
         },
       };
     }
@@ -142,10 +168,21 @@ const onUpdate = async () => {
   }
 };
 
+const sanitizeAndUnderscore = (str) => {
+  return str.replace(/[^\w\s]/g, "").replace(/\s+/g, "_");
+};
+
 watch(
   () => view.value.platform,
   () => {
     view.value.mode = "collapse";
+  }
+);
+
+watch(
+  () => template.desc,
+  (val) => {
+    template.code = sanitizeAndUnderscore(val);
   }
 );
 </script>
@@ -165,6 +202,7 @@ watch(
 
         <VTabs v-model="tab">
           <VTab value="tab-details"> Details </VTab>
+          <VTab value="tab-variables"> Variables </VTab>
         </VTabs>
 
         <VCard flat>
@@ -400,6 +438,24 @@ watch(
                     </VCol>
                   </VRow>
                 </VForm>
+              </VWindowItem>
+
+              <VWindowItem value="tab-variables">
+                <VRow>
+                  <VCol cols="12" md="12">
+                    <AppTextarea
+                      v-model="template.model.data"
+                      label="Sample Data"
+                      auto-grow
+                      rows="6"
+                      spellcheck="false"
+                      class="monospace"
+                      placeholder='e.g. {"title": "Hello"}'
+                      hint="use {{data.<variable>}} for custom variables in your template"
+                      persistent-hint
+                    />
+                  </VCol>
+                </VRow>
               </VWindowItem>
             </VWindow>
           </VCardText>
