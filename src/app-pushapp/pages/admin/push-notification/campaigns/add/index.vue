@@ -97,7 +97,7 @@ const onSendSimple = async () => {
   }
 };
 
-const onSendStyled = async (update, dialogRef) => {
+const onSendStyled = async (update) => {
   try {
     isLoading.value = true;
 
@@ -246,13 +246,15 @@ const onDialogChange = (val) => {
                 </v-card-text>
 
                 <v-card-actions class="justify-start">
-                  <v-btn color="primary" @click="onSendStyled(false, isActive)"
+                  <v-btn color="primary" @click="onSendStyled(false)"
                     >Start Activity</v-btn
                   >
-                  <v-btn color="primary" @click="onSendStyled(true, isActive)"
+                  <v-btn color="primary" @click="onSendStyled(true)"
                     >Update Activity</v-btn
                   >
-                  <v-btn variant="text" @click="isActive = false">Cancel</v-btn>
+                  <v-btn variant="text" @click="isActive.value = false"
+                    >Cancel</v-btn
+                  >
                 </v-card-actions>
               </v-card>
             </template>
