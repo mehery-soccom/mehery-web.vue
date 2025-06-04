@@ -2,6 +2,11 @@
 import axios from "@/app-phone/plugins/axios";
 import { REMOTE_JS_URL } from "@core/constants";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+
+import dtmfTone from "@/app-phone/assets/sounds/dtmf.wav";
+import ringbacktone from "@/app-phone/assets/sounds/ringbacktone.wav";
+import ringtone from "@/app-phone/assets/sounds/ringtone.wav";
+
 const dialedNumber = ref("");
 const isCallHistory = ref(false);
 const isDialer = ref(true);
@@ -102,34 +107,15 @@ const cleanupSIPBridge = () => {
     window.sipEventBridge.off("registrationAttempt", handleRegistrationAttempt);
   }
 };
-function areJsonEqual(obj1, obj2) {
-  if (obj1 === obj2) return true;
 
-  if (typeof obj1 !== 'object' || obj1 === null ||
-      typeof obj2 !== 'object' || obj2 === null) {
-    return false;
-  }
-
-  const keys1 = Object.keys(obj1);
-  const keys2 = Object.keys(obj2);
-
-  if (keys1.length !== keys2.length) return false;
-
-  for (let key of keys1) {
-    if (!keys2.includes(key)) return false;
-    if (!areJsonEqual(obj1[key], obj2[key])) return false;
-  }
-
-  return true;
-}
 const getSecrets = async () => {
   try {
-    // const response = await axios.get("/v1/register", {
-    //   headers: {
-    //     tnt: tenantPartitionKey.value,
-    //   },
-    // });
-    // const data = await response.data;
+    const response = await axios.get("/v1/register", {
+      headers: {
+        tnt: tenantPartitionKey.value,
+      },
+    });
+    const data = await response.data;
     // const response = await fetch(
     //   // "http://localhost:8090/nexus/phone/v1/register",
     //   "http://localhost:8090/scriptus/phone/v1/register",
@@ -143,32 +129,19 @@ const getSecrets = async () => {
     // );
     // const data = await response.json();
     bullforcePstn.value = {
-      // ...data.bullforcePstn,
-      FS_IMPU : "sip:90099@bullforce",
-      FS_IMPI : 90099,
-      FS_SECRET : 1234,
-      FS_REALM : "bullforce",
-      FS_WS_PROXY_URL_INT : "wss://fs-bullforce.fortiddns.com:7443",
-      FS_WS_PROXY_URL_EXT : "wss://fs-bullforce.fortiddns.com:7443",
-      FS_OUTBOUND_PROXY_URL : "tcp://fs-bullforce.fortiddns.com:5080",
-      FS_ICE_SERVERS : "[{urls:'stun:fs-bullforce.fortiddns.com'},{urls:'turn:fs-bullforce.fortiddns.com',username:'bullforce',credential:'bullForce'}]",
-      FS_DISPLAY: "kedar"
+      ...data.bullforcePstn,
+      FS_DISPLAY: "kedar",
     };
-    // console.log(`bulllforce creds : ${JSON.stringify(bullforceCreds)}`);
-    // console.log("are equivalent : ",areJsonEqual(,bullforceCreds.bullforceCreds));
   } catch (error) {
     console.error(error);
     bullforcePstn.value = {};
   } finally {
     console.log(`bullforcePstn : `, bullforcePstn.value);
-    // converting number to string
     bullforcePstn.value.FS_IMPI = bullforcePstn.value.FS_IMPI.toString();
     bullforcePstn.value.FS_SECRET = bullforcePstn.value.FS_SECRET.toString();
-    // converting string of list of JSON objects to a list of JSON objects according to 
-    // these docs : https://www.doubango.org/sipml5/docgen/symbols/SIPml.Stack.html
     bullforcePstn.value.FS_ICE_SERVERS = eval('(' + bullforcePstn.value.FS_ICE_SERVERS + ')');
     console.log(`bullforcePstn changed : `, bullforcePstn.value);
-    console.log(`Sip register to be called`);
+    console.log(`Sip register called`);
     // callSipRegister();
   }
 };
@@ -184,17 +157,6 @@ const callSipRegister = () => {
     console.error("Error calling sipRegister:", error);
   }
 };
-const callSipUnregister = () => {
-  try {
-    if (typeof window.sipUnRegister === "function") {
-      window.sipUnRegister();
-    } else {
-      console.warn("sipRegister function is not available");
-    }
-  } catch (error) {
-    console.error("Error calling sipRegister:", error);
-  }
-}
 
 const handleIncomingCall = (data) => {
   console.log("Incoming call received:", data);
@@ -251,14 +213,13 @@ const handleCallTerminated = (data) => {
     callTimer.value = null;
   }
 
-  callState.value = "idle";
   // Update call history
   updateCallHistory("terminated");
 };
 
 const handleConnectionStatus = (data) => {
   console.log("Connection status:", data);
-  registrationStatus.value = data.connected;
+  registrationStatus.value = data.connected ? "Connected" : "Disconnected";
 };
 
 const handleRegistrationAttempt = (data) => {
@@ -413,6 +374,18 @@ const setAttribute = (target, attrs) => {
   }
   return target;
 };
+// const addPreloads = () => {
+//   for (var i = 0; i < preloads.length; i++) {
+//     var item = preloads[i];
+//     var childNode = document.createElement(item.tagName);
+//     setAttribute(childNode, item.attrs);
+
+//     var parentElements = document.getElementsByTagName(item.parentTagName);
+//     if (parentElements && parentElements.length > 0) {
+//       parentElements[0].appendChild(childNode);
+//     }
+//   }
+// };
 // const preloads = [
 //   {
 //     parentTagName: "head",
@@ -430,7 +403,61 @@ const setAttribute = (target, attrs) => {
 //     attrs: { src: "/javascript/server.js" },
 //   },
 // ];
+const preloads = [
+  { src: "/javascript/adapter.js" },
+  { src: "/javascript/SIPml-api-altered.js" },
+  { src: "/javascript/server.js" },
+];
+const audioElements = [
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "ringtone",
+      loop: "",
+      src: "/javascript/sounds/ringtone.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "ringbacktone",
+      loop: "",
+      src: "/javascript/sounds/ringbacktone.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "dtmfTone",
+      src: "/javascript/sounds/dtmf.wav",
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "audio-remote",
+      autoplay: "autoplay",
+      // src: "/javascript/sounds/dtmf.wav"
+    },
+  },
+];
+const addPreloads = async () => {
+  const loadScript = (src) =>
+    new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `${REMOTE_JS_URL}${src}`;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
 
+  // Wait for all scripts to load
+  await Promise.all(preloads.map((s) => loadScript(s.src)));
+};
 const openRecents = async () => {
   isCallHistory.value = true;
   isDialer.value = false;
@@ -454,6 +481,8 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeydown);
   console.log("Phone onMounted");
 
+  await addPreloads();
+
   initializeSIPBridge();
 
   nextTick(() => {
@@ -462,10 +491,26 @@ onMounted(async () => {
     }, 100);
   });
 });
+
 onBeforeUnmount(() => {
-  console.log(`unmounting`);
   window.removeEventListener('keydown', handleKeydown);
   cleanupSIPBridge();
+
+  for (var i = 0; i < preloads.length; i++) {
+    var item = preloads[i];
+    // var childNode = document.createElement(item.tagName);
+    // setAttribute(childNode, item.attrs);
+
+    // var parentElements = document.getElementsByTagName(item.parentTagName);
+    // if (parentElements && parentElements.length > 0) {
+    //   parentElements[0].appendChild(childNode);
+    // }
+    const script = document.querySelector(`script[src="${item.src}"]`);
+    if (script) {
+      document.body.removeChild(script);
+    }
+  }
+
   if (callTimer.value) {
     clearInterval(callTimer.value);
   }
@@ -473,8 +518,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  
   <div class="container">
     <div class="sip-client">
+      <audio id="audio-remote" autoplay="autoplay"></audio>
+      <audio id="ringtone" loop :src="ringtone"></audio>
+      <audio id="ringbacktone" loop :src="ringbacktone"></audio>
+      <audio id="dtmfTone" :src="dtmfTone"></audio>
       <!-- Incoming Call Modal/Alert -->
       <div v-if="incomingCall.show" class="incoming-call-overlay">
         <div class="incoming-call-modal">
@@ -671,16 +721,6 @@ onBeforeUnmount(() => {
           <p></p>
         </li> -->
       </ul>
-      <button
-        class="action-button"
-        @click="callSipUnregister"
-        :disabled="registrationStatus !== 'connected'"
-      >Sip-Un-Register</button>
-      <button
-        class="action-button"
-        @click="callSipRegister"
-        :disabled="registrationStatus !== 'Disconnected'"
-      >Sip-Register</button>
     </div>
   </div>
 </template>

@@ -11,14 +11,11 @@ onMounted(() => {
 
 <template>
   <!-- <Dailer></Dailer> -->
-  <br />
+  <!-- <br /> -->
   <!-- <Home /> -->
-  <br />
+  <!-- <br /> -->
   <Phone />
 </template>
 
 <style lang="scss">
-.body {
-  background-color: white;
-}
 </style>
