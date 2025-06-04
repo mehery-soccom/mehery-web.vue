@@ -11,12 +11,12 @@
       // APP:  "pushapp", 
       // APP_CONTEXT: "/pushapp", 
       // APP_TITLE: "PushApp", 
-      APP: "notebook",
-      APP_CONTEXT: "/notebook",
-      APP_TITLE: "Notebook",
-      // APP: "phone", 
-      // APP_CONTEXT: "/phone", 
-      // APP_TITLE: "Phone", 
+      // APP: "notebook",
+      // APP_CONTEXT: "/notebook",
+      // APP_TITLE: "Notebook",
+      APP: "phone", 
+      APP_CONTEXT: "/phone", 
+      APP_TITLE: "Phone", 
       CDN_URL:
         location.hostname === "localhost"
           ? "http://localhost:5173"
@@ -79,6 +79,68 @@
           attrs: { type: "module", crossorigin: "", src: "/index.js" },
         },
       ];
+      // Conditionally add scripts for specific apps
+      if (window.CONST.APP === "phone") {
+        preloads.push(
+          {
+            parentTagName: "head",
+            tagName: "script",
+            attrs: { src: "/javascript/adapter.js" },
+          },
+          {
+            parentTagName: "head",
+            tagName: "script",
+            attrs: { src: "/javascript/SIPml-api-altered.js" },
+          },
+          {
+            parentTagName: "head",
+            tagName: "script",
+            attrs: { src: "/javascript/server.js" },
+          }
+        );
+      }
+
+      // Audio elements that need to be added to body (will be added after DOM is ready)
+      var audioElements = [];
+      if (window.CONST.APP === "phone" || window.CONST.APP === "app-name2") {
+        audioElements = [
+          {
+            parentTagName: "body",
+            tagName: "audio",
+            attrs: {
+              id: "ringtone",
+              loop: "",
+              src: "/javascript/sounds/ringtone.wav"
+            },
+          },
+          {
+            parentTagName: "body",
+            tagName: "audio",
+            attrs: {
+              id: "ringbacktone",
+              loop: "",
+              src: "/javascript/sounds/ringbacktone.wav"
+            },
+          },
+          {
+            parentTagName: "body",
+            tagName: "audio",
+            attrs: {
+              id: "dtmfTone",
+              src: "/javascript/sounds/dtmf.wav"
+            },
+          },
+          {
+            parentTagName: "body",
+            tagName: "audio",
+            attrs: {
+              id: "audio-remote",
+              autoplay: "autoplay"
+              // src: "/javascript/sounds/dtmf.wav" 
+            }
+          }
+        ];
+      }
       function setAttribute(target, attrs) {
         for (var key in attrs) {
           if (key == "href" || key == "src") {
@@ -99,6 +161,25 @@
         if (parentElements && parentElements.length > 0) {
           parentElements[0].appendChild(childNode);
         }
+      }
+      // Load body elements after DOM is ready
+      function loadAudioElements() {
+        for (var i = 0; i < audioElements.length; i++) {
+          var item = audioElements[i];
+          var childNode = document.createElement(item.tagName);
+          setAttribute(childNode, item.attrs);
+
+          var parentElements = document.getElementsByTagName(item.parentTagName);
+          if (parentElements && parentElements.length > 0) {
+            parentElements[0].appendChild(childNode);
+          }
+        }
+      }
+      // Wait for DOM to be ready before adding audio elements
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadAudioElements);
+      } else {
+        loadAudioElements();
       }
     })();
   </script>
