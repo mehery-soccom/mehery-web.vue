@@ -120,7 +120,10 @@ const filteredItems = computed(() => {
         <tr>
           <th v-for="col in columns" :key="col.key"
             @click="col.sortable && toggleSort(col.key)" class="sortable-th">
-            {{ col.title }}
+            {{ col.title }} 
+            <span v-if="col.information" class="ml-1" :title="col.information">
+              <VIcon size="18" icon="tabler-info-circle" />
+            </span>
             <VIcon v-if="col.sortable && currentSortKey === col.key" class="sort-icon" size="14">
               {{ currentSortOrder === 'asc' ? 'mdi-chevron-down' : 'mdi-chevron-up' }}
             </VIcon>

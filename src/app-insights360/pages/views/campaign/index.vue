@@ -4,6 +4,7 @@ import CardStatisticsTransactions from '@/app-insights360/views/dashboards/analy
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from 'vue';
+import * as XLSX from 'xlsx';
 import { useDatePickerFilters } from './../../../views/dashboards/analytics/useDatePickerFilters';
 
 const { customPlugin } = useDatePickerFilters()
@@ -87,6 +88,26 @@ const fetchCampaignData = async (start, end, chan, bool, stats) => {
   } catch (error) { console.error("analytics error", error); }
 };
 
+const exportToExcel = () => {
+  const formattedData = campTable.value.map(item => ({
+    'Campaign': item.name,
+    'Channel': item.channelId,
+    'Template': item.templateName,
+    'Status': item.status,
+    'Total': item.total,
+    'Sent': item.sent,
+    'Delivered': item.delivered,
+    'Read': item.read,
+    'Replied': item.responded,
+    'Failed': item.failed,
+  }))
+  
+  const worksheet = XLSX.utils.json_to_sheet(formattedData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+  const fileName = `Campaign-data-${dateRange.value}.xlsx`.replaceAll(' ', '-')
+  XLSX.writeFile(workbook, fileName);
+}
 const allAnalytics = () => {
   console.log("channs", selectedChannelItem, dateRange.value)
   let startStr = ''; let endStr = '';
@@ -130,6 +151,9 @@ onMounted( async () => {
           <span v-else-if="index === 1" class="text-muted"> +{{ selectedStatuses.length - 1 }}</span>
         </template>
       </VSelect>
+      <VBtn @click="exportToExcel" color="primary" style="width: 40px; height: 40px; min-width: 40px;" class="pa-0 ml-3" variant="flat">
+        <VIcon>mdi-download</VIcon>
+      </VBtn>
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,

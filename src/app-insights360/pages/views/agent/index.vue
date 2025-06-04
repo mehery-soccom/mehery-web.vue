@@ -2,6 +2,7 @@
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from 'vue';
+import * as XLSX from 'xlsx';
 import { useDatePickerFilters } from './../../../views/dashboards/analytics/useDatePickerFilters';
 
 const { customPlugin } = useDatePickerFilters()
@@ -11,7 +12,7 @@ const headers = [
   { title: 'Agent', key: 'agent', searchable: true, sortable: true },
   { title: 'Team', key: 'deptName', searchable: true },
   { title: 'Status', key: 'status', sortable: false },
-  { title: 'No. of Conv', key: 'totalConversations'},
+  { title: 'No. of Conv', key: 'totalConversations', information: 'Number of Conversations'},
   { title: 'Av Start Lag', key: 'averageStartLag'},
   { title: 'Av Response Time', key: 'averageResponseTime'},
   { title: 'Duration', key: 'averageAssignedDuration'},
@@ -95,6 +96,27 @@ const findStatus = (sess) =>{
   return activity;
 }
 
+const exportToExcel = () => {
+  const formattedData = tempTable.value.map(item => ({
+    'Agent': item.agent,
+    'Team': item.deptName,
+    'Status': item.activity,
+    'No. of Conversation': item.totalConversations,
+    'Avg. Start Lag': formatDuration(item.averageStartLag),
+    'Avg. Response Time': formatDuration(item.averageResponseTime),
+    'Duration': formatDuration(item.averageAssignedDuration),
+    'Open': item.openConversations,
+    'Resolved': item.resolvedConversations,
+    'Expired': item.expiredConversations,
+    'Feedback': item.averageSatisfaction,
+  }))
+  
+  const worksheet = XLSX.utils.json_to_sheet(formattedData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+  const fileName = `Agent-data-${dateRange.value}.xlsx`.replaceAll(' ', '-')
+  XLSX.writeFile(workbook, fileName);
+}
 const allAnalytics = () => {
   console.log("channs", dateRange.value)
   let startStr = ''; let endStr = '';
@@ -121,6 +143,9 @@ onMounted( async () => {
 <template>
   <VRow>
     <div style="width: 100%;display: flex; justify-content: flex-end;">
+      <VBtn @click="exportToExcel" color="primary" style="width: 40px; height: 40px; min-width: 40px;" class="pa-0 ml-3" variant="flat">
+        <VIcon>mdi-download</VIcon>
+      </VBtn>
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right',
@@ -129,6 +154,12 @@ onMounted( async () => {
     </div>
     <VCol cols="12">
       <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Agent Data'" >
+        <template #item.agent="{ item }">
+          <span style="min-width: 100px;display: inline-block;">{{ item.value.agent }}</span>
+        </template>
+        <template #item.deptName="{ item }">
+          <span style="min-width: 100px;display: inline-block;">{{ item.value.deptName }}</span>
+        </template>
         <template #item.averageStartLag="{ item }">
           {{ formatDuration(item.value.averageStartLag) }}
         </template>
@@ -139,6 +170,10 @@ onMounted( async () => {
 
         <template #item.averageAssignedDuration="{ item }">
           {{ formatDuration(item.value.averageAssignedDuration) }}
+        </template>
+        <template #item.averageSatisfaction="{ item }">
+          <span v-if="item.value.averageSatisfaction">{{ String(Math.round(item.value.averageSatisfaction * 100) / 100) }}</span>
+          <span v-else>0</span>
         </template>
         <!-- {{ findStatus(item.value.session) }} -->
         <template #item.status="{ item }">

@@ -3,6 +3,7 @@ import AnalyticsMonthlyCampaignState from '@/app-insights360/views/dashboards/an
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
 import { ref } from 'vue';
+import * as XLSX from 'xlsx';
 import { useDatePickerFilters } from './../../../views/dashboards/analytics/useDatePickerFilters';
 
 const { customPlugin } = useDatePickerFilters()
@@ -21,6 +22,24 @@ const headers = [
   { title: 'Replied', key: 'responded', sortable: true },
   { title: 'Failed', key: 'failed', sortable: true },
 ]
+const exportToExcel = () => {
+  const formattedData = tempTable.value.map(item => ({
+    'Template': item.templateCode,
+    'Channel': item.channelId,
+    'Category': item.templateType,
+    'Sent': item.total,
+    'Delivered': item.delivered,
+    'Read': item.read,
+    'Replied': item.responded,
+    'Failed': item.failed,
+  }))
+  
+  const worksheet = XLSX.utils.json_to_sheet(formattedData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+  const fileName = `Template-data-${dateRange.value}.xlsx`.replaceAll(' ', '-')
+  XLSX.writeFile(workbook, fileName);
+}
 
 const fetchTemplateData = async (start, end, chan, bool) => {
   try {
@@ -104,6 +123,9 @@ onMounted( async () => {
           </VListItem>
         </VList>
       </VMenu>
+      <VBtn @click="exportToExcel" color="primary" style="width: 40px; height: 40px; min-width: 40px;" class="pa-0 ml-3" variant="flat">
+        <VIcon>mdi-download</VIcon>
+      </VBtn>
       <AppDateTimePicker style="width: 250px; margin-left: auto; margin: 0 12px;"
         v-model="dateRange" prepend-inner-icon="tabler-calendar"
         :config="{ mode: 'range', dateFormat: 'd-m-Y', position: 'auto right', onChange: onDateSelect,
