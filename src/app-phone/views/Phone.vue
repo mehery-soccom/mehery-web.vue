@@ -142,7 +142,7 @@ const getSecrets = async () => {
     bullforcePstn.value.FS_ICE_SERVERS = eval('(' + bullforcePstn.value.FS_ICE_SERVERS + ')');
     console.log(`bullforcePstn changed : `, bullforcePstn.value);
     console.log(`Sip register called`);
-    callSipRegister();
+    // callSipRegister();
   }
 };
 

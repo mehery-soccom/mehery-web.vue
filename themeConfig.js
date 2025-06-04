@@ -12,7 +12,8 @@ import logo_default from '@app/assets/images/logo_default.svg?raw'
 let app = window?.CONST?.WEBAPP?.split("/").pop() || window?.CONST?.APP
 let appTitle = app
 let appLogo = app === 'pushapp' ? logo : logo_default
-
+console.log(`theme config app : ${app}`);
+const theme = app === "phone" ? "light" : "system";
 export const { themeConfig, layoutConfig } = defineThemeConfig({
   app: {
     title: appTitle,
@@ -21,7 +22,8 @@ export const { themeConfig, layoutConfig } = defineThemeConfig({
     contentLayoutNav: AppContentLayoutNav.Vertical,
     overlayNavFromBreakpoint: breakpointsVuetify.md + 16,
     // enableI18n: true,
-    theme: 'system',
+    // theme: 'system',
+    theme: theme,
     isRtl: false,
     skin: Skins.Default,
     routeTransition: RouteTransitions.Fade,

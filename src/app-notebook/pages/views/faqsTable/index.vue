@@ -1,4 +1,931 @@
 <!-- src/components/QAPairsTable.vue -->
+<script setup>
+import { ref, reactive, computed, watch, nextTick } from "vue";
+import { VDataTable } from "vuetify/labs/VDataTable";
+import * as XLSX from "xlsx";
+import zipcelx from "zipcelx";
+const qaTableItemsPerPage = 25;
+const qaTableHeaders = [
+        { text: 'Question', value: 'question' },
+  { text: 'Answer', value: 'answer' }
+      ]
+const selectedItems = ref([]);
+// Reactive data
+const qaData = ref([]);
+const cachedPages = ref({}); // Cache for page data: { pageNum: [...data] }
+const lastSeenIds = ref({}); // Cache for lastSeenIds: { pageNum: lastSeenId }
+const selectedIdsByPage = ref({}); // Track selections by page: { pageNum: [...selectedIds] }
+const editedItems = ref({}); // Track edited items: { itemId: { question: '...', answer: '...' } }
+const editingContent = reactive({
+  itemId: null,
+  field: null,
+  text: "",
+  originalText: "",
+});
+const loading = ref(false);
+const currentPage = ref(1);
+const totalPages = ref(0);
+const totalItems = ref(0);
+const pageSize = ref(25);
+const knowledgeBases = ref([]); // List of knowledge bases
+const topics = ref([]);
+const tenantPartitionKey = ref("kedar");
+const tempTenantKey = ref("");
+const selectedKbId = ref(null); // Selected knowledge base ID
+const selectedKbName = ref(""); // Selected knowledge base name
+const tempKbId = ref(""); // Temporary KB ID for form
+const showDeleteModal = ref(false);
+const showKbDeleteModal = ref(false);
+const statusMessage = ref("");
+const statusType = ref("info"); // 'info', 'success', 'error'
+const statusTimeout = ref(null);
+const cacheTimestamp = ref(null); // When the cache was last refreshed
+const tempTopicId = ref("");
+const selectedTopicId = ref(null);
+const selectedTopicName = ref("");
+const ques = ref([]);
+const validationMessage = ref("");
+const isValidFile = ref(false);
+const saveMessage = ref("");
+const saveSuccess = ref(false);
+const isSaving = ref(false);
+const previewHeaders = ref([
+  {
+    align: "start",
+    key: "que",
+    sortable: false,
+    title: "Question",
+  },
+  { title: "Answer", key: "ans" },
+]);
+const previewPage = ref(1);
+const previewItemsPerPage = ref(5);
+// Template refs
+const editTextarea = ref(null);
+
+// Computed properties
+const allSelected = computed(() => {
+  return (
+    qaData.value.length > 0 &&
+    selectedIdsByPage.value[currentPage.value] &&
+    selectedIdsByPage.value[currentPage.value].length === qaData.value.length
+  );
+});
+
+const isFormValid = computed(() => {
+  return (
+    // tempTenantKey.value.trim() &&
+    !tenantPartitionKey.value || // No tenant set yet, so only validate tenant field
+    (knowledgeBases.value.length > 0 && tempKbId.value) || // Tenant set, so validate KB selection
+    (topics.value.length > 0 && tempTopicId.value)
+  );
+});
+
+// Methods
+const submitSelections = () => {
+  if (!tenantPartitionKey.value && tempTenantKey.value.trim()) {
+    tenantPartitionKey.value = tempTenantKey.value.trim();
+    // Don't reset tempTenantKey yet as we need it for the next step
+  }
+
+  if (tenantPartitionKey.value && tempKbId.value) {
+    // Find the KB name for the selected ID
+    const selectedKb = knowledgeBases.value.find(
+      (kb) => kb._id === tempKbId.value
+    );
+    if (selectedKb) {
+      selectedKbId.value = tempKbId.value;
+      selectedKbName.value = selectedKb.kb_name;
+
+      // Reset temporary values
+      // tempTenantKey.value = ""
+      tempKbId.value = "";
+      tempTopicId.value = "";
+      selectedTopicId.value = null;
+      selectedTopicName.value = "";
+      qaData.value = [];
+      cachedPages.value = {};
+      lastSeenIds.value = {};
+      selectedIdsByPage.value = {};
+      editedItems.value = {};
+      Object.assign(editingContent, {
+        itemId: null,
+        field: null,
+        text: "",
+        originalText: "",
+      });
+      // Reset data states
+      // resetState()
+
+      // // Fetch first page of data
+      // fetchData(1)
+    }
+  }
+
+  if (selectedKbId.value && tempTopicId.value) {
+    const selectedTopic = topics.value.find(
+      (tp) => tp._id === tempTopicId.value
+    );
+
+    if (selectedTopic) {
+      selectedTopicId.value = tempTopicId.value;
+      selectedTopicName.value = selectedTopic.topic_name;
+
+      tempTopicId.value = "";
+      resetState();
+      fetchData(1);
+    }
+  }
+};
+
+const changeSelections = () => {
+  selectedKbId.value = null;
+  selectedKbName.value = "";
+  selectedTopicId.value = null;
+  selectedTopicName.value = "";
+  resetState();
+};
+
+const resetStateComplete = () => {
+  qaData.value = [];
+  cachedPages.value = {};
+  lastSeenIds.value = {};
+  selectedIdsByPage.value = {};
+  editedItems.value = {};
+  Object.assign(editingContent, {
+    itemId: null,
+    field: null,
+    text: "",
+    originalText: "",
+  });
+  knowledgeBases.value = [];
+  topics.value = [];
+  currentPage.value = 1;
+  totalPages.value = 0;
+  totalItems.value = 0;
+  cacheTimestamp.value = null;
+  selectedKbId.value = null;
+  tenantPartitionKey.value = null;
+  selectedKbName.value = "";
+  tempTopicId.value = "";
+  selectedTopicId.value = null;
+  selectedTopicName.value = "";
+  ques.value = [];
+  validationMessage.value = "";
+  isValidFile.value = false;
+  saveMessage.value = "";
+  saveSuccess.value = false;
+  isSaving.value = false;
+};
+
+const resetState = () => {
+  qaData.value = [];
+  cachedPages.value = {};
+  lastSeenIds.value = {};
+  selectedIdsByPage.value = {};
+  editedItems.value = {};
+  Object.assign(editingContent, {
+    itemId: null,
+    field: null,
+    text: "",
+    originalText: "",
+  });
+  currentPage.value = 1;
+  totalPages.value = 0;
+  totalItems.value = 0;
+  cacheTimestamp.value = null;
+  ques.value = [];
+  validationMessage.value = "";
+  isValidFile.value = false;
+  saveMessage.value = "";
+  saveSuccess.value = false;
+  isSaving.value = false;
+};
+
+const downloadTemplate = () => {
+  // Create sample data for the template
+  const sampleData = [
+    [
+      { type: "string", value: "Question" },
+      { type: "string", value: "Answer" },
+    ],
+    [
+      { type: "string", value: "What is Vue.js?" },
+      {
+        type: "string",
+        value:
+          "Vue.js is a progressive JavaScript framework for building user interfaces.",
+      },
+    ],
+    [
+      { type: "string", value: "What is Excel?" },
+      {
+        type: "string",
+        value: "Excel is a spreadsheet application developed by Microsoft.",
+      },
+    ],
+    [
+      { type: "string", value: "Sample Question 3" },
+      { type: "string", value: "Sample Answer 3" },
+    ],
+  ];
+
+  // Use zipcelx to create and download the Excel file
+  const config = {
+    filename: "qa_template",
+    sheet: {
+      data: sampleData,
+    },
+  };
+
+  zipcelx(config);
+};
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) {
+    resetValidation();
+    return;
+  }
+
+  validateAndParseFile(file);
+};
+
+const validateAndParseFile = (file) => {
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+
+      // Get the first worksheet
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      // Convert to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      // Validate the file format
+      if (!validateFileFormat(jsonData)) {
+        return;
+      }
+
+      // Parse the data
+      parseQuestionsAndAnswers(jsonData);
+    } catch (error) {
+      validationMessage.value = "Error reading file: " + error.message;
+      isValidFile.value = false;
+      ques.value = [];
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+const validateFileFormat = (data) => {
+  // Check if file has data
+  if (!data || data.length < 2) {
+    validationMessage.value =
+      "File must contain at least a header row and one data row.";
+    isValidFile.value = false;
+    ques.value = [];
+    return false;
+  }
+
+  // Check if header row exists and has correct columns
+  const headers = data[0];
+  if (!headers || headers.length < 2) {
+    validationMessage.value = "File must have at least 2 columns.";
+    isValidFile.value = false;
+    ques.value = [];
+    return false;
+  }
+
+  // Check if headers match expected format (case-insensitive)
+  const expectedHeaders = ["question", "answer"];
+  const actualHeaders = headers
+    .slice(0, 2)
+    .map((h) => (h || "").toString().toLowerCase().trim());
+
+  const headersMatch = expectedHeaders.every(
+    (expected, index) => actualHeaders[index] === expected
+  );
+
+  if (!headersMatch) {
+    validationMessage.value = `Headers must be "Question" and "Answer". Found: "${headers[0]}" and "${headers[1]}"`;
+    isValidFile.value = false;
+    ques.value = [];
+    return false;
+  }
+
+  return true;
+};
+
+const parseQuestionsAndAnswers = (data) => {
+  const parsedQues = [];
+
+  // Skip header row (index 0) and process data rows
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    // Skip empty rows
+    if (!row || row.length === 0 || (!row[0] && !row[1])) {
+      continue;
+    }
+
+    const question = (row[0] || "").toString().trim();
+    const answer = (row[1] || "").toString().trim();
+
+    // Only add rows that have both question and answer
+    if (question && answer) {
+      parsedQues.push({
+        que: question,
+        ans: answer,
+      });
+    }
+  }
+
+  if (parsedQues.length === 0) {
+    validationMessage.value =
+      "No valid question-answer pairs found. Make sure both columns have data.";
+    isValidFile.value = false;
+    ques.value = [];
+    return;
+  }
+
+  ques.value = parsedQues;
+  previewPage.value = 1;
+  validationMessage.value = `Successfully loaded ${parsedQues.length} question-answer pairs.`;
+  isValidFile.value = true;
+
+  // Clear any previous save messages
+  saveMessage.value = "";
+};
+
+const resetValidation = () => {
+  ques.value = [];
+  validationMessage.value = "";
+  isValidFile.value = false;
+  saveMessage.value = "";
+};
+
+const saveToBackend = async () => {
+  if (ques.value.length === 0) return;
+
+  isSaving.value = true;
+  saveMessage.value = "";
+
+  try {
+    const payload = {
+      kb_id: selectedKbId.value,
+      topic_id: selectedTopicId.value,
+      ques: ques.value.map((pair) => ({
+        que: pair.que.trim(),
+        ans: pair.ans.trim(),
+      })),
+    };
+    // Replace this URL with your actual backend endpoint
+    const response = await fetch(
+      "http://localhost:8090/nexus/notebook/api/qapairs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (response.ok) {
+      saveMessage.value = `Successfully saved ${ques.value.length} question-answer pairs to the backend.`;
+      saveSuccess.value = true;
+      loading.value = true;
+      refreshData();
+      loading.value = false;
+    } else {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    saveMessage.value = `Error saving to backend: ${error.message}`;
+    saveSuccess.value = false;
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const fetchTopics = async () => {
+  if (!selectedKbId.value) return;
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    topics.value = data.result || [];
+    console.log(topics.value);
+
+    if (topics.value.length === 0) {
+      showStatus("No knowledge bases found for this tenant", "info");
+    }
+  } catch (error) {
+    console.error("Error fetching topics:", error);
+    showStatus("Failed to load topics: " + error.message, "error");
+    knowledgeBases.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchKnowledgeBases = async () => {
+  if (!tenantPartitionKey.value) return;
+
+  loading.value = true;
+
+  try {
+    const response = await fetch(
+      "http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=false",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    knowledgeBases.value = data.result || [];
+
+    if (knowledgeBases.value.length === 0) {
+      showStatus("No knowledge bases found for this tenant", "info");
+    }
+  } catch (error) {
+    console.error("Error fetching knowledge bases:", error);
+    showStatus("Failed to load knowledge bases: " + error.message, "error");
+    knowledgeBases.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Load data from cache or fetch from server
+const loadPageData = async (pageNum) => {
+  if (!tenantPartitionKey.value || !selectedKbId.value) return;
+
+  // If page exists in cache, use it
+  if (cachedPages.value[pageNum]) {
+    qaData.value = cachedPages.value[pageNum];
+    // Initialize selection array for this page if needed
+    if (!selectedIdsByPage.value[pageNum]) {
+      selectedIdsByPage.value[pageNum] = [];
+    }
+    return;
+  }
+
+  // Otherwise, fetch from server
+  await fetchData(pageNum);
+};
+
+// Refresh all data (clear cache and fetch first page)
+const refreshData = () => {
+  resetState();
+  fetchData(1);
+  showStatus("Data refreshed", "success");
+};
+
+const fetchData = async (pageNum) => {
+  if (!tenantPartitionKey.value || !selectedKbId.value) return;
+
+  loading.value = true;
+
+  try {
+    let url = `http://localhost:8090/nexus/notebook/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
+
+    // Add lastSeenId parameter for pages beyond the first page
+    if (pageNum > 1 && lastSeenIds.value[pageNum - 1]) {
+      url += `&lastSeenId=${lastSeenIds.value[pageNum - 1]}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Update the current data
+    qaData.value = data.data;
+    console.log(`qaData : `,qaData.value);
+    totalPages.value = parseInt(data.totalPages);
+    totalItems.value = parseInt(data.total);
+
+    // Cache the retrieved data
+    cachedPages.value[pageNum] = data.data;
+
+    // Initialize selection array for this page if needed
+    if (!selectedIdsByPage.value[pageNum]) {
+      selectedIdsByPage.value[pageNum] = [];
+    }
+
+    // Update the lastSeenId for pagination
+    if (qaData.value.length > 0) {
+      lastSeenIds.value[pageNum] = qaData.value[qaData.value.length - 1]._id;
+    }
+
+    // Update cache timestamp
+    cacheTimestamp.value = new Date();
+  } catch (error) {
+    console.error("Error fetching QA pairs:", error);
+    qaData.value = [];
+    showStatus("Failed to load data: " + error.message, "error");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const toggleSelectAll = () => {
+  if (!selectedIdsByPage.value[currentPage.value]) {
+    selectedIdsByPage.value[currentPage.value] = [];
+  }
+
+  if (allSelected.value) {
+    selectedIdsByPage.value[currentPage.value] = [];
+  } else {
+    selectedIdsByPage.value[currentPage.value] = qaData.value.map(
+      (item) => item._id
+    );
+  }
+};
+
+const showDelKbModal = () => {
+  showKbDeleteModal.value = true;
+};
+
+const confirmDeleteSelected = () => {
+  if (getSelectedCount() > 0) {
+    showDeleteModal.value = true;
+  }
+};
+
+const cancelDeleteKb = () => {
+  showKbDeleteModal.value = false;
+};
+
+const cancelDelete = () => {
+  showDeleteModal.value = false;
+};
+
+// Get all selected IDs across all pages
+const getAllSelectedIds = () => {
+  let allSelectedIds = [];
+  for (const pageNum in selectedIdsByPage.value) {
+    allSelectedIds = [...allSelectedIds, ...selectedIdsByPage.value[pageNum]];
+  }
+  return allSelectedIds;
+};
+
+// Get total count of selected items
+const getSelectedCount = () => {
+  return getAllSelectedIds().length;
+};
+
+const deleteKnowledgeBase = async () => {
+  showDelKbModal.value = false;
+  loading.value = true;
+  try {
+    const response = await fetch(
+      "http://localhost:8090/nexus/notebook/api/qapairs/kb",
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+        body: JSON.stringify({
+          kb_id: selectedKbId.value,
+          kb_name: selectedKbName.value,
+        }),
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`response del: ${JSON.stringify(data)}`);
+
+    // Show success message
+    showStatus(
+      `Successfully deleted ${selectedKbName.value} knowledge base`,
+      "success"
+    );
+
+    // Clear cache and reload data
+    resetStateComplete();
+  } catch (error) {
+    console.error("Error deleting records:", error);
+    showStatus("Failed to delete records: " + error.message, "error");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deleteSelected = async () => {
+  showDeleteModal.value = false;
+  loading.value = true;
+  const selectedIds = getAllSelectedIds();
+
+  try {
+    const url = `http://localhost:8090/nexus/notebook/api/qapairs`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      body: JSON.stringify({
+        kb_id: selectedKbId.value,
+        topic_id: selectedTopicId.value,
+        del_ids: selectedIds,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`response del: ${JSON.stringify(data)}`);
+
+    // Show success message
+    showStatus(`Successfully deleted ${selectedIds.length} item(s)`, "success");
+
+    // Clear cache and reload data
+    resetState();
+    fetchData(1);
+  } catch (error) {
+    console.error("Error deleting records:", error);
+    showStatus("Failed to delete records: " + error.message, "error");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const showStatus = (message, type = "info") => {
+  statusMessage.value = message;
+  statusType.value = type;
+
+  // Clear any existing timeout
+  if (statusTimeout.value) {
+    clearTimeout(statusTimeout.value);
+  }
+
+  // Auto-clear success and info messages after 5 seconds
+  if (type !== "error") {
+    statusTimeout.value = setTimeout(() => {
+      clearStatus();
+    }, 5000);
+  }
+};
+
+const clearStatus = () => {
+  statusMessage.value = "";
+  if (statusTimeout.value) {
+    clearTimeout(statusTimeout.value);
+    statusTimeout.value = null;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value += 1;
+  }
+};
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value -= 1;
+  }
+};
+
+// Format cache status message
+const getCacheStatus = () => {
+  const pagesCount = Object.keys(cachedPages.value).length;
+  let timeAgo = "";
+
+  if (cacheTimestamp.value) {
+    const seconds = Math.floor((new Date() - cacheTimestamp.value) / 1000);
+    if (seconds < 60) {
+      timeAgo = `${seconds} seconds ago`;
+    } else if (seconds < 3600) {
+      timeAgo = `${Math.floor(seconds / 60)} minutes ago`;
+    } else {
+      timeAgo = `${Math.floor(seconds / 3600)} hours ago`;
+    }
+  }
+
+  return `${pagesCount} page(s) cached ${timeAgo}`;
+};
+
+// Start editing a cell
+const startEditing = (itemId, field) => {
+  // Get the current item from the data
+  const item = qaData.value.find((item) => item._id === itemId);
+  if (!item) return;
+
+  // Set up the editing state
+  Object.assign(editingContent, {
+    itemId: itemId,
+    field: field,
+    text: item[field],
+    originalText: item[field],
+  });
+
+  // Focus the textarea after Vue updates the DOM
+  nextTick(() => {
+    if (editTextarea.value) {
+      const textarea = Array.isArray(editTextarea.value)
+        ? editTextarea.value[0]
+        : editTextarea.value;
+
+      if (textarea) {
+        textarea.focus();
+        textarea.select();
+      }
+    }
+  });
+};
+
+// Complete editing and save changes
+const finishEditing = (itemId, field) => {
+  // Make sure we're editing this item and field
+  if (editingContent.itemId !== itemId || editingContent.field !== field) {
+    return;
+  }
+
+  const newText = editingContent.text.trim();
+  const originalText = editingContent.originalText.trim();
+
+  // Only update if content changed
+  if (newText !== originalText) {
+    // Find item in the current data and update it
+    const item = qaData.value.find((item) => item._id === itemId);
+    if (item) {
+      item[field] = newText;
+
+      // Update the item in cache as well
+      Object.values(cachedPages.value).forEach((pageData) => {
+        const cachedItem = pageData.find((i) => i._id === itemId);
+        if (cachedItem) {
+          cachedItem[field] = newText;
+        }
+      });
+
+      // Track this item as edited
+      if (!editedItems.value[itemId]) {
+        editedItems.value[itemId] = {
+          _id: itemId,
+          question: item.question,
+          answer: item.answer,
+          kb_id: selectedKbId.value, // Add the KB ID for the update API
+        };
+      } else {
+        editedItems.value[itemId][field] = newText;
+      }
+    }
+  }
+
+  // Clear editing state
+  Object.assign(editingContent, {
+    itemId: null,
+    field: null,
+    text: "",
+    originalText: "",
+  });
+};
+
+// Check if we're currently editing a specific cell
+const isEditingCell = (itemId, field) => {
+  return editingContent.itemId === itemId && editingContent.field === field;
+};
+
+// Check if an item has been edited
+const isItemEdited = (itemId) => {
+  return !!editedItems.value[itemId];
+};
+
+// Get count of edited items
+const getEditedCount = () => {
+  return Object.keys(editedItems.value).length;
+};
+
+// Send all edited items to the update API
+const updateEditedItems = async () => {
+  if (getEditedCount() === 0) return;
+
+  loading.value = true;
+  const editedItemsArray = Object.values(editedItems.value);
+
+  try {
+    const response = await fetch(
+      "http://localhost:8090/nexus/notebook/api/qapairs",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+        body: JSON.stringify({
+          kb_id: selectedKbId.value,
+          topic_id: selectedTopicId.value,
+          updateDocs: editedItemsArray,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`Update response: ${JSON.stringify(data)}`);
+
+    // Show success message
+    showStatus(
+      `Successfully updated ${editedItemsArray.length} item(s)`,
+      "success"
+    );
+
+    // Clear edited items after successful update
+    editedItems.value = {};
+    refreshData();
+  } catch (error) {
+    console.error("Error updating records:", error);
+    showStatus("Failed to update records: " + error.message, "error");
+  } finally {
+    loading.value = false;
+  }
+};
+// Watchers
+// Update qaData whenever the page changes
+watch(
+  currentPage,
+  (newPage) => {
+    if (tenantPartitionKey.value && selectedKbId.value) {
+      loadPageData(newPage);
+    }
+  },
+  { immediate: true }
+);
+
+// Fetch knowledge bases when tenant key is set
+watch(
+  tenantPartitionKey,
+  (newValue) => {
+    if (newValue) {
+      fetchKnowledgeBases();
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  selectedKbId,
+  (newValue) => {
+    if (newValue) {
+      fetchTopics();
+    }
+  },
+  { immediate: true }
+);
+const previewPageCount = computed(() => {
+  return Math.ceil(ques.value.length / previewItemsPerPage.value);
+});
+</script>
 <template>
   <div class="qa-table-container">
     <h1 class="title">FQA's</h1>
@@ -107,10 +1034,15 @@
       </div>
 
       <div class="data-controls">
-        <button v-if="selectedKbId && selectedTopicId" @click="refreshData" class="btn btn-primary">
+        <button
+          v-if="selectedKbId && selectedTopicId"
+          @click="refreshData"
+          class="btn btn-primary"
+        >
           Refresh Data
         </button>
-        <button v-if="selectedKbId && selectedTopicId"
+        <button
+          v-if="selectedKbId && selectedTopicId"
           @click="updateEditedItems"
           class="btn btn-success"
           :disabled="getEditedCount() === 0"
@@ -128,7 +1060,10 @@
       <div class="loading-spinner"></div>
       <p>Loading data...</p>
     </div>
-    <div class="excel-qa-manager p-6 max-w-4xl mx-auto" v-if="selectedKbId && selectedTopicId">
+    <div
+      class="excel-qa-manager p-6 max-w-4xl mx-auto"
+      v-if="selectedKbId && selectedTopicId"
+    >
       <h2 class="text-2xl font-bold mb-6">Question & Answer Excel Upload</h2>
 
       <!-- Download Template Button -->
@@ -143,7 +1078,9 @@
 
       <!-- Upload Excel File -->
       <div class="mb-6">
-        <label class="block text-sm font-medium mb-2">Upload Excel File : </label>
+        <label class="block text-sm font-medium mb-2"
+          >Upload Excel File :
+        </label>
         <input
           type="file"
           ref="fileInput"
@@ -172,7 +1109,7 @@
           Preview ({{ ques.length }} items)
         </h3>
         <div class="max-h-60 overflow-y-auto border rounded-lg">
-          <table class="w-full">
+          <!-- <table class="w-full">
             <thead class="bg-gray-50 sticky top-0">
               <tr>
                 <th
@@ -193,7 +1130,34 @@
                 <td class="px-4 py-2 text-sm">{{ item.ans }}</td>
               </tr>
             </tbody>
-          </table>
+          </table> -->
+          <VDataTable
+            v-model:page="previewPage"
+            :headers="previewHeaders"
+            :items="ques"
+            :items-per-page="previewItemsPerPage"
+          >
+            <template v-slot:top>
+              <v-text-field
+                :model-value="previewItemsPerPage"
+                class="pa-2"
+                label="Items per page"
+                min="-1"
+                type="number"
+                hide-details
+                @update:model-value="previewItemsPerPage = parseInt($event, 10)"
+              ></v-text-field>
+            </template>
+
+            <template v-slot:bottom>
+              <div class="text-center pt-2">
+                <VPagination
+                  v-model="previewPage"
+                  :length="previewPageCount"
+                ></VPagination>
+              </div>
+            </template>
+          </VDataTable>
         </div>
       </div>
 
@@ -275,7 +1239,7 @@
       </div>
 
       <div class="table-responsive">
-        <table class="qa-table">
+        <!-- <table class="qa-table">
           <thead>
             <tr>
               <th class="checkbox-col">
@@ -344,10 +1308,142 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table> -->
+        <VDataTable
+          v-model="selectedItems"
+          :headers="qaTableHeaders"
+          :items="qaData"
+          :items-per-page="qaTableItemsPerPage"
+          :page="currentPage"
+          show-select
+          item-value="_id"
+          class="qa-table"
+        >
+          <!-- Custom header for select all -->
+          <template v-slot:header.data-table-select="{ props, on }">
+            <v-checkbox
+              v-bind="props"
+              v-on="on"
+              :indeterminate="someSelected && !allSelected"
+              :input-value="allSelected"
+              @change="toggleSelectAll"
+            ></v-checkbox>
+          </template>
+
+          <!-- Custom item select -->
+          <template
+            v-slot:item.data-table-select="{ item, isSelected, select }"
+          >
+            <v-checkbox
+              :input-value="isSelected"
+              @change="select($event)"
+            ></v-checkbox>
+          </template>
+
+          <!-- Question column with inline editing -->
+          <template v-slot:item.question="{ item }">
+            <div
+              @click="startEditing(item._id, 'question')"
+              :class="{ editing: isEditingCell(item._id, 'question') }"
+              class="editable-cell"
+            >
+              <div
+                v-if="isEditingCell(item._id, 'question')"
+                class="edit-container"
+              >
+                <v-textarea
+                  v-model="editingContent.text"
+                  auto-grow
+                  rows="1"
+                  dense
+                  outlined
+                  @blur="finishEditing(item._id, 'question')"
+                  @keydown.enter.prevent="finishEditing(item._id, 'question')"
+                  ref="editTextarea"
+                  class="edit-input"
+                ></v-textarea>
+              </div>
+              <div v-else>{{ item.question }}</div>
+            </div>
+          </template>
+
+          <!-- Answer column with inline editing -->
+          <template v-slot:item.answer="{ item }">
+            <div
+              @click="startEditing(item._id, 'answer')"
+              :class="{ editing: isEditingCell(item._id, 'answer') }"
+              class="editable-cell"
+            >
+              <div
+                v-if="isEditingCell(item._id, 'answer')"
+                class="edit-container"
+              >
+                <v-textarea
+                  v-model="editingContent.text"
+                  auto-grow
+                  rows="1"
+                  dense
+                  outlined
+                  @blur="finishEditing(item._id, 'answer')"
+                  @keydown.enter.prevent="finishEditing(item._id, 'answer')"
+                  ref="editTextarea"
+                  class="edit-input"
+                ></v-textarea>
+              </div>
+              <div v-else>{{ item.answer }}</div>
+            </div>
+          </template>
+
+          <!-- Custom row styling for edited items -->
+          <template v-slot:item="{ item, props }">
+            <tr :class="{ 'edited-row': isItemEdited(item._id) }">
+              <td v-for="(header, index) in qaTableHeaders" :key="qaTableHeaders.value">
+                <slot
+                  :name="`item.${header.value}`"
+                  :item="item"
+                  :header="header"
+                  :props="props"
+                >
+                  {{ item[header.value] }}
+                </slot>
+              </td>
+            </tr>
+          </template>
+
+          <!-- Custom footer for pagination info -->
+          <template v-slot:footer>
+            <div class="pagination">
+              <div class="pagination-info">
+                Page {{ currentPage }} of {{ totalPages }}
+              </div>
+              <div class="pagination-controls">
+                <v-btn
+                  @click="previousPage"
+                  :disabled="currentPage === 1"
+                  class="btn-pagination"
+                  outlined
+                  small
+                >
+                  <v-icon left>mdi-chevron-left</v-icon>
+                  Previous
+                </v-btn>
+                <v-btn
+                  @click="nextPage"
+                  :disabled="currentPage === totalPages"
+                  class="btn-pagination"
+                  outlined
+                  small
+                >
+                  Next
+                  <v-icon right>mdi-chevron-right</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </template>
+        </VDataTable>
       </div>
 
-      <div class="pagination">
+      <!-- <div class="pagination">
         <div class="pagination-info">
           Page {{ currentPage }} of {{ totalPages }}
         </div>
@@ -367,7 +1463,7 @@
             Next <span>→</span>
           </button>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- No Data Message -->
@@ -431,906 +1527,6 @@
   </div>
 </template>
 
-<script>
-import * as XLSX from "xlsx";
-import zipcelx from "zipcelx";
-export default {
-  name: "ExcelQAManager",
-  data() {
-    return {
-      qaData: [],
-      cachedPages: {}, // Cache for page data: { pageNum: [...data] }
-      lastSeenIds: {}, // Cache for lastSeenIds: { pageNum: lastSeenId }
-      selectedIdsByPage: {}, // Track selections by page: { pageNum: [...selectedIds] }
-      editedItems: {}, // Track edited items: { itemId: { question: '...', answer: '...' } }
-      editingContent: {
-        itemId: null,
-        field: null,
-        text: "",
-        originalText: "",
-      },
-      loading: false,
-      currentPage: 1,
-      totalPages: 0,
-      totalItems: 0,
-      pageSize: 25,
-      knowledgeBases: [], // List of knowledge bases
-      topics: [],
-      tenantPartitionKey: "kedar",
-      tempTenantKey: "",
-      selectedKbId: null, // Selected knowledge base ID
-      selectedKbName: "", // Selected knowledge base name
-      tempKbId: "", // Temporary KB ID for form
-      showDeleteModal: false,
-      showKbDeleteModal: false,
-      statusMessage: "",
-      statusType: "info", // 'info', 'success', 'error'
-      statusTimeout: null,
-      cacheTimestamp: null, // When the cache was last refreshed
-      tempTopicId: "",
-      selectedTopicId: null,
-      selectedTopicName: "",
-      ques: [],
-      validationMessage: "",
-      isValidFile: false,
-      saveMessage: "",
-      saveSuccess: false,
-      isSaving: false,
-    };
-  },
-
-  computed: {
-    allSelected() {
-      return (
-        this.qaData.length > 0 &&
-        this.selectedIdsByPage[this.currentPage] &&
-        this.selectedIdsByPage[this.currentPage].length === this.qaData.length
-      );
-    },
-    isFormValid() {
-      return (
-        // this.tempTenantKey.trim() &&
-        !this.tenantPartitionKey || // No tenant set yet, so only validate tenant field
-        (this.knowledgeBases.length > 0 && this.tempKbId) || // Tenant set, so validate KB selection
-        (this.topics.length > 0 && this.tempTopicId)
-      );
-    },
-  },
-
-  watch: {
-    // Update qaData whenever the page changes
-    currentPage: {
-      immediate: true,
-      handler(newPage) {
-        if (this.tenantPartitionKey && this.selectedKbId) {
-          this.loadPageData(newPage);
-        }
-      },
-    },
-    // Fetch knowledge bases when tenant key is set
-    tenantPartitionKey: {
-      immediate: true,
-      handler(newValue) {
-        if (newValue) {
-          this.fetchKnowledgeBases();
-        }
-      },
-    },
-    selectedKbId: {
-      immediate: true,
-      handler(newValue) {
-        if (newValue) {
-          this.fetchTopics();
-        }
-      },
-    },
-  },
-
-  methods: {
-    submitSelections() {
-      if (!this.tenantPartitionKey && this.tempTenantKey.trim()) {
-        this.tenantPartitionKey = this.tempTenantKey.trim();
-        // Don't reset tempTenantKey yet as we need it for the next step
-      }
-
-      if (this.tenantPartitionKey && this.tempKbId) {
-        // Find the KB name for the selected ID
-        const selectedKb = this.knowledgeBases.find(
-          (kb) => kb._id === this.tempKbId
-        );
-        if (selectedKb) {
-          this.selectedKbId = this.tempKbId;
-          this.selectedKbName = selectedKb.kb_name;
-
-          // Reset temporary values
-          // this.tempTenantKey = "";
-          this.tempKbId = "";
-          this.tempTopicId = "";
-          this.selectedTopicId = null;
-          this.selectedTopicName = "";
-          this.qaData = [];
-          this.cachedPages = {};
-          this.lastSeenIds = {};
-          this.selectedIdsByPage = {};
-          this.editedItems = {};
-          this.editingContent = {
-            itemId: null,
-            field: null,
-            text: "",
-            originalText: "",
-          };
-          // Reset data states
-          // this.resetState();
-
-          // // Fetch first page of data
-          // this.fetchData(1);
-        }
-      }
-
-      if (this.selectedKbId && this.tempTopicId) {
-        const selectedTopic = this.topics.find(
-          (tp) => tp._id === this.tempTopicId
-        );
-
-        if (selectedTopic) {
-          this.selectedTopicId = this.tempTopicId;
-          this.selectedTopicName = selectedTopic.topic_name;
-
-          this.tempTopicId = "";
-          this.resetState();
-          this.fetchData(1);
-        }
-      }
-    },
-
-    changeSelections() {
-      this.selectedKbId = null;
-      this.selectedKbName = "";
-      this.selectedTopicId = null;
-      this.selectedTopicName = "";
-      this.resetState();
-    },
-    resetStateComplete() {
-      this.qaData = [];
-      this.cachedPages = {};
-      this.lastSeenIds = {};
-      this.selectedIdsByPage = {};
-      this.editedItems = {};
-      this.editingContent = {
-        itemId: null,
-        field: null,
-        text: "",
-        originalText: "",
-      };
-      this.knowledgeBases = [];
-      this.topics = [];
-      this.currentPage = 1;
-      this.totalPages = 0;
-      this.totalItems = 0;
-      this.cacheTimestamp = null;
-      this.selectedKbId = null;
-      this.tenantPartitionKey = null;
-      this.selectedKbName = "";
-      this.tempTopicId = "";
-      this.selectedTopicId = null;
-      this.selectedTopicName = "";
-      this.ques = [];
-      this.validationMessage = "";
-      this.isValidFile = false;
-      this.saveMessage = "";
-      this.saveSuccess = false;
-      this.isSaving = false;
-    },
-    resetState() {
-      this.qaData = [];
-      this.cachedPages = {};
-      this.lastSeenIds = {};
-      this.selectedIdsByPage = {};
-      this.editedItems = {};
-      this.editingContent = {
-        itemId: null,
-        field: null,
-        text: "",
-        originalText: "",
-      };
-      this.currentPage = 1;
-      this.totalPages = 0;
-      this.totalItems = 0;
-      this.cacheTimestamp = null;
-      this.ques = [];
-      this.validationMessage = "";
-      this.isValidFile = false;
-      this.saveMessage = "";
-      this.saveSuccess = false;
-      this.isSaving = false;
-    },
-    downloadTemplate() {
-      // Create sample data for the template
-      const sampleData = [
-        [
-          { type : "string" , value : "Question" }, 
-          {type : "string" , value : "Answer" }
-        ],
-        [
-          { type : "string" , value : "What is Vue.js?" },
-          { type : "string" , value : "Vue.js is a progressive JavaScript framework for building user interfaces." }
-          
-        ],
-        [
-          { type : "string" , value : "What is Excel?" },
-          { type : "string" , value : "Excel is a spreadsheet application developed by Microsoft." }
-        ],
-        [
-          { type : "string" , value : "Sample Question 3" },
-          { type : "string" , value : "Sample Answer 3" }
-        ],
-      ];
-
-      // Use zipcelx to create and download the Excel file
-      const config = {
-        filename: "qa_template",
-        sheet: {
-          data: sampleData,
-        },
-      };
-
-      zipcelx(config);
-    },
-
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) {
-        this.resetValidation();
-        return;
-      }
-
-      this.validateAndParseFile(file);
-    },
-
-    validateAndParseFile(file) {
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: "array" });
-
-          // Get the first worksheet
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-
-          // Convert to JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          // Validate the file format
-          if (!this.validateFileFormat(jsonData)) {
-            return;
-          }
-
-          // Parse the data
-          this.parseQuestionsAndAnswers(jsonData);
-        } catch (error) {
-          this.validationMessage = "Error reading file: " + error.message;
-          this.isValidFile = false;
-          this.ques = [];
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    },
-
-    validateFileFormat(data) {
-      // Check if file has data
-      if (!data || data.length < 2) {
-        this.validationMessage =
-          "File must contain at least a header row and one data row.";
-        this.isValidFile = false;
-        this.ques = [];
-        return false;
-      }
-
-      // Check if header row exists and has correct columns
-      const headers = data[0];
-      if (!headers || headers.length < 2) {
-        this.validationMessage = "File must have at least 2 columns.";
-        this.isValidFile = false;
-        this.ques = [];
-        return false;
-      }
-
-      // Check if headers match expected format (case-insensitive)
-      const expectedHeaders = ["question", "answer"];
-      const actualHeaders = headers
-        .slice(0, 2)
-        .map((h) => (h || "").toString().toLowerCase().trim());
-
-      const headersMatch = expectedHeaders.every(
-        (expected, index) => actualHeaders[index] === expected
-      );
-
-      if (!headersMatch) {
-        this.validationMessage = `Headers must be "Question" and "Answer". Found: "${headers[0]}" and "${headers[1]}"`;
-        this.isValidFile = false;
-        this.ques = [];
-        return false;
-      }
-
-      return true;
-    },
-
-    parseQuestionsAndAnswers(data) {
-      const parsedQues = [];
-
-      // Skip header row (index 0) and process data rows
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-
-        // Skip empty rows
-        if (!row || row.length === 0 || (!row[0] && !row[1])) {
-          continue;
-        }
-
-        const question = (row[0] || "").toString().trim();
-        const answer = (row[1] || "").toString().trim();
-
-        // Only add rows that have both question and answer
-        if (question && answer) {
-          parsedQues.push({
-            que: question,
-            ans: answer,
-          });
-        }
-      }
-
-      if (parsedQues.length === 0) {
-        this.validationMessage =
-          "No valid question-answer pairs found. Make sure both columns have data.";
-        this.isValidFile = false;
-        this.ques = [];
-        return;
-      }
-
-      this.ques = parsedQues;
-      this.validationMessage = `Successfully loaded ${parsedQues.length} question-answer pairs.`;
-      this.isValidFile = true;
-
-      // Clear any previous save messages
-      this.saveMessage = "";
-    },
-
-    resetValidation() {
-      this.ques = [];
-      this.validationMessage = "";
-      this.isValidFile = false;
-      this.saveMessage = "";
-    },
-
-    async saveToBackend() {
-      if (this.ques.length === 0) return;
-
-      this.isSaving = true;
-      this.saveMessage = "";
-
-      try {
-        const payload = {
-          kb_id: this.selectedKbId,
-          topic_id: this.selectedTopicId,
-          ques: this.ques.map((pair) => ({
-            que: pair.que.trim(),
-            ans: pair.ans.trim(),
-          })),
-        };
-        // Replace this URL with your actual backend endpoint
-        const response = await fetch("http://localhost:8090/nexus/notebook/api/qapairs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "tnt": this.tenantPartitionKey,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          this.saveMessage = `Successfully saved ${this.ques.length} question-answer pairs to the backend.`;
-          this.saveSuccess = true;
-          this.loading = true;
-          this.refreshData();
-          this.loading = false;
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      } catch (error) {
-        this.saveMessage = `Error saving to backend: ${error.message}`;
-        this.saveSuccess = false;
-      } finally {
-        this.isSaving = false;
-      }
-    },
-    async fetchTopics() {
-      if (!this.selectedKbId) return;
-      this.loading = true;
-      try {
-        const response = await fetch(
-          `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${this.selectedKbId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              tnt: this.tenantPartitionKey,
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        this.topics = data.result || [];
-        console.log(this.topics);
-
-        if (this.topics.length === 0) {
-          this.showStatus("No knowledge bases found for this tenant", "info");
-        }
-      } catch (error) {
-        console.error("Error fetching topics:", error);
-        this.showStatus("Failed to load topics: " + error.message, "error");
-        this.knowledgeBases = [];
-      } finally {
-        this.loading = false;
-      }
-    },
-    async fetchKnowledgeBases() {
-      if (!this.tenantPartitionKey) return;
-
-      this.loading = true;
-
-      try {
-        const response = await fetch(
-          "http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=false",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              tnt: this.tenantPartitionKey,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        this.knowledgeBases = data.result || [];
-
-        if (this.knowledgeBases.length === 0) {
-          this.showStatus("No knowledge bases found for this tenant", "info");
-        }
-      } catch (error) {
-        console.error("Error fetching knowledge bases:", error);
-        this.showStatus(
-          "Failed to load knowledge bases: " + error.message,
-          "error"
-        );
-        this.knowledgeBases = [];
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // Load data from cache or fetch from server
-    async loadPageData(pageNum) {
-      if (!this.tenantPartitionKey || !this.selectedKbId) return;
-
-      // If page exists in cache, use it
-      if (this.cachedPages[pageNum]) {
-        this.qaData = this.cachedPages[pageNum];
-        // Initialize selection array for this page if needed
-        if (!this.selectedIdsByPage[pageNum]) {
-          this.selectedIdsByPage[pageNum] = [];
-        }
-        return;
-      }
-
-      // Otherwise, fetch from server
-      await this.fetchData(pageNum);
-    },
-
-    // Refresh all data (clear cache and fetch first page)
-    refreshData() {
-      this.resetState();
-      this.fetchData(1);
-      this.showStatus("Data refreshed", "success");
-    },
-
-    async fetchData(pageNum) {
-      if (!this.tenantPartitionKey || !this.selectedKbId) return;
-
-      this.loading = true;
-
-      try {
-        let url = `http://localhost:8090/nexus/notebook/api/qapairs/mongodb?page=${pageNum}&pageSize=${this.pageSize}&kb_id=${this.selectedKbId}&topic_id=${this.selectedTopicId}`;
-
-        // Add lastSeenId parameter for pages beyond the first page
-        if (pageNum > 1 && this.lastSeenIds[pageNum - 1]) {
-          url += `&lastSeenId=${this.lastSeenIds[pageNum - 1]}`;
-        }
-
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            tnt: this.tenantPartitionKey,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Update the current data
-        this.qaData = data.data;
-        this.totalPages = parseInt(data.totalPages);
-        this.totalItems = parseInt(data.total);
-
-        // Cache the retrieved data
-        this.cachedPages[pageNum] = data.data;
-
-        // Initialize selection array for this page if needed
-        if (!this.selectedIdsByPage[pageNum]) {
-          this.selectedIdsByPage[pageNum] = [];
-        }
-
-        // Update the lastSeenId for pagination
-        if (this.qaData.length > 0) {
-          this.lastSeenIds[pageNum] = this.qaData[this.qaData.length - 1]._id;
-        }
-
-        // Update cache timestamp
-        this.cacheTimestamp = new Date();
-      } catch (error) {
-        console.error("Error fetching QA pairs:", error);
-        this.qaData = [];
-        this.showStatus("Failed to load data: " + error.message, "error");
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    toggleSelectAll() {
-      if (!this.selectedIdsByPage[this.currentPage]) {
-        this.selectedIdsByPage[this.currentPage] = [];
-      }
-
-      if (this.allSelected) {
-        this.selectedIdsByPage[this.currentPage] = [];
-      } else {
-        this.selectedIdsByPage[this.currentPage] = this.qaData.map(
-          (item) => item._id
-        );
-      }
-    },
-    showDelKbModal() {
-      this.showKbDeleteModal = true;
-    },
-    confirmDeleteSelected() {
-      if (this.getSelectedCount() > 0) {
-        this.showDeleteModal = true;
-      }
-    },
-    cancelDeleteKb() {
-      this.showKbDeleteModal = false;
-    },
-    cancelDelete() {
-      this.showDeleteModal = false;
-    },
-
-    // Get all selected IDs across all pages
-    getAllSelectedIds() {
-      let allSelectedIds = [];
-      for (const pageNum in this.selectedIdsByPage) {
-        allSelectedIds = [
-          ...allSelectedIds,
-          ...this.selectedIdsByPage[pageNum],
-        ];
-      }
-      return allSelectedIds;
-    },
-
-    // Get total count of selected items
-    getSelectedCount() {
-      return this.getAllSelectedIds().length;
-    },
-    async deleteKnowledgeBase() {
-      this.showDelKbModal = false;
-      this.loading = true;
-      try {
-        const response = await fetch(
-          "http://localhost:8090/nexus/notebook/api/qapairs/kb",
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              tnt: this.tenantPartitionKey,
-            },
-            body: JSON.stringify({
-              kb_id: this.selectedKbId,
-              kb_name: this.selectedKbName,
-            }),
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log(`response del: ${JSON.stringify(data)}`);
-
-        // Show success message
-        this.showStatus(
-          `Successfully deleted ${this.selectedKbName} knowledge base`,
-          "success"
-        );
-
-        // Clear cache and reload data
-        this.resetStateComplete();
-      } catch (error) {
-        console.error("Error deleting records:", error);
-        this.showStatus("Failed to delete records: " + error.message, "error");
-      } finally {
-        this.loading = false;
-      }
-    },
-    async deleteSelected() {
-      this.showDeleteModal = false;
-      this.loading = true;
-      const selectedIds = this.getAllSelectedIds();
-
-      try {
-        const url = `http://localhost:8090/nexus/notebook/api/qapairs`;
-        const response = await fetch(url, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            tnt: this.tenantPartitionKey,
-          },
-          body: JSON.stringify({
-            kb_id: this.selectedKbId,
-            topic_id: this.selectedTopicId,
-            del_ids: selectedIds,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log(`response del: ${JSON.stringify(data)}`);
-
-        // Show success message
-        this.showStatus(
-          `Successfully deleted ${selectedIds.length} item(s)`,
-          "success"
-        );
-
-        // Clear cache and reload data
-        this.resetState();
-        this.fetchData(1);
-      } catch (error) {
-        console.error("Error deleting records:", error);
-        this.showStatus("Failed to delete records: " + error.message, "error");
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    showStatus(message, type = "info") {
-      this.statusMessage = message;
-      this.statusType = type;
-
-      // Clear any existing timeout
-      if (this.statusTimeout) {
-        clearTimeout(this.statusTimeout);
-      }
-
-      // Auto-clear success and info messages after 5 seconds
-      if (type !== "error") {
-        this.statusTimeout = setTimeout(() => {
-          this.clearStatus();
-        }, 5000);
-      }
-    },
-
-    clearStatus() {
-      this.statusMessage = "";
-      if (this.statusTimeout) {
-        clearTimeout(this.statusTimeout);
-        this.statusTimeout = null;
-      }
-    },
-
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage += 1;
-      }
-    },
-
-    previousPage() {
-      if (this.currentPage > 1) {
-        this.currentPage -= 1;
-      }
-    },
-
-    // Format cache status message
-    getCacheStatus() {
-      const pagesCount = Object.keys(this.cachedPages).length;
-      let timeAgo = "";
-
-      if (this.cacheTimestamp) {
-        const seconds = Math.floor((new Date() - this.cacheTimestamp) / 1000);
-        if (seconds < 60) {
-          timeAgo = `${seconds} seconds ago`;
-        } else if (seconds < 3600) {
-          timeAgo = `${Math.floor(seconds / 60)} minutes ago`;
-        } else {
-          timeAgo = `${Math.floor(seconds / 3600)} hours ago`;
-        }
-      }
-
-      return `${pagesCount} page(s) cached ${timeAgo}`;
-    },
-
-    // Start editing a cell
-    startEditing(itemId, field) {
-      // Get the current item from the data
-      const item = this.qaData.find((item) => item._id === itemId);
-      if (!item) return;
-
-      // Set up the editing state
-      this.editingContent = {
-        itemId: itemId,
-        field: field,
-        text: item[field],
-        originalText: item[field],
-      };
-
-      // Focus the textarea after Vue updates the DOM
-      this.$nextTick(() => {
-        if (this.$refs.editTextarea) {
-          const textarea = Array.isArray(this.$refs.editTextarea)
-            ? this.$refs.editTextarea[0]
-            : this.$refs.editTextarea;
-
-          if (textarea) {
-            textarea.focus();
-            textarea.select();
-          }
-        }
-      });
-    },
-
-    // Complete editing and save changes
-    finishEditing(itemId, field) {
-      // Make sure we're editing this item and field
-      if (
-        this.editingContent.itemId !== itemId ||
-        this.editingContent.field !== field
-      ) {
-        return;
-      }
-
-      const newText = this.editingContent.text.trim();
-      const originalText = this.editingContent.originalText.trim();
-
-      // Only update if content changed
-      if (newText !== originalText) {
-        // Find item in the current data and update it
-        const item = this.qaData.find((item) => item._id === itemId);
-        if (item) {
-          item[field] = newText;
-
-          // Update the item in cache as well
-          Object.values(this.cachedPages).forEach((pageData) => {
-            const cachedItem = pageData.find((i) => i._id === itemId);
-            if (cachedItem) {
-              cachedItem[field] = newText;
-            }
-          });
-
-          // Track this item as edited
-          if (!this.editedItems[itemId]) {
-            this.editedItems[itemId] = {
-              _id: itemId,
-              question: item.question,
-              answer: item.answer,
-              kb_id: this.selectedKbId, // Add the KB ID for the update API
-            };
-          } else {
-            this.editedItems[itemId][field] = newText;
-          }
-        }
-      }
-
-      // Clear editing state
-      this.editingContent = {
-        itemId: null,
-        field: null,
-        text: "",
-        originalText: "",
-      };
-    },
-
-    // Check if we're currently editing a specific cell
-    isEditingCell(itemId, field) {
-      return (
-        this.editingContent.itemId === itemId &&
-        this.editingContent.field === field
-      );
-    },
-
-    // Check if an item has been edited
-    isItemEdited(itemId) {
-      return !!this.editedItems[itemId];
-    },
-
-    // Get count of edited items
-    getEditedCount() {
-      return Object.keys(this.editedItems).length;
-    },
-
-    // Send all edited items to the update API
-    async updateEditedItems() {
-      if (this.getEditedCount() === 0) return;
-
-      this.loading = true;
-      const editedItemsArray = Object.values(this.editedItems);
-
-      try {
-        const response = await fetch(
-          "http://localhost:8090/nexus/notebook/api/qapairs",
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              tnt: this.tenantPartitionKey,
-            },
-            body: JSON.stringify({
-              kb_id: this.selectedKbId,
-              topic_id: this.selectedTopicId,
-              updateDocs: editedItemsArray,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log(`Update response: ${JSON.stringify(data)}`);
-
-        // Show success message
-        this.showStatus(
-          `Successfully updated ${editedItemsArray.length} item(s)`,
-          "success"
-        );
-
-        // Clear edited items after successful update
-        this.editedItems = {};
-        this.refreshData();
-      } catch (error) {
-        console.error("Error updating records:", error);
-        this.showStatus("Failed to update records: " + error.message, "error");
-      } finally {
-        this.loading = false;
-      }
-    },
-  },
-};
-</script>
 <style lang="scss">
 .qa-table-container {
   max-width: 1200px;
