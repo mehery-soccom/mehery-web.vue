@@ -124,12 +124,12 @@ function areJsonEqual(obj1, obj2) {
 }
 const getSecrets = async () => {
   try {
-    // const response = await axios.get("/v1/register", {
-    //   headers: {
-    //     tnt: tenantPartitionKey.value,
-    //   },
-    // });
-    // const data = await response.data;
+    const response = await axios.get("/v1/register", {
+      headers: {
+        tnt: tenantPartitionKey.value,
+      },
+    });
+    const data = await response.data;
     // const response = await fetch(
     //   // "http://localhost:8090/nexus/phone/v1/register",
     //   "http://localhost:8090/scriptus/phone/v1/register",
@@ -143,15 +143,7 @@ const getSecrets = async () => {
     // );
     // const data = await response.json();
     bullforcePstn.value = {
-      // ...data.bullforcePstn,
-      FS_IMPU : "sip:90099@bullforce",
-      FS_IMPI : 90099,
-      FS_SECRET : 1234,
-      FS_REALM : "bullforce",
-      FS_WS_PROXY_URL_INT : "wss://fs-bullforce.fortiddns.com:7443",
-      FS_WS_PROXY_URL_EXT : "wss://fs-bullforce.fortiddns.com:7443",
-      FS_OUTBOUND_PROXY_URL : "tcp://fs-bullforce.fortiddns.com:5080",
-      FS_ICE_SERVERS : "[{urls:'stun:fs-bullforce.fortiddns.com'},{urls:'turn:fs-bullforce.fortiddns.com',username:'bullforce',credential:'bullForce'}]",
+      ...data.bullforcePstn,
       FS_DISPLAY: "kedar"
     };
     // console.log(`bulllforce creds : ${JSON.stringify(bullforceCreds)}`);
