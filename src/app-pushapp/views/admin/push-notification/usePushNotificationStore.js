@@ -106,6 +106,9 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
     sendBulk(params) {
       return axios.post("/api/send-notification-bulk", params);
     },
+    sendBulkV2(params) {
+      return axios.post("/api/v2/send-notification-bulk", params);
+    },
 
     // 👉 Send Single Notification
     sendSingle(params) {
@@ -113,6 +116,16 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
         `/api/live-activity/${params.activity_id ? "update" : "start"}`,
         params
       );
+    },
+
+    // 👉 Fetch All Campaign
+    fetchCampaigns(params) {
+      return axios.get(`/api/v1/campaign`, { params });
+    },
+
+    // 👉 Fetch Single Campaign
+    fetchCampaign({ id }) {
+      return axios.get(`/api/v1/campaign/${id}`);
     },
 
     // 👉 Fetch all Templates

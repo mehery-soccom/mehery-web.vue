@@ -24,7 +24,7 @@ const pushNotificationStore = usePushNotificationStore();
 const tab = ref("tab-details");
 const isLoading = ref(false);
 const notification = reactive({
-  name: "",
+  campaignName: "",
   template: null,
   channel_id: null,
   platforms: [],
@@ -57,7 +57,7 @@ onMounted(async () => {
   const copy = route.query.copy;
   if (copy) {
     pushNotificationStore
-      .fetchSimpleNotification({ id: copy })
+      .fetchCampaign({ id: copy })
       .then((response) => {
         const _notification = response.data.notification;
         Object.assign(notification, {
@@ -91,7 +91,30 @@ const onSendSimple = async () => {
       channel_id: notification.channel_id,
     };
 
-    await pushNotificationStore.sendBulk(payload);
+    let payloadV2 = {
+      to: {
+        filter: {
+          platform: notification.platforms,
+          session_type: "all",
+        },
+      },
+      channel_id: notification.channel_id,
+      style: { code: "simple", ...template.style },
+      template: {
+        code: template.code,
+        data: template.model?.data,
+        lang: "en",
+      },
+      options: {
+        buttons: template.options.buttons,
+      },
+
+      type: template.type,
+      campaignName: notification.campaignName,
+    };
+
+    // await pushNotificationStore.sendBulk(payload);
+    await pushNotificationStore.sendBulkV2(payloadV2);
 
     show({ message: "Notification sent successfully", color: "success" });
 
@@ -283,7 +306,7 @@ const onDialogChange = (val) => {
                   <VRow>
                     <VCol cols="12" md="6">
                       <AppTextField
-                        v-model="notification.name"
+                        v-model="notification.campaignName"
                         label="Notification Name"
                         placeholder="Enter Notification Name"
                       />
