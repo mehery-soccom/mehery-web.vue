@@ -16,8 +16,8 @@ var CallEarlyEpoch =
   CallHangupEpoch =
   CallEarlyMedia =
     null);
-const getRing = () => document.getElementById("ringtone");
-const getAudioRemoteElement = () => document.getElementById("audio-remote");
+// const getRing = () => document.getElementById("ringtone");
+// const getAudioRemoteElement = () => document.getElementById("audio-remote");
 window.onload = function () {
   // txtPrivateIdentity = document.getElementById("txtPrivateIdentity");
   // txtPublicIdentity = document.getElementById("txtPublicIdentity");
