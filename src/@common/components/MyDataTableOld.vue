@@ -1,43 +1,22 @@
 <script setup>
-import { VDataTable, VDataTableServer } from "vuetify/labs/VDataTable";
+import { VDataTable } from "vuetify/labs/VDataTable";
 
 const props = defineProps({
-  serverSide: {
-    type: Boolean,
-    default: false,
-  },
-
-  headers: Array,
-  items: Array,
-  loading: Boolean,
-
-  itemsLength: {
-    type: Number,
-  },
-
-  page: {
-    type: Number,
-    default: 1,
-  },
-  itemsPerPage: {
-    type: Number,
-    default: 10,
-  },
-  sortBy: {
+  headers: {
     type: Array,
-    default: () => [],
+    required: true,
   },
-
-  filters: {
-    type: Object,
-    default: () => ({}),
+  items: {
+    type: Array,
+    required: true,
+  },
+  loading: {
+    type: Boolean,
+    required: false,
   },
 });
 
-const emit = defineEmits([
-  // "update:filters",
-  "update:options",
-]);
+const emit = defineEmits([]);
 
 /**
  * useAttrs() -  To forward unknown props and listeners
@@ -52,11 +31,9 @@ const attrs = useAttrs();
  * usage : v-bind="tableProps"
  */
 const tableProps = computed(() => {
-  const { filters, ...rest } = props;
-
-  const _props = { ...rest, itemsLength: itemsLength.value };
-
-  console.log("_props", _props);
+  const { headers, items, ...rest } = props;
+  const _props = { headers, items };
+  // console.log("_props", _props);
   return _props;
 });
 
@@ -67,8 +44,7 @@ const tableListeners = computed(() => {
   const _listeners = Object.fromEntries(
     Object.entries(attrs).filter(([key]) => key.startsWith("on"))
   );
-
-  console.log("_listeners", _listeners);
+  // console.log("_listeners", _listeners);
   return _listeners;
 });
 
@@ -82,67 +58,14 @@ const itemScopedSlots = computed(() => {
   );
   return r;
 });
-
-const itemsLength = computed(() => {
-  return props.serverSide ? props.itemsLength || 0 : props.items.length;
-});
-
-const handleOptionsUpdate = (options) => {
-  console.log("handleOptionsUpdate", options);
-
-  emit("update:options", {
-    itemsLength: itemsLength.value,
-
-    page: options.page,
-    itemsPerPage: options.itemsPerPage,
-    sortBy: options.sortBy,
-
-    filters: props.filters,
-  });
-};
-
-const handleFiltersUpdate = () => {
-  //   emit("update:filters", { ...props.filters });
-
-  emit("update:options", {
-    itemsLength: itemsLength.value,
-
-    page: props.page,
-    itemsPerPage: props.itemsPerPage,
-    sortBy: props.sortBy,
-
-    filters: props.filters,
-  });
-};
-
-const currentComponent = computed(() => {
-  return props.serverSide ? VDataTableServer : VDataTable;
-});
 </script>
 
 <template>
-  <component
-    :is="currentComponent"
+  <VDataTable
     class="text-no-wrap mb-3 my-data-table"
     v-bind="tableProps"
     v-on="tableListeners"
-    @update:options="props.serverSide ? handleOptionsUpdate : () => {}"
   >
-    <!-- Filter inputs -->
-    <template v-slot:thead>
-      <tr>
-        <td v-for="header in props.headers" :key="header.key" class="px-2">
-          <v-text-field
-            v-if="props.filters.hasOwnProperty(header.key)"
-            v-model="props.filters[header.key]"
-            density="compact"
-            variant="underlined"
-            @update:modelValue="handleFiltersUpdate"
-          />
-        </td>
-      </tr>
-    </template>
-
     <!-- Forward default slot -->
     <template v-if="hasSlot('default')" #default="slotProps">
       <slot v-bind="slotProps" />
@@ -187,7 +110,7 @@ const currentComponent = computed(() => {
     <template v-if="hasSlot('expanded-row')" #expanded-row="slotProps">
       <slot name="expanded-row" v-bind="slotProps" />
     </template>
-  </component>
+  </VDataTable>
 </template>
 
 <style lang="scss">

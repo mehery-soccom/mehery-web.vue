@@ -1,49 +1,54 @@
 <script setup>
 import MyDataTable from "@/@common/components/MyDataTable.vue";
-import { PLATFORM_COLORS } from "@app/utils/constants";
-// import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
+import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 import { smartFormatDate } from "@core/utils/formatters";
 
 const pushNotificationStore = usePushNotificationStore();
 const isLoading = ref(false);
 const notifications = ref([]);
-const headers = [
-  //   { title: "", key: "data-table-expand" },
-  {
-    title: "Name",
-    key: "campaignName",
+const totalNotifications = ref(0);
+// const itemsPerPage = ref(10);
+const colors = {
+  success: {
+    color: "success",
   },
+  failed: {
+    color: "error",
+  },
+};
+const headers = [
+  { title: "", key: "data-table-expand" },
   {
-    title: "Template",
-    key: "templateCode",
+    title: "Notification",
+    key: "notification",
   },
   {
     title: "Status",
     key: "status",
+    sortable: false,
   },
+  // {
+  //   title: "Platform(s)",
+  //   key: "platforms",
+  //   sortable: false,
+  // },
   {
-    title: "Platform(s)",
-    key: "filters.platform",
+    title: "Start / Send",
+    key: "sent_at",
+  },
+  // {
+  //   title: "End",
+  //   key: "end",
+  // },
+  {
+    title: "Sends",
+    key: "sent_to.total",
     sortable: false,
   },
   {
-    title: "Start",
-    key: "createdStamp",
-  },
-  {
-    title: "Total",
-    key: "messageCount",
-    sortable: false,
-  },
-  {
-    title: "Sent",
-    key: "stats.sent",
-    sortable: false,
-  },
-  {
-    title: "Failed",
-    key: "stats.failed",
+    title: "Opens",
+    key: "opened.total",
     sortable: false,
   },
   {
@@ -52,18 +57,9 @@ const headers = [
     sortable: false,
   },
 ];
-const pagination = reactive({
-  itemsLength: 0,
-  page: 1,
-  itemsPerPage: 10,
-  sortBy: [],
-  filters: {},
-});
 
 onMounted(async () => {
-  // fetchSimpleNotifications();
-
-  fetchCampaigns();
+  fetchSimpleNotifications();
 });
 
 // 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
@@ -76,6 +72,7 @@ const fetchSimpleNotifications = () => {
     .fetchSimpleNotifications()
     .then((response) => {
       notifications.value = response.results.map((r) => ({ ...r, id: r._id }));
+      totalNotifications.value = response.data?.total;
     })
     .catch((error) => {
       console.log(error);
@@ -85,30 +82,12 @@ const fetchSimpleNotifications = () => {
     });
 };
 
-const fetchCampaigns = async () => {
-  try {
-    isLoading.value = true;
+// const onUpdateOptions = (newValue) => {
+//   console.log("onUpdateOptions", newValue);
+//   // options.value = newValue;
 
-    const response = await pushNotificationStore.fetchCampaigns();
-    notifications.value = response.data.results.map((r) => ({
-      ...r,
-      id: r._id,
-    }));
-    pagination.itemsLength = response.data.pagination.total;
-  } catch (error) {
-    console.error(error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const onUpdateOptions = (options) => {
-  pagination.itemsLength = options.itemsLength;
-  pagination.page = options.page;
-  pagination.itemsPerPage = options.itemsPerPage;
-  pagination.sortBy = options.sortBy;
-  pagination.filters = options.filters;
-};
+//   fetchSimpleNotifications();
+// };
 </script>
 
 <template>
@@ -135,51 +114,69 @@ const onUpdateOptions = (options) => {
       :headers="headers"
       :items="notifications"
       :loading="isLoading"
-      :server-side="true"
-      v-bind="pagination"
-      @update:options="onUpdateOptions"
+      show-expand
     >
-      <!-- show-expand -->
       <!-- Expanded Row Data -->
       <template #expanded-row="slotProps">
         <tr class="v-data-table__tr">
           <td :colspan="headers.length">
-            <!-- <NotificationQuickAnalytics :data="slotProps.item.raw" /> -->
+            <NotificationQuickAnalytics :data="slotProps.item.raw" />
           </td>
         </tr>
       </template>
 
+      <!-- notification -->
+      <template #item.notification="{ item }">
+        <div class="d-flex flex-column ms-3 col-status">
+          <span
+            class="d-block font-weight-medium text--primary text-truncate"
+            >{{ item.raw.title }}</span
+          >
+          <small class="text-truncate">{{ item.raw.message }}</small>
+        </div>
+      </template>
+
       <!-- status -->
       <template #item.status="{ item }">
-        <div class="d-flex gap-2">{{ item.raw.status }}</div>
-      </template>
-
-      <!-- sent at -->
-      <template #item.createdStamp="{ item }">
-        {{ smartFormatDate(item.raw.createdStamp) }}
-      </template>
-
-      <!-- platforms -->
-      <template #item.filters.platform="{ item }">
         <div class="d-flex gap-2">
           <VChip
-            v-for="p in item.raw.filters.platform"
-            :key="p"
+            v-for="[k, v] in Object.entries(item.raw.status)"
+            :key="k"
             label
-            :color="PLATFORM_COLORS[p]?.color"
+            :color="colors[k]?.color"
             class="font-weight-medium"
           >
-            {{ PLATFORM_COLORS[p]?.text }}
+            {{ v }}
           </VChip>
         </div>
       </template>
+
+      <!-- sent at -->
+      <template #item.sent_at="{ item }">
+        {{ smartFormatDate(item.raw.sent_at) }}
+      </template>
+
+      <!-- platforms -->
+      <!-- <template #item.platforms="{ item }">
+        <div class="d-flex gap-2">
+          <VChip
+            v-for="p in item.raw.platforms"
+            :key="p.platform_type"
+            label
+            :color="colors[p.platform_type].color"
+            class="font-weight-medium"
+          >
+            {{ colors[p.platform_type].text }}
+          </VChip>
+        </div>
+      </template> -->
 
       <!-- Actions -->
       <template #item.actions="{ item }">
         <IconBtn
           :to="{
             name: 'admin-push-notification-campaigns-add',
-            query: { copy: item.raw.id },
+            query: { copy: item.raw.notification_id },
           }"
         >
           <VIcon icon="mdi-content-copy" />

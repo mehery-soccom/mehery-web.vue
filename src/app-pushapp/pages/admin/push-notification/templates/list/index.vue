@@ -86,7 +86,6 @@ const onSendStyled = async (template, update) => {
         },
       },
       channel_id: testNotification.channel_id,
-      activity_id: testNotification.activity_id,
       style: { code: template.subType, ...template.style, progress_percent },
       template: {
         code: template.code,
@@ -96,6 +95,9 @@ const onSendStyled = async (template, update) => {
       options: {
         buttons: [],
       },
+
+      type: template.type,
+      activity_id: testNotification.activity_id,
     };
 
     let res = await pushNotificationStore.sendSingle(payload);
