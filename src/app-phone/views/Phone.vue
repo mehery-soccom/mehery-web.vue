@@ -7,6 +7,7 @@ const isCallHistory = ref(false);
 const isDialer = ref(true);
 const callState = ref("idle"); // 'idle', 'ringing', 'talking'
 const tenantPartitionKey = ref("kedar");
+const loadedResources = ref([]);
 const bullforcePstn = ref({
   FS_DISPLAY: "",
   FS_IMPU: "",
@@ -72,8 +73,10 @@ const statusClass = computed(() => {
 });
 
 // Methods
-const initializeSIPBridge = () => {
+const initializeSIPBridge = async () => {
   // Check if SIP bridge is available
+  console.log("Entered SIP bridge initialize");
+  
   if (!window.sipEventBridge) {
     console.error(
       "SIP Event Bridge not available. Make sure server.js is loaded."
@@ -105,8 +108,12 @@ const cleanupSIPBridge = () => {
 function areJsonEqual(obj1, obj2) {
   if (obj1 === obj2) return true;
 
-  if (typeof obj1 !== 'object' || obj1 === null ||
-      typeof obj2 !== 'object' || obj2 === null) {
+  if (
+    typeof obj1 !== "object" ||
+    obj1 === null ||
+    typeof obj2 !== "object" ||
+    obj2 === null
+  ) {
     return false;
   }
 
@@ -147,7 +154,7 @@ const getSecrets = async () => {
       FS_DISPLAY: "kedar"
     };
     // console.log(`bulllforce creds : ${JSON.stringify(bullforceCreds)}`);
-    // console.log("are equivalent : ",areJsonEqual(,bullforceCreds.bullforceCreds));
+    // console.log("are equivalent : ",areJsonEqual(bullforcePstn.value,correctValue));
   } catch (error) {
     console.error(error);
     bullforcePstn.value = {};
@@ -156,9 +163,11 @@ const getSecrets = async () => {
     // converting number to string
     bullforcePstn.value.FS_IMPI = bullforcePstn.value.FS_IMPI.toString();
     bullforcePstn.value.FS_SECRET = bullforcePstn.value.FS_SECRET.toString();
-    // converting string of list of JSON objects to a list of JSON objects according to 
+    // converting string of list of JSON objects to a list of JSON objects according to
     // these docs : https://www.doubango.org/sipml5/docgen/symbols/SIPml.Stack.html
-    bullforcePstn.value.FS_ICE_SERVERS = eval('(' + bullforcePstn.value.FS_ICE_SERVERS + ')');
+    bullforcePstn.value.FS_ICE_SERVERS = eval(
+      "(" + bullforcePstn.value.FS_ICE_SERVERS + ")"
+    );
     console.log(`bullforcePstn changed : `, bullforcePstn.value);
     console.log(`Sip register to be called`);
     // callSipRegister();
@@ -186,7 +195,7 @@ const callSipUnregister = () => {
   } catch (error) {
     console.error("Error calling sipRegister:", error);
   }
-}
+};
 
 const handleIncomingCall = (data) => {
   console.log("Incoming call received:", data);
@@ -396,71 +405,179 @@ const updateCallHistory = (newStatus) => {
     callHistory.value[0].status = newStatus;
   }
 };
-const setAttribute = (target, attrs) => {
-  for (var key in attrs) {
-    if (key == "href" || key == "src") {
-      attrs[key] = window.__dynamic_base__ + attrs[key];
-    }
-    target.setAttribute(key, attrs[key]);
-  }
-  return target;
-};
-// const preloads = [
-//   {
-//     parentTagName: "head",
-//     tagName: "script",
-//     attrs: { src: "/javascript/adapter.js" },
-//   },
-//   {
-//     parentTagName: "head",
-//     tagName: "script",
-//     attrs: { src: "/javascript/SIPml-api-altered.js" },
-//   },
-//   {
-//     parentTagName: "head",
-//     tagName: "script",
-//     attrs: { src: "/javascript/server.js" },
-//   },
-// ];
 
 const openRecents = async () => {
   isCallHistory.value = true;
   isDialer.value = false;
-}
+};
 const openDialer = async () => {
   isCallHistory.value = false;
   isDialer.value = true;
-}
+};
+
 function handleKeydown(event) {
-  const allowedKeys = ['Backspace', 'Delete'];
+  const allowedKeys = ["Backspace", "Delete"];
   const isDigit = /^[0-9]$/.test(event.key);
-  if(isDigit){
+  if (isDigit) {
     addDigit(event.key);
   } else if (allowedKeys.includes(event.key)) {
     // Do something for Backspace, Delete, or digit 0–9
     removeDigit();
-  } 
+  }
 }
+// Data for elements to be preloaded
+const preloads = [
+  {
+    parentTagName: "head",
+    tagName: "script",
+    attrs: { src: `${REMOTE_JS_URL}/javascript/adapter.js` },
+  },
+  {
+    parentTagName: "head",
+    tagName: "script",
+    attrs: { src: `${REMOTE_JS_URL}/javascript/SIPml-api-altered.js` },
+  },
+  {
+    parentTagName: "head",
+    tagName: "script",
+    attrs: { src: `${REMOTE_JS_URL}/javascript/server.js` },
+  },
+];
+
+// Data for audio elements
+const audioElements = [
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: { id: "ringtone", loop: "", src: `${REMOTE_JS_URL}/javascript/sounds/ringtone.wav` },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: {
+      id: "ringbacktone",
+      loop: "",
+      src: `${REMOTE_JS_URL}/javascript/sounds/ringbacktone.wav`,
+    },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: { id: "dtmfTone", src: `${REMOTE_JS_URL}/javascript/sounds/dtmf.wav` },
+  },
+  {
+    parentTagName: "body",
+    tagName: "audio",
+    attrs: { id: "audio-remote", autoplay: "autoplay" },
+  },
+];
+const loadElements = async (elements) => {
+  return Promise.all(
+    elements.map((elementConfig) => {
+      return new Promise((resolve, reject) => {
+        const parent = document.querySelector(elementConfig.parentTagName);
+        if (!parent) {
+          console.warn(
+            `Parent tag "${elementConfig.parentTagName}" not found for element:`,
+            elementConfig
+          );
+          return resolve(); // Resolve even if parent not found to not block other elements
+        }
+
+        const newElement = document.createElement(elementConfig.tagName);
+        for (const attr in elementConfig.attrs) {
+          
+          newElement.setAttribute(attr, elementConfig.attrs[attr]);
+          
+        }
+
+        if (elementConfig.tagName === "script") {
+          newElement.onload = () => {
+            console.log(`Script loaded: ${elementConfig.attrs.src}`);
+            resolve();
+          };
+          newElement.onerror = (error) => {
+            console.error(
+              `Error loading script: ${elementConfig.attrs.src}`,
+              error
+            );
+            reject(error);
+          };
+        } else if (elementConfig.tagName === "audio" && elementConfig.attrs.src ) {
+          // For audio, we can listen to 'canplaythrough' or 'loadeddata'
+          // 'canplaythrough' means the browser estimates it can play the media to the end without stopping for buffering
+          newElement.oncanplaythrough = () => {
+            console.log(
+              `Audio loaded and ready to play: ${elementConfig.attrs.id}`
+            );
+            resolve();
+          };
+          newElement.onerror = (error) => {
+            console.error(
+              `Error loading audio: ${elementConfig.attrs.id}`,
+              error
+            );
+            reject(error);
+          };
+          // In case canplaythrough doesn't fire for some reason or faster resolution is needed
+          // newElement.onloadeddata = () => {
+          //   console.log(`Audio data loaded: ${elementConfig.attrs.id}`);
+          //   resolve();
+          // };
+        } else {
+          resolve(); // For other tag types, resolve immediately after creation
+        }
+        parent.appendChild(newElement);
+      });
+    })
+  );
+};
 // Lifecycle hooks
 onMounted(async () => {
-  window.addEventListener('keydown', handleKeydown);
-  console.log("Phone onMounted");
+  console.log("windows const app context : ", window.CONST.APP_CONTEXT);
+  console.log("window const cdn url : ", window.CONST.CDN_URL);
+  console.log("window dynamic base : ", window.__dynamic_base__);
+  console.log("REMOTE_JS_URL",REMOTE_JS_URL);
+  try {
+    // Load script files
+    await loadElements(preloads);
+    console.log("All script files loaded.");
 
-  initializeSIPBridge();
+    // Create and load audio elements
+    await loadElements(audioElements);
+    console.log("All audio elements created and ready.");
 
-  nextTick(() => {
-    setTimeout(() => {
-      getSecrets();
-    }, 100);
-  });
-});
-onBeforeUnmount(() => {
-  console.log(`unmounting`);
-  window.removeEventListener('keydown', handleKeydown);
-  cleanupSIPBridge();
-  if (callTimer.value) {
-    clearInterval(callTimer.value);
+    // Once both are done, the rest of your onMounted logic can run
+    console.log(
+      "onMounted: Preloading and audio elements setup complete. Running the rest of the onMounted hook."
+    );
+    // Your other onMounted logic here
+    // e.g., initialize SIPml-api, set up event listeners, etc.
+  } catch (error) {
+    console.error(
+      "onMounted: Error during preloading or element creation:",
+      error
+    );
+    // Handle errors appropriately, e.g., show an error message to the user
   }
+  window.onloadServerJs();
+  await initializeSIPBridge();
+  await getSecrets();
+  console.log("Phone component mounted.");
+});
+
+onBeforeUnmount(() => {
+  console.log("Phone component unmounting.");
+  window.removeEventListener("keydown", handleKeydown);
+  cleanupSIPBridge();
+
+  // Clean up dynamically loaded elements
+  loadedResources.value.forEach((element) => {
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+  });
+  loadedResources.value = [];
 });
 </script>
 
@@ -667,12 +784,16 @@ onBeforeUnmount(() => {
         class="action-button"
         @click="callSipUnregister"
         :disabled="registrationStatus !== 'connected'"
-      >Sip-Un-Register</button>
+      >
+        Sip-Un-Register
+      </button>
       <button
         class="action-button"
         @click="callSipRegister"
         :disabled="registrationStatus !== 'Disconnected'"
-      >Sip-Register</button>
+      >
+        Sip-Register
+      </button>
     </div>
   </div>
 </template>

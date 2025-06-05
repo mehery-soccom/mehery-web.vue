@@ -19,6 +19,7 @@ var CallEarlyEpoch =
 // const getRing = () => document.getElementById("ringtone");
 // const getAudioRemoteElement = () => document.getElementById("audio-remote");
 window.onload = function () {
+  console.log("In server.js window.onload");
   // txtPrivateIdentity = document.getElementById("txtPrivateIdentity");
   // txtPublicIdentity = document.getElementById("txtPublicIdentity");
   // txtPassword = document.getElementById("txtPassword");
@@ -102,7 +103,15 @@ window.onload = function () {
 
   SIPml.init(postInit);
 };
+window.onloadServerJs = function () {
+  console.log("In window.onloadServerJs");
+  txtPhoneNumber = document.getElementById("txtPhoneNumber");
+  txtCallStatus = document.getElementById("txtCallStatus");
+  Ring = document.getElementById("ringtone");
+  SIPml.init(postInit);
+}
 window.sipEventBridge = {
+  
   callbacks: {},
 
   // Register callback functions from Vue component
@@ -392,13 +401,6 @@ function onSipEventStack(e /*SIPml.Stack.Event*/) {
         // btnCall.value = 'Answer';
         // btnHangup.value = 'Reject';
         // btnHangup.disabled = false;
-        // Ring = getRing();
-        // if (Ring) {
-        //   console.log("Ring new call found");
-          
-        // } else {
-        //   console.log("Ring new call not found");
-        // }
         Ring.play();
       }
       break;
@@ -422,37 +424,11 @@ function onSipEventStack(e /*SIPml.Stack.Event*/) {
         console.log(`message :${e.getContentString()}`);
         const message = JSON.parse(e.getContentString());
         if (message.call_status == "HANGUP") {
-          // Ring = getRing();
-          // if (Ring) {
-          //   console.log("Ring new call found");
-          //   if(!Ring.paused){
-          //     Ring.pause();
-          //   }
-          // } else {
-          //   console.log("Ring new call not found");
-          // }
           window.sipEventBridge.emit("callTerminated", {
             description: "HANGUP",
             timestamp: new Date().toISOString(),
           });
         } 
-        // else if (message.call_status == "RINGING") {
-        //   Ring = getRing();
-        //   if (Ring) {
-        //     Ring.play();
-        //     console.log("Ring found");
-        //   } else {
-        //     console.log("Ring not found");
-        //   }
-        // } else if (message.call_status == "ACTIVE") {
-        //   Ring = getRing();
-        //   if (Ring) {
-        //     Ring.pause();
-        //     console.log("Ring pause found");
-        //   } else {
-        //     console.log("Ring pause not found");
-        //   }
-        // }
         callEngageTime(e.getContentString());
       }
 
