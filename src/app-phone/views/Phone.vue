@@ -168,7 +168,6 @@ const getSecrets = async () => {
     bullforcePstn.value.FS_ICE_SERVERS = eval(
       "(" + bullforcePstn.value.FS_ICE_SERVERS + ")"
     );
-    console.log(`bullforcePstn changed : `, bullforcePstn.value);
     console.log(`Sip register to be called`);
     // callSipRegister();
   }
@@ -560,6 +559,7 @@ onMounted(async () => {
     );
     // Handle errors appropriately, e.g., show an error message to the user
   }
+  window.addEventListener('keydown', handleKeydown);
   window.onloadServerJs();
   await initializeSIPBridge();
   await getSecrets();
@@ -781,6 +781,7 @@ onBeforeUnmount(() => {
         </li> -->
       </ul>
       <button
+        v-if="registrationStatus === 'connected'"
         class="action-button"
         @click="callSipUnregister"
         :disabled="registrationStatus !== 'connected'"
@@ -788,11 +789,11 @@ onBeforeUnmount(() => {
         Sip-Un-Register
       </button>
       <button
+        v-if="registrationStatus === 'Disconnected'"
         class="action-button"
         @click="callSipRegister"
         :disabled="registrationStatus !== 'Disconnected'"
-      >
-        Sip-Register
+      >Sip-Register
       </button>
     </div>
   </div>
@@ -1038,6 +1039,7 @@ onBeforeUnmount(() => {
 }
 
 .action-button {
+  padding: 10px;
   flex: 1;
   height: 50px;
   border: none;
