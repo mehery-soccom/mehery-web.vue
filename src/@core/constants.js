@@ -1,5 +1,6 @@
 const { CONST = {} } = window;
 
+window.__dynamic_base__ = CONST.CDN_URL;
 export const APP = CONST.APP;
 export const WEBAPP = CONST.WEBAPP?.split("/").pop() || APP;
 export const APP_CONTEXT =
@@ -13,3 +14,4 @@ export const APP_CONTEXT =
 export const CDN_CONTEXT = CONST.CDN_CONTEXT || APP_CONTEXT;
 export const API_CONTEXT = CONST.API_CONTEXT || APP_CONTEXT;
 export const REMOTE_SERVER_URL = `${window.location.origin}${API_CONTEXT}`;
+export const REMOTE_JS_URL = CONST.CDN_URL;

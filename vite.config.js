@@ -125,10 +125,10 @@ export default defineConfig({
         "src/@core/components",
         "src/app-pushapp/views/demos",
         "src/app-pushapp/components",
-        "src/app-notebook/views/demos",
-        "src/app-notebook/components",
-        "src/app-phone/views/demos",
-        "src/app-phone/components",
+        // "src/app-notebook/views/demos",
+        // "src/app-notebook/components",
+        // "src/app-phone/views/demos",
+        // "src/app-phone/components",
       ],
       dts: false,
     }),
@@ -232,6 +232,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: ["src/main.js", "src/bootstrap.js"],
       output: {
         entryFileNames: `[name].js`,
         chunkFileNames: `[name].js`,

@@ -1,46 +1,21 @@
 <script setup>
-import "@core/scss/template/index.scss";
+import { onMounted } from "vue";
+// import Dailer from "./views/Dailer.vue";
+import Phone from "./views/Phone.vue";
+// import Home from "./views/Home.vue";
 
-import "@app-phone/styles/styles.scss";
-
-import { loadFonts } from "@app-phone/plugins/webfontloader";
-loadFonts();
-
-import { useTheme } from "vuetify";
-
-import ScrollToTop from "@core/components/ScrollToTop.vue";
-import { useThemeConfig } from "@core/composable/useThemeConfig";
-
-import SnackbarProvider from "@app-phone/plugins/SnackbarProvider.vue";
-import { hexToRgb } from "@layouts/utils";
-
-const {
-  syncInitialLoaderTheme,
-  syncVuetifyThemeWithTheme: syncConfigThemeWithVuetifyTheme,
-  isAppRtl,
-  handleSkinChanges,
-} = useThemeConfig();
-
-const { global } = useTheme();
-
-// ℹ️ Sync current theme with initial loader theme
-syncInitialLoaderTheme();
-syncConfigThemeWithVuetifyTheme();
-handleSkinChanges();
+onMounted(() => {
+  console.log("Phone App mounted");
+});
 </script>
 
 <template>
-  <VLocaleProvider :rtl="isAppRtl">
-    <!-- ℹ️ This is required to set the background color of active nav link based on currently active global theme's primary -->
-    <SnackbarProvider>
-      <VApp
-        :style="`--v-global-theme-primary: ${hexToRgb(
-          global.current.value.colors.primary
-        )}`"
-      >
-        <RouterView />
-        <ScrollToTop />
-      </VApp>
-    </SnackbarProvider>
-  </VLocaleProvider>
+  <!-- <Dailer></Dailer> -->
+  <!-- <br /> -->
+  <!-- <Home /> -->
+  <!-- <br /> -->
+  <Phone />
 </template>
+
+<style lang="scss">
+</style>
