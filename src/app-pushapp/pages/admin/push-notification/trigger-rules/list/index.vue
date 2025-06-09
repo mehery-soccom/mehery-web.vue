@@ -1,5 +1,5 @@
 <script setup></script>
 
 <template>
-  <div>trigger rules list</div>
+  <div>coming soon...</div>
 </template>

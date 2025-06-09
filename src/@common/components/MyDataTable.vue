@@ -56,7 +56,7 @@ const tableProps = computed(() => {
 
   const _props = { ...rest, itemsLength: itemsLength.value };
 
-  console.log("_props", _props);
+  // console.log("_props", _props);
   return _props;
 });
 
@@ -68,7 +68,7 @@ const tableListeners = computed(() => {
     Object.entries(attrs).filter(([key]) => key.startsWith("on"))
   );
 
-  console.log("_listeners", _listeners);
+  // console.log("_listeners", _listeners);
   return _listeners;
 });
 
@@ -88,7 +88,7 @@ const itemsLength = computed(() => {
 });
 
 const handleOptionsUpdate = (options) => {
-  console.log("handleOptionsUpdate", options);
+  // console.log("handleOptionsUpdate", options);
 
   emit("update:options", {
     itemsLength: itemsLength.value,
@@ -126,7 +126,7 @@ const currentComponent = computed(() => {
     class="text-no-wrap mb-3 my-data-table"
     v-bind="tableProps"
     v-on="tableListeners"
-    @update:options="props.serverSide ? handleOptionsUpdate : () => {}"
+    @update:options="handleOptionsUpdate"
   >
     <!-- Filter inputs -->
     <template v-slot:thead>

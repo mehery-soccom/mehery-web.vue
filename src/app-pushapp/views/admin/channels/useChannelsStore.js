@@ -20,7 +20,6 @@ export const useChannelsStore = defineStore("ChannelsStore", {
           page: 1,
         },
       };
-      console.log(res);
       return res;
     },
 

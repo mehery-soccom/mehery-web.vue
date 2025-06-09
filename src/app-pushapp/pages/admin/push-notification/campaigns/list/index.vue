@@ -4,6 +4,7 @@ import { PLATFORM_COLORS } from "@app/utils/constants";
 // import NotificationQuickAnalytics from "@app/views/admin/push-notification/NotificationQuickAnalytics.vue";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
 import { smartFormatDate } from "@core/utils/formatters";
+import debounce from "lodash/debounce";
 
 const pushNotificationStore = usePushNotificationStore();
 const isLoading = ref(false);
@@ -57,39 +58,22 @@ const pagination = reactive({
   page: 1,
   itemsPerPage: 10,
   sortBy: [],
-  filters: {},
+  multiSort: true,
+  filters: {
+    campaignName: "",
+    templateCode: "",
+  },
 });
 
 onMounted(async () => {
-  // fetchSimpleNotifications();
-
-  fetchCampaigns();
+  fetchCampaigns({ ...pagination });
 });
 
-// 👉 watch for data table options like itemsPerPage,page,searchQuery,sortBy etc...
-watchEffect(() => {});
-
-// 👉 Fetch
-const fetchSimpleNotifications = () => {
-  isLoading.value = true;
-  pushNotificationStore
-    .fetchSimpleNotifications()
-    .then((response) => {
-      notifications.value = response.results.map((r) => ({ ...r, id: r._id }));
-    })
-    .catch((error) => {
-      console.log(error);
-    })
-    .finally(() => {
-      isLoading.value = false;
-    });
-};
-
-const fetchCampaigns = async () => {
+const fetchCampaigns = async (params) => {
   try {
     isLoading.value = true;
 
-    const response = await pushNotificationStore.fetchCampaigns();
+    const response = await pushNotificationStore.fetchCampaigns(params);
     notifications.value = response.data.results.map((r) => ({
       ...r,
       id: r._id,
@@ -108,7 +92,13 @@ const onUpdateOptions = (options) => {
   pagination.itemsPerPage = options.itemsPerPage;
   pagination.sortBy = options.sortBy;
   pagination.filters = options.filters;
+
+  fetchCampaigns({ ...pagination });
 };
+
+const onUpdateOptionsDebounced = debounce((options) => {
+  onUpdateOptions(options);
+}, 300);
 </script>
 
 <template>
@@ -137,17 +127,16 @@ const onUpdateOptions = (options) => {
       :loading="isLoading"
       :server-side="true"
       v-bind="pagination"
-      @update:options="onUpdateOptions"
+      @update:options="onUpdateOptionsDebounced"
     >
-      <!-- show-expand -->
-      <!-- Expanded Row Data -->
-      <template #expanded-row="slotProps">
+      <!-- Expanded Row Data [ show-expand ] -->
+      <!-- <template #expanded-row="slotProps">
         <tr class="v-data-table__tr">
           <td :colspan="headers.length">
-            <!-- <NotificationQuickAnalytics :data="slotProps.item.raw" /> -->
+            <NotificationQuickAnalytics :data="slotProps.item.raw" />
           </td>
         </tr>
-      </template>
+      </template> -->
 
       <!-- status -->
       <template #item.status="{ item }">

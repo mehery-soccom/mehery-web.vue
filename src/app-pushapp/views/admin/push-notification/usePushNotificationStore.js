@@ -120,7 +120,13 @@ export const usePushNotificationStore = defineStore("PushNotificationStore", {
 
     // 👉 Fetch All Campaign
     fetchCampaigns(params) {
-      return axios.get(`/api/v1/campaign`, { params });
+      let { page, itemsPerPage, sortBy, filters } = params;
+      let sort = sortBy
+        .map((s) => `${s.order === "asc" ? "-" : ""}${s.key}`)
+        .join(",");
+      return axios.get(`/api/v1/campaign`, {
+        params: { page, limit: itemsPerPage, sort, search: filters },
+      });
     },
 
     // 👉 Fetch Single Campaign
