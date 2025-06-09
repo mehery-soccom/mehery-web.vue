@@ -699,12 +699,12 @@ onBeforeUnmount(() => {
         <div class="status-right">
           <div class="registration-status">
             <!-- Connected Icon -->
-            <div v-if="registrationStatus === 'Disconnected'">
+            <!-- <div v-if="registrationStatus === 'Disconnected'">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M22 16v-.5a2.5 2.5 0 0 0-5 0v.5c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5zM18 5.83v5.43c.47-.16.97-.26 1.5-.26c.17 0 .33.03.5.05V1L1 20h13v-2H5.83z"/></svg>
             </div>
             <div v-else-if="registrationStatus === 'connected'">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.5 10c.17 0 .33.03.5.05V1L1 20h13v-3c0-.89.39-1.68 1-2.23v-.27c0-2.48 2.02-4.5 4.5-4.5m2.5 6v-1.5a2.5 2.5 0 0 0-5 0V16c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>
-            </div>
+            </div> -->
             <span class="status-text">{{ registrationStatus }}</span>
           </div>
         </div>
@@ -905,7 +905,7 @@ onBeforeUnmount(() => {
       <ul class="tab-nav-container">
         <li class="tab" @click="openDialer">
           <!-- <div class="icon-placeholder"></div> -->
-          <div class="icon-placeholder" :class="{ active: isDialer }">
+          <!-- <div class="icon-placeholder" :class="{ active: isDialer }">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -917,11 +917,11 @@ onBeforeUnmount(() => {
                 d="M12 19c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2M6 1c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m12-8c1.1 0 2-.9 2-2s-.9-2-2-2s-2 .9-2 2s.9 2 2 2m-6 8c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m6 0c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m0-6c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m-6 0c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2m0-6c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2"
               />
             </svg>
-          </div>
+          </div> -->
           <p>Dialer</p>
         </li>
         <li class="tab" @click="openRecents">
-          <div v-if="!isCallHistory" class="icon-placeholder">
+          <!-- <div v-if="!isCallHistory" class="icon-placeholder">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -954,7 +954,7 @@ onBeforeUnmount(() => {
                 d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2m3.3 14.71L11 12.41V7h2v4.59l3.71 3.71z"
               />
             </svg>
-          </div>
+          </div> -->
           <p>Recent</p>
         </li>
         <!-- <li class="tab">
