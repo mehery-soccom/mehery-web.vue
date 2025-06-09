@@ -86,7 +86,11 @@ const onSendStyled = async (template, update) => {
         },
       },
       channel_id: testNotification.channel_id,
-      style: { code: template.subType, ...template.style, progress_percent },
+      style: {
+        code: template.subType,
+        ...template.style,
+        progress_percent: parseFloat(progress_percent),
+      },
       template: {
         code: template.code,
         data,
@@ -272,7 +276,10 @@ const deleteTemplate = (id, dialogCloseRef) => {
                   <v-btn color="primary" @click="onSendStyled(item.raw, false)"
                     >Start Activity</v-btn
                   >
-                  <v-btn color="primary" @click="onSendStyled(item.raw, true)"
+                  <v-btn
+                    color="primary"
+                    @click="onSendStyled(item.raw, true)"
+                    :disabled="!testNotification.activity_id"
                     >Update Activity</v-btn
                   >
                   <v-btn variant="text" @click="isActive.value = false"
