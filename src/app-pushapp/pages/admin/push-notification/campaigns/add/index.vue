@@ -59,10 +59,17 @@ onMounted(async () => {
     pushNotificationStore
       .fetchCampaign({ id: copy })
       .then((response) => {
-        const _notification = response.data.notification;
+        const _notification = response.data.data;
+        let template = TemplateListSimple.value.find(
+          (t) => t.code === _notification.templateCode
+        );
         Object.assign(notification, {
           ...notification,
           ..._notification,
+          channel_id: _notification.channelId,
+          platforms: _notification.filters.platform,
+          template: template?._id,
+          campaignName: "",
         });
       })
       .catch((error) => {
