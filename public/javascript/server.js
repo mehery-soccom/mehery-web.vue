@@ -429,6 +429,12 @@ function onSipEventStack(e /*SIPml.Stack.Event*/) {
             timestamp: new Date().toISOString(),
           });
         } 
+        if (message.call_status == "PROFILE"){
+          window.sipEventBridge.emit("callAnswered", {
+            timestamp: new Date().toISOString(),
+            status: "accepted",
+          });
+        }
         callEngageTime(e.getContentString());
       }
 
@@ -450,10 +456,10 @@ answercall = () => {
     }
     oSipSessionCall.accept(oConfigCall);
     // Notify Vue component that call was answered
-    window.sipEventBridge.emit("callAnswered", {
-      timestamp: new Date().toISOString(),
-      status: "accepted",
-    });
+    // window.sipEventBridge.emit("callAnswered", {
+    //   timestamp: new Date().toISOString(),
+    //   status: "accepted",
+    // });
     // SelPresence.value='Busy';
   }
 };
