@@ -84,7 +84,7 @@ const onSendStyled = async (template, update) => {
 
     let _data = {};
     try {
-      _data = JSON.parse(testNotification.dataSimple);
+      _data = JSON.parse(testNotification.data);
     } catch (error) {
       return show({ message: "Invalid json data", color: "error" });
     }
@@ -148,7 +148,7 @@ const onSendSimple = async (template) => {
     /*
     let _data = {};
     try {
-      _data = JSON.parse(testNotification.data);
+      _data = JSON.parse(testNotification.dataSimple);
     } catch (error) {
       return show({ message: "Invalid json data", color: "error" });
     }
