@@ -2,22 +2,26 @@
 import MyDataTable from "@/@common/components/MyDataTable.vue";
 import { useChannelsStore } from "@app/views/admin/channels/useChannelsStore";
 import { usePushNotificationStore } from "@app/views/admin/push-notification/usePushNotificationStore";
+import { smartFormatDate } from "@core/utils/formatters";
 const { show } = inject("snackbar");
 
 const DEFAULT_TEST_NOTIFICATION = {
   data: `{
-    "progress_percent": "0.25"
+    "progress_percent": 0.25
+}`,
+  dataSimple: `{
+    
 }`,
   channel_id: null,
   user_id: "",
   activity_id: "",
+  campaignName: "",
 };
 
 const channelsStore = useChannelsStore();
 const pushNotificationStore = usePushNotificationStore();
 const isLoading = ref(false);
 const items = ref([]);
-// const totalItems = ref(0);
 const ChannelList = ref([]);
 const testNotification = reactive({
   ...DEFAULT_TEST_NOTIFICATION,
@@ -34,6 +38,14 @@ const headers = [
   {
     title: "Type",
     key: "type",
+  },
+  {
+    title: "Created",
+    key: "createdAt",
+  },
+  {
+    title: "Updated",
+    key: "updatedAt",
   },
   {
     title: "",
@@ -56,7 +68,6 @@ const fetchTemplates = () => {
     .fetchTemplates()
     .then((response) => {
       items.value = response.results;
-      // totalItems.value = response.data.total;
     })
     .catch((error) => {
       show({ message: "Something went wrong", color: "error" });
@@ -86,10 +97,14 @@ const onSendStyled = async (template, update) => {
         },
       },
       channel_id: testNotification.channel_id,
-      style: { code: template.subType, ...template.style, progress_percent },
+      style: {
+        code: template.subType,
+        ...template.style,
+        progress_percent: parseFloat(progress_percent),
+      },
       template: {
         code: template.code,
-        data,
+        data: { ...(template.model?.data || {}), ...data },
         lang: "en",
       },
       options: {
@@ -107,6 +122,64 @@ const onSendStyled = async (template, update) => {
       testNotification.activity_id = res.data.activity_id;
       show({ message: "Notification sent successfully", color: "success" });
     }
+  } catch (error) {
+    console.error(error);
+
+    show({ message: "Something went wrong. try again", color: "error" });
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const onSendSimple = async (template) => {
+  try {
+    isLoading.value = true;
+
+    let payload = {
+      ...template.style,
+      buttons: template.options.buttons,
+
+      filter: {
+        user_id: testNotification.user_id,
+      },
+      channel_id: testNotification.channel_id,
+    };
+
+    /*
+    let _data = {};
+    try {
+      _data = JSON.parse(testNotification.dataSimple);
+    } catch (error) {
+      return show({ message: "Invalid json data", color: "error" });
+    }
+    const { progress_percent, ...data } = _data;
+
+    let payloadV2 = {
+      to: {
+        filter: {
+          user_id: testNotification.user_id,
+        },
+      },
+      channel_id: testNotification.channel_id,
+      style: { code: "simple", ...template.style },
+      template: {
+        code: template.code,
+        data: { ...(template.model?.data || {}), ...data },
+        lang: "en",
+      },
+      options: {
+        buttons: template.options.buttons,
+      },
+
+      type: template.type,
+      campaignName: testNotification.campaignName,
+    };
+    */
+
+    await pushNotificationStore.sendBulk(payload);
+    // await pushNotificationStore.sendBulkV2(payloadV2);
+
+    show({ message: "Notification sent successfully", color: "success" });
   } catch (error) {
     console.error(error);
 
@@ -160,6 +233,29 @@ const deleteTemplate = (id, dialogCloseRef) => {
     <VDivider />
 
     <MyDataTable :headers="headers" :items="items" :loading="isLoading">
+      <!-- code -->
+      <template #item.code="{ item }">
+        {{ item.raw.code }} <small>( {{ item.raw.lang }} )</small>
+      </template>
+
+      <!-- type -->
+      <template #item.type="{ item }">
+        {{ item.raw.type }}
+        <small v-if="item.raw.type === 'styled'"
+          >( {{ item.raw.subType }} )</small
+        >
+      </template>
+
+      <!-- created at -->
+      <template #item.createdAt="{ item }">
+        {{ smartFormatDate(item.raw.createdAt) }}
+      </template>
+
+      <!-- created at -->
+      <template #item.updatedAt="{ item }">
+        {{ smartFormatDate(item.raw.updatedAt) }}
+      </template>
+
       <!-- Actions -->
       <template #item.actions="{ item }">
         <IconBtn>
@@ -210,7 +306,7 @@ const deleteTemplate = (id, dialogCloseRef) => {
           <VTooltip activator="parent">Duplicate</VTooltip>
         </IconBtn>
 
-        <IconBtn v-if="item.raw.type === 'styled'">
+        <IconBtn>
           <VIcon icon="mdi-monitor-eye" />
           <VTooltip activator="parent">Test</VTooltip>
           <v-dialog
@@ -221,7 +317,10 @@ const deleteTemplate = (id, dialogCloseRef) => {
           >
             <template v-slot:default="{ isActive }">
               <v-card>
-                <v-card-title>Test Live Activity</v-card-title>
+                <v-card-title v-if="item.raw.type === 'styled'"
+                  >Test Live Activity</v-card-title
+                >
+                <v-card-title v-else>Test Push Notification</v-card-title>
 
                 <v-card-text>
                   <VRow>
@@ -236,17 +335,25 @@ const deleteTemplate = (id, dialogCloseRef) => {
                         clearable
                       />
                     </VCol>
-                    <VCol cols="12" md="4"> </VCol>
+                    <VCol cols="12" md="4">
+                      <!-- <AppTextField
+                        v-if="item.raw.type === 'simple'"
+                        v-model="testNotification.campaignName"
+                        label="Notification Name"
+                        placeholder="Enter Notification Name"
+                      /> -->
+                    </VCol>
                     <VCol cols="12" md="4"></VCol>
                     <VCol cols="12" md="4">
                       <AppTextField
                         v-model="testNotification.user_id"
                         label="Testing Device"
-                        placeholder="Enter Testing Device ID"
+                        placeholder="Enter Testing User ID"
                       />
                     </VCol>
                     <VCol cols="12" md="4">
                       <AppTextField
+                        v-if="item.raw.type === 'styled'"
                         readonly
                         v-model="testNotification.activity_id"
                         label="Activity ID"
@@ -256,6 +363,7 @@ const deleteTemplate = (id, dialogCloseRef) => {
                     </VCol>
                     <VCol cols="12" md="8">
                       <AppTextarea
+                        v-if="item.raw.type === 'styled'"
                         v-model="testNotification.data"
                         label="Data"
                         auto-grow
@@ -264,15 +372,38 @@ const deleteTemplate = (id, dialogCloseRef) => {
                         class="monospace"
                         placeholder='e.g. {"title": "Hello"}'
                       />
+                      <!-- <AppTextarea
+                        v-if="item.raw.type === 'simple'"
+                        v-model="testNotification.dataSimple"
+                        label="Data"
+                        auto-grow
+                        rows="6"
+                        spellcheck="false"
+                        class="monospace"
+                        placeholder='e.g. {"title": "Hello"}'
+                      /> -->
                     </VCol>
                   </VRow>
                 </v-card-text>
 
                 <v-card-actions class="justify-start">
-                  <v-btn color="primary" @click="onSendStyled(item.raw, false)"
+                  <v-btn
+                    v-if="item.raw.type === 'simple'"
+                    color="primary"
+                    @click="onSendSimple(item.raw)"
+                    >Push</v-btn
+                  >
+                  <v-btn
+                    v-if="item.raw.type === 'styled'"
+                    color="primary"
+                    @click="onSendStyled(item.raw, false)"
                     >Start Activity</v-btn
                   >
-                  <v-btn color="primary" @click="onSendStyled(item.raw, true)"
+                  <v-btn
+                    v-if="item.raw.type === 'styled'"
+                    color="primary"
+                    @click="onSendStyled(item.raw, true)"
+                    :disabled="!testNotification.activity_id"
                     >Update Activity</v-btn
                   >
                   <v-btn variant="text" @click="isActive.value = false"
