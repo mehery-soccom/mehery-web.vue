@@ -133,10 +133,26 @@ onMounted( async () => {
       />
     </div>
     <VCol v-for="(campaign, index) in tempCharts" :key="index" cols="12" :sm="tempCharts.length <= 2 ? 6 : 4">
-      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} template state`" />
+      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} `" />
     </VCol>
     <VCol cols="12">
-      <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Template Data'" />
+      <DemoDataTableKitchenSink :headers="headers" :productList="tempTable" :title="'Template Data'" >
+        <template #item.total="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.total }}</span>
+        </template>
+        <template #item.delivered="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.delivered }}</span>
+        </template>
+        <template #item.read="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.read }}</span>
+        </template>
+        <template #item.responded="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.responded }}</span>
+        </template>
+        <template #item.failed="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.failed }}</span>
+        </template>
+      </DemoDataTableKitchenSink>
     </VCol>
   </VRow>
 </template>

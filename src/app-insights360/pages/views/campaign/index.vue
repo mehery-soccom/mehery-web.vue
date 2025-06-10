@@ -1,5 +1,4 @@
 <script setup>
-import AnalyticsMonthlyCampaignState from '@/app-insights360/views/dashboards/analytics/AnalyticsMonthlyCampaignState.vue';
 import CardStatisticsTransactions from '@/app-insights360/views/dashboards/analytics/CardStatisticsTransactions.vue';
 import DemoDataTableKitchenSink from '@/app-insights360/views/tables/DemoDataTableKitchenSink.vue';
 import { useProjectStore } from "@app-insights360/views/dashboards/analytics/useProjectStore";
@@ -163,11 +162,50 @@ onMounted( async () => {
     <VCol cols="12" md="12">
       <CardStatisticsTransactions :statistics="statsCamp" :title="'Campaign Statistics'" />
     </VCol>
-    <VCol v-for="(campaign, index) in campCharts" :key="index" cols="12" :sm="campCharts.length === 3 ? 4 : 6">
-      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} campaign state`" />
-    </VCol>
+    <!-- <VCol v-for="(campaign, index) in campCharts" :key="index" cols="12" :sm="campCharts.length === 3 ? 4 : 6">
+      <AnalyticsMonthlyCampaignState :statistics="campaign" :title="`${campaign.title} `" />
+    </VCol> -->
     <VCol cols="12">
-      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Data'" />
+      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Data'" >
+        <template #item.name="{ item }">
+          <RouterLink
+            :to="{
+              name: 'views-outbound-id',
+              params: { id: item.value.campaignCode },
+            }"
+            style="width: 100%; display: inline-block; text-align: center;"
+          >
+            {{ item.value.name }}
+          </RouterLink>
+        </template>
+        <!-- <IconBtn
+          :to="{
+            name: 'admin-push-notification-templates-edit-id',
+            params: { id: item.raw._id },
+          }"
+        >
+          <VIcon icon="mdi-pencil-outline" />
+          <VTooltip activator="parent">Edit</VTooltip>
+        </IconBtn> -->
+        <template #item.total="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.total }}</span>
+        </template>
+        <template #item.sent="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.sent }}</span>
+        </template>
+        <template #item.delivered="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.delivered }}</span>
+        </template>
+        <template #item.read="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.read }}</span>
+        </template>
+        <template #item.responded="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.responded }}</span>
+        </template>
+        <template #item.failed="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.failed }}</span>
+        </template>
+      </DemoDataTableKitchenSink>
     </VCol>
   </VRow>
 </template>

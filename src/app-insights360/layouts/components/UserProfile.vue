@@ -1,5 +1,5 @@
 <script setup>
-import { initialAbility } from "@app-insights360/plugins/casl/ability";
+
 import { useAppAbility } from "@app-insights360/plugins/casl/useAppAbility";
 import { PerfectScrollbar } from "vue3-perfect-scrollbar";
 
@@ -7,73 +7,15 @@ const router = useRouter();
 const ability = useAppAbility();
 const userData = JSON.parse(localStorage.getItem("userData") || "null");
 
-const logout = () => {
-  // Remove "userData" from localStorage
-  localStorage.removeItem("userData");
-
-  // Remove "accessToken" from localStorage
-  localStorage.removeItem("accessToken");
-  router.push("/login").then(() => {
-    // Remove "userAbilities" from localStorage
-    localStorage.removeItem("userAbilities");
-
-    // Reset ability to initial ability
-    ability.update(initialAbility);
-  });
+const logout = async () => {
+  try{
+    window.location.href = `${window.location.origin}/nexus/insights360/auth/logout`;
+  }catch(e){
+    console.error("Logout not successful", e);
+  }
 };
 
 const userProfileList = [
-  { type: "divider" },
-  {
-    type: "navItem",
-    icon: "tabler-user",
-    title: "Profile",
-    // to: {
-    //   name: "apps-user-view-id",
-    //   params: { id: 21 },
-    // },
-  },
-  {
-    type: "navItem",
-    icon: "tabler-settings",
-    title: "Settings",
-    // to: {
-    //   name: "pages-account-settings-tab",
-    //   params: { tab: "account" },
-    // },
-  },
-  {
-    type: "navItem",
-    icon: "tabler-credit-card",
-    title: "Billing",
-    // to: {
-    //   name: "pages-account-settings-tab",
-    //   params: { tab: "billing-plans" },
-    // },
-    badgeProps: {
-      color: "error",
-      content: "3",
-    },
-  },
-  { type: "divider" },
-  {
-    type: "navItem",
-    icon: "tabler-lifebuoy",
-    title: "Help",
-    // to: { name: "pages-help-center" },
-  },
-  {
-    type: "navItem",
-    icon: "tabler-currency-dollar",
-    title: "Pricing",
-    // to: { name: "pages-pricing" },
-  },
-  {
-    type: "navItem",
-    icon: "tabler-help",
-    title: "FAQ",
-    // to: { name: "pages-faq" },
-  },
   { type: "divider" },
   {
     type: "navItem",
@@ -133,10 +75,10 @@ const userProfileList = [
               </VListItemAction>
             </template>
 
-            <VListItemTitle class="font-weight-medium">
+            <VListItemTitle class="font-weight-medium" v-if="userData && userData.fullName">
               {{ userData.fullName || userData.username }}
             </VListItemTitle>
-            <VListItemSubtitle>{{ userData.role }}</VListItemSubtitle>
+            <VListItemSubtitle v-if="userData && userData.role">{{ userData.role }}</VListItemSubtitle>
           </VListItem>
 
           <PerfectScrollbar :options="{ wheelPropagation: false }">

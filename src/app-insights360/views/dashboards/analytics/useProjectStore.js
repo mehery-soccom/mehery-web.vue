@@ -112,5 +112,13 @@ export const useProjectStore = defineStore("ProjectStore", {
       if(agent && agentType && agent != 'all_teams') url += `&${agentType}=${agent}`;
       return axios.get(url);
     },
+    fetchOneCampaignData(id){
+      let url = `/api/v1/dashboard/campaign/cta/${id}`;
+      return axios.get(url);
+    },
+    fetchOneCampaignOutboundData(id){
+      let url = `/api/v1/dashboard/campaign/outbound/${id}`;
+      return axios.get(url);
+    },
   },
 });

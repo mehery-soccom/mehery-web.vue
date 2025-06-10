@@ -6,10 +6,7 @@ import { themeConfig } from "@themeConfig";
 // Components
 import Footer from "@app-insights360/layouts/components/Footer.vue";
 // import NavBarI18n from '@app-insights360/layouts/components/NavBarI18n.vue'
-import NavBarNotifications from "@app-insights360/layouts/components/NavBarNotifications.vue";
-import NavbarShortcuts from "@app-insights360/layouts/components/NavbarShortcuts.vue";
 import NavbarThemeSwitcher from "@app-insights360/layouts/components/NavbarThemeSwitcher.vue";
-import NavSearchBar from "@app-insights360/layouts/components/NavSearchBar.vue";
 import UserProfile from "@app-insights360/layouts/components/UserProfile.vue";
 import { HorizontalNavLayout } from "@layouts";
 import { VNodeRenderer } from "@layouts/components/VNodeRenderer";
@@ -32,12 +29,12 @@ const { appRouteTransition } = useThemeConfig();
       </RouterLink>
       <VSpacer />
 
-      <NavSearchBar trigger-btn-class="ms-lg-n3" />
+      <!-- <NavSearchBar trigger-btn-class="ms-lg-n3" /> -->
 
       <!-- <NavBarI18n class="me-1" /> -->
       <NavbarThemeSwitcher class="me-1" />
-      <NavbarShortcuts class="me-1" />
-      <NavBarNotifications class="me-2" />
+      <!-- <NavbarShortcuts class="me-1" />
+      <NavBarNotifications class="me-2" /> -->
       <UserProfile />
     </template>
 

@@ -160,16 +160,28 @@ onMounted( async () => {
         <template #item.deptName="{ item }">
           <span style="min-width: 100px;display: inline-block;">{{ item.value.deptName }}</span>
         </template>
+        <template #item.totalConversations="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.totalConversations }}</span>
+        </template>
         <template #item.averageStartLag="{ item }">
-          {{ formatDuration(item.value.averageStartLag) }}
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ formatDuration(item.value.averageStartLag) }}</span>
         </template>
 
         <template #item.averageResponseTime="{ item }">
-          {{ formatDuration(item.value.averageResponseTime) }}
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ formatDuration(item.value.averageResponseTime) }}</span>
         </template>
 
         <template #item.averageAssignedDuration="{ item }">
-          {{ formatDuration(item.value.averageAssignedDuration) }}
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ formatDuration(item.value.averageAssignedDuration) }}</span>
+        </template>
+        <template #item.openConversations="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.openConversations }}</span>
+        </template>
+        <template #item.resolvedConversations="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.resolvedConversations }}</span>
+        </template>
+        <template #item.expiredConversations="{ item }">
+          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.expiredConversations }}</span>
         </template>
         <template #item.averageSatisfaction="{ item }">
           <span v-if="item.value.averageSatisfaction">{{ String(Math.round(item.value.averageSatisfaction * 100) / 100) }}</span>
@@ -177,9 +189,11 @@ onMounted( async () => {
         </template>
         <!-- {{ findStatus(item.value.session) }} -->
         <template #item.status="{ item }">
-          <span v-if="item.value.activity === 'online'" class="status-dot green-dot"></span>
-          <span v-else-if="item.value.activity === 'away'" class="status-dot orange-dot"></span>
-          <span v-else class="status-dot red-dot"></span>
+          <span style="width: 100%; display: inline-block;text-align:center;">
+            <span v-if="item.value.activity === 'online'" class="status-dot green-dot"></span>
+            <span v-else-if="item.value.activity === 'away'" class="status-dot orange-dot"></span>
+            <span v-else class="status-dot red-dot"></span>
+          </span>
         </template>
       </DemoDataTableKitchenSink>
     </VCol>

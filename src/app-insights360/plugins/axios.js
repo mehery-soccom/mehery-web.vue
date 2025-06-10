@@ -1,4 +1,3 @@
-import router from "@app-insights360/router";
 import axios from "axios";
 
 import { REMOTE_SERVER_URL } from "@core/constants";
@@ -38,16 +37,16 @@ axiosIns.interceptors.response.use(
   (error) => {
     // Handle error
     if (error.response.status === 401) {
-      // ℹ️ Logout user and redirect to login page
-      // Remove "userData" from localStorage
-      localStorage.removeItem("userData");
+      // // ℹ️ Logout user and redirect to login page
+      // // Remove "userData" from localStorage
+      // localStorage.removeItem("userData");
 
-      // Remove "accessToken" from localStorage
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("userAbilities");
+      // // Remove "accessToken" from localStorage
+      // localStorage.removeItem("accessToken");
+      // localStorage.removeItem("userAbilities");
 
       // If 401 response returned from api
-      router.push("/login");
+      window.location.href = `${window.location.origin}/front/auth/login`;
     } else {
       return Promise.reject(error);
     }
