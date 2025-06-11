@@ -85,7 +85,7 @@ onMounted( async () => {
       </VBtn>
     </div>
     <VCol cols="12">
-      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Data'" >
+      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Statistics'" >
         <template #item.contact.lane="{ item }">
           <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.contact.lane }}</span>
         </template>

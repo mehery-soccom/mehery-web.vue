@@ -83,9 +83,9 @@ onMounted( async () => {
       </VBtn>
     </div>
     <VCol cols="12">
-      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign Data'" >
+      <DemoDataTableKitchenSink  :headers="headers" :productList="campTable" :title="'Campaign CTA'" >
         <template #item.contact.phone="{ item }">
-          <span style="width: 100%; display: inline-block;text-align:center;">{{ item.value.contact.phone }}</span>
+          <span>{{ item.value.contact.phone }}</span>
         </template>
         <template #item.timestamp="{ item }">
           <span style="width: 100%; display: inline-block;text-align:center;">{{ formatTimestamp(item.value.timestamp) }}</span>
