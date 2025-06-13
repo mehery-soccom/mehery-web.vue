@@ -44,7 +44,7 @@ const exportToExcel = () => {
   const worksheet = XLSX.utils.json_to_sheet(formattedData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
-  const fileName = `Campaign-data.xlsx`.replaceAll(' ', '-')
+  const fileName = `Campaign-CTA.xlsx`.replaceAll(' ', '-')
   XLSX.writeFile(workbook, fileName);
 }
 function formatTimestamp(ts) {

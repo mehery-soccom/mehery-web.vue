@@ -37,16 +37,16 @@ const exportToExcel = () => {
     'Sender': item.contact.lane,
     'Contact': item.contact.phone || item.contact.email,
     'Status': item.status,
-    'Created': item.CRTD,
-    'Sent': item.SENT,
-    'Delivered': item.DLVRD,
-    'Read': item.READ,
+    'Created': formatTimestamp(item.stamps.CRTD),
+    'Sent': formatTimestamp(item.stamps.SENT),
+    'Delivered': formatTimestamp(item.stamps.DLVRD),
+    'Read': formatTimestamp(item.stamps.READ),
   }))
   
   const worksheet = XLSX.utils.json_to_sheet(formattedData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
-  const fileName = `Campaign-data.xlsx`.replaceAll(' ', '-')
+  const fileName = `Campaign-Stats.xlsx`.replaceAll(' ', '-')
   XLSX.writeFile(workbook, fileName);
 }
 
