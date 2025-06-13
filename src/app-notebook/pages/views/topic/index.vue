@@ -320,7 +320,7 @@ export default {
       this.loadingKbs = true;
       try {
         const response = await fetch(
-          `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=true&kb_id=${this.selectedKbId}`,
+          `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/topic?isDetailed=true&kb_id=${this.selectedKbId}`,
           {
             method: "GET",
             headers: {
@@ -361,7 +361,7 @@ export default {
 
       try {
         const response = await fetch(
-          `http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=true`,
+          `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb?isDetailed=true`,
           {
             // Replace with your actual API URL
             method: "GET",

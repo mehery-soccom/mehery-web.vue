@@ -424,6 +424,13 @@ function onSipEventStack(e /*SIPml.Stack.Event*/) {
         console.log(`message :${e.getContentString()}`);
         const message = JSON.parse(e.getContentString());
         if (message.call_status == "HANGUP") {
+          if (!Ring.paused && !Ring.ended) {
+            // console.log("Not paused state");
+            Ring.pause();
+          } else {
+            console.log("Paused state");
+            // Ring.pause();
+          }
           window.sipEventBridge.emit("callTerminated", {
             description: "HANGUP",
             timestamp: new Date().toISOString(),

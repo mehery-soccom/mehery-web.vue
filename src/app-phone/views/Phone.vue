@@ -724,7 +724,7 @@ onBeforeUnmount(() => {
               class="btn btn-success answer-btn"
               :disabled="callProcessing"
             >
-              <span v-if="!callProcessing">📞 Answer</span>
+              <span v-if="!callProcessing">Answer</span>
               <span v-else>Connecting...</span>
             </button>
 
@@ -733,7 +733,7 @@ onBeforeUnmount(() => {
               class="btn btn-danger reject-btn"
               :disabled="callProcessing"
             >
-              <span v-if="!callProcessing">❌ Reject</span>
+              <span v-if="!callProcessing">Reject</span>
               <span v-else>Rejecting...</span>
             </button>
           </div>
@@ -748,13 +748,13 @@ onBeforeUnmount(() => {
         <p>Duration: {{ callDuration }}</p>
 
         <div class="call-controls">
-          <button @click="hangupCall" class="btn btn-danger">📞 Hang Up</button>
-          <button @click="toggleMute" class="btn btn-secondary">
+          <button @click="hangupCall" class="btn btn-danger">❌ Hang Up</button>
+          <!-- <button @click="toggleMute" class="btn btn-secondary">
             {{ isMuted ? "🔊 Unmute" : "🔇 Mute" }}
           </button>
           <button @click="toggleHold" class="btn btn-secondary">
             {{ isOnHold ? "▶️ Resume" : "⏸️ Hold" }}
-          </button>
+          </button> -->
         </div>
       </div>
       <!-- Call History -->
@@ -983,6 +983,40 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px; /* More square, slightly rounded */
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-success:hover {
+  background-color: #24913e;
+  box-shadow: 0 3px 6px rgba(40, 167, 69, 0.25);
+}
+
+.btn-danger {
+  background-color: #a70414;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-danger:hover {
+  background-color: #860a0a;
+  box-shadow: 0 3px 6px rgba(220, 53, 69, 0.25);
+}
+
 .container {
   display: flex;
   justify-content: center;

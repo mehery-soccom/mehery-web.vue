@@ -1,8 +1,8 @@
 <script setup>
+import { VDataTable } from "vuetify/labs/VDataTable";
+import { paginationMeta } from "@fake-db/utils";
 import { useProjectStore } from "@app-notebook/views/dashboards/analytics/useProjectStore";
 import { avatarText } from "@core/utils/formatters";
-import { paginationMeta } from "@fake-db/utils";
-import { VDataTable } from "vuetify/labs/VDataTable";
 
 const projectStore = useProjectStore();
 const searchQuery = ref("");
@@ -15,39 +15,39 @@ const options = ref({
   search: undefined,
 });
 
-const qapairs = ref([]);
+const projects = ref([]);
 
 // 👉 headers
 const headers = [
   {
-    title: "Question",
-    key: "question",
+    title: "Name",
+    key: "name",
   },
   {
-    title: "Answer",
-    key: "answer",
+    title: "Leader",
+    key: "leader",
   },
-  //   {
-  //     title: "Team",
-  //     key: "team",
-  //   },
-  //   {
-  //     title: "Status",
-  //     key: "status",
-  //   },
-  //   {
-  //     title: "Actions",
-  //     key: "actions",
-  //     sortable: false,
-  //   },
+  {
+    title: "Team",
+    key: "team",
+  },
+  {
+    title: "Status",
+    key: "status",
+  },
+  {
+    title: "Actions",
+    key: "actions",
+    sortable: false,
+  },
 ];
 
-// 👉 Fetch qapairs
+// 👉 Fetch Projects
 onMounted(() => {
   projectStore
     .fetchProjects()
     .then((response) => {
-      qapairs.value = response.data;
+      projects.value = response.data;
     })
     .catch((error) => {
       console.log(error);
@@ -56,11 +56,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <VCard v-if="qapairs">
+  <VCard v-if="projects">
     <VCardItem
       class="project-header d-flex flex-wrap justify-space-between py-4 gap-4"
     >
-      <VCardTitle>qapairs</VCardTitle>
+      <VCardTitle>Projects</VCardTitle>
 
       <template #append>
         <div style="inline-size: 272px">
@@ -78,7 +78,7 @@ onMounted(() => {
       show-select
       :search="searchQuery"
       :headers="headers"
-      :items="qapairs"
+      :items="projects"
       class="text-no-wrap"
       @update:options="options = $event"
     >
@@ -117,7 +117,32 @@ onMounted(() => {
         </div>
       </template>
 
-      
+      <!-- 👉 Status -->
+      <template #item.status="{ item }">
+        <div class="d-flex align-center gap-3" style="min-inline-size: 150px">
+          <div class="flex-grow-1">
+            <VProgressLinear
+              :model-value="item.raw.status"
+              color="primary"
+              height="8"
+              rounded
+              rounded-bar
+            />
+          </div>
+          <span>{{ item.raw.status }}%</span>
+        </div>
+      </template>
+
+      <!-- 👉 Actions -->
+      <template #item.actions>
+        <MoreBtn
+          color="default"
+          :menu-list="[
+            { title: 'Details', value: 'Details' },
+            { title: 'Archive', value: 'Archive' },
+          ]"
+        />
+      </template>
 
       <template #bottom>
         <VDivider />
@@ -126,13 +151,13 @@ onMounted(() => {
           class="d-flex align-center justify-center justify-sm-space-between flex-wrap gap-3 pa-5 pt-3"
         >
           <p class="text-sm text-disabled mb-0">
-            {{ paginationMeta(options, qapairs.length) }}
+            {{ paginationMeta(options, projects.length) }}
           </p>
-
-          <VPagination
+          
+          <!-- <VPagination
             v-model="options.page"
-            :total-visible="Math.ceil(qapairs.length / options.itemsPerPage)"
-            :length="Math.ceil(qapairs.length / options.itemsPerPage)"
+            :total-visible="Math.ceil(projects.length / options.itemsPerPage)"
+            :length="Math.ceil(projects.length / options.itemsPerPage)"
           >
             <template #next="slotProps">
               <VBtn
@@ -155,7 +180,7 @@ onMounted(() => {
                 Previous
               </VBtn>
             </template>
-          </VPagination>
+          </VPagination> -->
         </div>
       </template>
     </VDataTable>

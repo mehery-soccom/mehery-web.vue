@@ -2,14 +2,44 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import { VDataTable } from "vuetify/labs/VDataTable";
+import { paginationMeta } from "@fake-db/utils";
 import * as XLSX from "xlsx";
 import zipcelx from "zipcelx";
 const qaTableItemsPerPage = 25;
 const qaTableHeaders = [
-        { text: 'Question', value: 'question' },
-  { text: 'Answer', value: 'answer' }
-      ]
+  { title: "Question", key: "question", sortable: false },
+  { title: "Answer", key: "answer", sortable: false },
+  { title: "Actions", key: "actions", sortable: false, width: "100px" },
+];
 const selectedItems = ref([]);
+const qaTableOptions = ref({
+  page: 1,
+  itemsPerPage: 25,
+  search: undefined,
+});
+const editedItem = ref({
+  _id: "",
+  question: "",
+  answer: "",
+  createdAt: "",
+  kb_id: "",
+  topic_id: "",
+  updatedAt: "",
+  tenant_partition_key: "",
+  __v: 0,
+});
+const defaultItem = {
+  _id: "",
+  question: "",
+  answer: "",
+  createdAt: "",
+  kb_id: "",
+  topic_id: "",
+  updatedAt: "",
+  tenant_partition_key: "",
+  __v: 0,
+};
+const editedIndex = ref("");
 // Reactive data
 const qaData = ref([]);
 const cachedPages = ref({}); // Cache for page data: { pageNum: [...data] }
@@ -22,6 +52,7 @@ const editingContent = reactive({
   text: "",
   originalText: "",
 });
+
 const loading = ref(false);
 const currentPage = ref(1);
 const totalPages = ref(0);
@@ -60,9 +91,12 @@ const previewHeaders = ref([
 ]);
 const previewPage = ref(1);
 const previewItemsPerPage = ref(5);
+const kbNameError = ref("");
+const isKbNameValid = ref(true);
 // Template refs
 const editTextarea = ref(null);
-
+const showCreateKbModal = ref(false);
+const newCreateKbName = ref("");
 // Computed properties
 const allSelected = computed(() => {
   return (
@@ -71,7 +105,137 @@ const allSelected = computed(() => {
     selectedIdsByPage.value[currentPage.value].length === qaData.value.length
   );
 });
+const newCreateTopicName = ref("");
+const showCreateTopicModal = ref(false);
+const isTopicNameValid = ref(true);
+const topicNameError = ref("");
+const openCreateTopicModal = () => {
+  showCreateTopicModal.value = true;
+  newCreateTopicName.value = ""; // Reset form when opening
+};
 
+const closeTopicModal = () => {
+  showCreateTopicModal.value = false;
+  newCreateTopicName.value = ""; // Clear form when closing
+  topicNameError.value = "";
+  isTopicNameValid.value = true;
+};
+const createTopic = async () => {
+  const trimmedTopicName = newCreateTopicName.value.trim();
+  if (!trimmedTopicName) {
+    isTopicNameValid.value = false;
+    topicNameError.value = "topic name is empty after trimming.";
+    return;
+  }
+  const allowedTopicNameRegex = /^[a-zA-Z0-9_]+$/;
+  if (!allowedTopicNameRegex.test(trimmedTopicName)) {
+    isTopicNameValid.value = false;
+    topicNameError.value =
+      "Invalid characters. Only letters, numbers, and underscores (_) are allowed.";
+    return;
+  } else {
+    isTopicNameValid.value = true;
+    topicNameError.value = "";
+  }
+  const payload = {
+    topic_name: trimmedTopicName,
+    kb_id: selectedKbId.value,
+  };
+  try {
+    const response = await fetch(
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/topic",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create knowledge base");
+    }
+    const newTopicData = await response.json();
+    // Assuming backend returns the new KB object
+    newCreateTopicName.value = ""; // Clear input
+    console.log(JSON.stringify(newTopicData));
+    if (newTopicData.result.success) {
+      isTopicNameValid.value = true;
+      topicNameError.value = "";
+      closeTopicModal();
+    } else {
+      isTopicNameValid.value = false;
+      topicNameError.value = newTopicData.result.message;
+    }
+    await fetchTopics(); // Refresh list from backend
+  } catch (error) {
+    console.error("Error creating knowledge base:", error);
+  }
+};
+const openCreateKbModal = () => {
+  showCreateKbModal.value = true;
+  newCreateKbName.value = ""; // Reset form when opening
+};
+
+const closeKbModal = () => {
+  showCreateKbModal.value = false;
+  newCreateKbName.value = ""; // Clear form when closing
+  kbNameError.value = "";
+  isKbNameValid.value = true;
+};
+const createKnowledgeBase = async () => {
+  const trimmedKbName = newCreateKbName.value.trim();
+  if (!trimmedKbName) {
+    isKbNameValid.value = false;
+    kbNameError.value =
+      "Knowledge base name is invalid or empty after trimming.";
+    return;
+  }
+  const allowedKbNameRegex = /^[a-zA-Z0-9_]+$/;
+  if (!allowedKbNameRegex.test(trimmedKbName)) {
+    isKbNameValid.value = false;
+    kbNameError.value =
+      "Invalid characters. Only letters, numbers, and underscores (_) are allowed.";
+    return;
+  } else {
+    isKbNameValid.value = true;
+    kbNameError.value = "";
+  }
+  try {
+    const response = await fetch(
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+        body: JSON.stringify({ kb_name: trimmedKbName }),
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create knowledge base");
+    }
+    const newKbData = await response.json();
+    // Assuming backend returns the new KB object
+    newCreateKbName.value = ""; // Clear input
+    console.log(JSON.stringify(newKbData));
+    if (newKbData.result.success) {
+      isKbNameValid.value = true;
+      kbNameError.value = "";
+      closeKbModal();
+    } else {
+      isKbNameValid.value = false;
+      kbNameError.value = newKbData.result.message;
+    }
+    await fetchKnowledgeBases(); // Refresh list from backend
+  } catch (error) {
+    console.error("Error creating knowledge base:", error);
+  }
+};
 const isFormValid = computed(() => {
   return (
     // tempTenantKey.value.trim() &&
@@ -114,6 +278,7 @@ const submitSelections = () => {
         text: "",
         originalText: "",
       });
+
       // Reset data states
       // resetState()
 
@@ -176,6 +341,20 @@ const resetStateComplete = () => {
   saveMessage.value = "";
   saveSuccess.value = false;
   isSaving.value = false;
+  editedItem.value = {
+    _id: "",
+    question: "",
+    answer: "",
+    createdAt: "",
+    kb_id: "",
+    topic_id: "",
+    updatedAt: "",
+    tenant_partition_key: "",
+    __v: 0,
+  };
+  editedIndex.value = "";
+  showCreateKbModal = false;
+  newCreateKbName = "";
 };
 
 const resetState = () => {
@@ -200,6 +379,18 @@ const resetState = () => {
   saveMessage.value = "";
   saveSuccess.value = false;
   isSaving.value = false;
+  editedItem.value = {
+    _id: "",
+    question: "",
+    answer: "",
+    createdAt: "",
+    kb_id: "",
+    topic_id: "",
+    updatedAt: "",
+    tenant_partition_key: "",
+    __v: 0,
+  };
+  editedIndex.value = "";
 };
 
 const downloadTemplate = () => {
@@ -387,7 +578,7 @@ const saveToBackend = async () => {
     };
     // Replace this URL with your actual backend endpoint
     const response = await fetch(
-      "http://localhost:8090/nexus/notebook/api/qapairs",
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs",
       {
         method: "POST",
         headers: {
@@ -420,7 +611,7 @@ const fetchTopics = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `http://localhost:8090/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
+      `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
       {
         method: "GET",
         headers: {
@@ -438,7 +629,10 @@ const fetchTopics = async () => {
     console.log(topics.value);
 
     if (topics.value.length === 0) {
-      showStatus("No knowledge bases found for this tenant", "info");
+      showStatus(
+        `No topics found for knowledgebase ${selectedKbName.value}`,
+        "info"
+      );
     }
   } catch (error) {
     console.error("Error fetching topics:", error);
@@ -456,7 +650,7 @@ const fetchKnowledgeBases = async () => {
 
   try {
     const response = await fetch(
-      "http://localhost:8090/nexus/notebook/api/qapairs/kb?isDetailed=false",
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb?isDetailed=false",
       {
         method: "GET",
         headers: {
@@ -506,6 +700,7 @@ const loadPageData = async (pageNum) => {
 // Refresh all data (clear cache and fetch first page)
 const refreshData = () => {
   resetState();
+  qaTableOptions.value.page = 1;
   fetchData(1);
   showStatus("Data refreshed", "success");
 };
@@ -516,7 +711,7 @@ const fetchData = async (pageNum) => {
   loading.value = true;
 
   try {
-    let url = `http://localhost:8090/nexus/notebook/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
+    let url = `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
 
     // Add lastSeenId parameter for pages beyond the first page
     if (pageNum > 1 && lastSeenIds.value[pageNum - 1]) {
@@ -539,7 +734,7 @@ const fetchData = async (pageNum) => {
 
     // Update the current data
     qaData.value = data.data;
-    console.log(`qaData : `,qaData.value);
+    console.log(`qaData : `, qaData.value);
     totalPages.value = parseInt(data.totalPages);
     totalItems.value = parseInt(data.total);
 
@@ -618,7 +813,7 @@ const deleteKnowledgeBase = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      "http://localhost:8090/nexus/notebook/api/qapairs/kb",
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb",
       {
         method: "DELETE",
         headers: {
@@ -646,6 +841,7 @@ const deleteKnowledgeBase = async () => {
 
     // Clear cache and reload data
     resetStateComplete();
+    qaTableOptions.value.page = 1;
   } catch (error) {
     console.error("Error deleting records:", error);
     showStatus("Failed to delete records: " + error.message, "error");
@@ -660,7 +856,7 @@ const deleteSelected = async () => {
   const selectedIds = getAllSelectedIds();
 
   try {
-    const url = `http://localhost:8090/nexus/notebook/api/qapairs`;
+    const url = `http://localhost:8090/scriptus/nexus/notebook/api/qapairs`;
     const response = await fetch(url, {
       method: "DELETE",
       headers: {
@@ -723,12 +919,14 @@ const clearStatus = () => {
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value += 1;
+    qaTableOptions.value.page += 1;
   }
 };
 
 const previousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value -= 1;
+    qaTableOptions.value.page -= 1;
   }
 };
 
@@ -827,7 +1025,53 @@ const finishEditing = (itemId, field) => {
     originalText: "",
   });
 };
-
+const close = () => {
+  // setTimeout(() => {
+  editedItem.value = Object.assign({}, defaultItem);
+  editedIndex.value = "";
+  // }, 150)
+};
+const save = () => {
+  // Update the item in cache as well
+  // console.log(`cached Pages : ${currentPage.value}`,cachedPages.value);
+  // const pages = cachedPages.value;
+  cachedPages.value[currentPage.value].forEach((faq) => {
+    // console.log(`faq : `, faq);
+    if (faq._id === editedIndex.value) {
+      faq["question"] = editedItem.value.question;
+      faq["answer"] = editedItem.value.answer;
+      console.log("cache updated");
+    } else {
+      console.log("not updated");
+    }
+  });
+  // Object.values().forEach((cachedCurrentPage) => {
+  //   console.log(` cached page : `,cachedCurrentPage);
+  // const cachedItem = cachedCurrentPage.find((i) => i._id === editedIndex.value);
+  // if (cachedItem) {
+  //   cachedItem[field] = newText;
+  // }
+  // if (cachedItem) {
+  //   console.log(`cached item : ${JSON.stringify(cachedItem)}`);
+  //   cachedItem["question"] = editedItem.value.question;
+  //   cachedItem["answer"] = editedItem.value.answer;
+  // } else {
+  //   console.log(`cached item : ${JSON.stringify(cachedItem)}`);
+  // }
+  // });
+  editedItems.value[editedIndex.value] = {
+    _id: editedIndex.value,
+    question: editedItem.value.question,
+    answer: editedItem.value.answer,
+    // kb_id: selectedKbId.value, // Add the KB ID for the update API
+  };
+  close();
+};
+const editItem = (item) => {
+  console.log(`start edit item : `, item);
+  editedIndex.value = item._id;
+  editedItem.value = item;
+};
 // Check if we're currently editing a specific cell
 const isEditingCell = (itemId, field) => {
   return editingContent.itemId === itemId && editingContent.field === field;
@@ -852,7 +1096,7 @@ const updateEditedItems = async () => {
 
   try {
     const response = await fetch(
-      "http://localhost:8090/nexus/notebook/api/qapairs",
+      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs",
       {
         method: "PATCH",
         headers: {
@@ -927,269 +1171,325 @@ const previewPageCount = computed(() => {
 });
 </script>
 <template>
-  <div class="qa-table-container">
-    <h1 class="title">FQA's</h1>
+  <v-container fluid class="qa-table-container">
+    <v-row>
+      <v-col cols="12">
+        <v-card elevation="0">
+          <v-card-title class="text-h4 pa-4"> FQA's </v-card-title>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Selection Status Messages -->
-    <div
-      v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId"
-      class="selection-status"
-    >
-      <div v-if="!tenantPartitionKey" class="status-alert">
-        Tenant is not selected
-      </div>
-      <div v-else-if="!selectedKbId" class="status-alert">
-        Knowledge base is not selected
-      </div>
-      <div v-else-if="!selectedTopicId" class="status-alert">
-        Topic is not selected
-      </div>
-    </div>
+    <v-row v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId">
+      <v-col cols="12">
+        <v-alert
+          v-if="!tenantPartitionKey"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          Tenant is not selected
+        </v-alert>
+        <v-alert
+          v-else-if="!selectedKbId"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          Knowledge base is not selected
+        </v-alert>
+        <v-alert
+          v-else-if="!selectedTopicId"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          Topic is not selected
+        </v-alert>
+      </v-col>
+    </v-row>
 
     <!-- Tenant and KB Display & Change Option -->
-    <div class="selection-info" v-if="tenantPartitionKey">
-      <div class="current-selections">
-        <div class="selection-item">
-          <span
-            >Current Tenant: <strong>{{ tenantPartitionKey }}</strong></span
-          >
-        </div>
-        <!-- <div class="selection-item">
-          <span
-            >Knowledge Base: <strong>{{ selectedKbName }}</strong></span
-          >
-        </div>
-        <div class="selection-item">
-          <span
-            >Topic: <strong>{{ selectedTopicName }}</strong></span
-          >
-        </div> -->
-        <div class="selection-form-container" v-if="tenantPartitionKey">
-          <form @submit.prevent="submitSelections" class="selection-form">
-            <div
-              class="form-group"
-              v-if="tenantPartitionKey && knowledgeBases.length > 0"
-            >
-              <label for="kbSelection">Knowledge Base:</label>
-              <p v-if="selectedKbId">
-                Selected Knowledge base : {{ selectedKbName }}
-              </p>
-              <select
-                id="kbSelection"
-                v-model="tempKbId"
-                required
-                class="form-input"
-              >
-                <option value="" disabled>Select a knowledge base</option>
-                <option
-                  v-for="kb in knowledgeBases"
-                  :key="kb._id"
-                  :value="kb._id"
-                >
-                  {{ kb.kb_name }}
-                </option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="!isFormValid"
-            >
-              Select Knowledge Base
-            </button>
-          </form>
-        </div>
-        <div class="selection-form-container" v-if="selectedKbId">
-          <form @submit.prevent="submitSelections" class="selection-form">
-            <div class="form-group" v-if="selectedKbId && topics.length > 0">
-              <label for="topicSelection">Select Topic:</label>
-              <p v-if="selectedTopicId">
-                Selected Topic : {{ selectedTopicName }}
-              </p>
-              <select
-                id="topicSelection"
-                v-model="tempTopicId"
-                required
-                class="form-input"
-              >
-                <option value="" disabled>
-                  Select a Topic from knowledge base
-                </option>
-                <option v-for="tp in topics" :key="tp._id" :value="tp._id">
-                  {{ tp.topic_name }}
-                </option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="!isFormValid"
-            >
-              Select Topic
-            </button>
-          </form>
-        </div>
-        <!-- <button @click="changeSelections" class="btn btn-secondary">
-          Change Selections
-        </button> -->
-      </div>
+    <v-row v-if="tenantPartitionKey">
+      <v-col cols="12">
+        <v-card class="mb-4">
+          <v-card-text>
+            <v-row>
+              <v-col cols="12">
+                <v-chip color="primary" variant="outlined" class="mb-2">
+                  Current Tenant: <strong>{{ tenantPartitionKey }}</strong>
+                </v-chip>
+              </v-col>
+            </v-row>
+            <v-row v-if="tenantPartitionKey">
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="mb-4">
+                  <v-btn
+                      @click="openCreateKbModal"
+                      color="primary"
+                      class="mt-2"
+                    >
+                      Add Knowledge base
+                    </v-btn>
+                  <v-card-text>                    
+                    <v-form @submit.prevent="submitSelections">
+                      <v-row
+                        v-if="tenantPartitionKey && knowledgeBases.length > 0"
+                      >
+                        <v-col cols="12">
+                          <v-chip
+                            v-if="selectedKbId"
+                            color="success"
+                            variant="outlined"
+                            class="mb-2"
+                          >
+                            Selected Knowledge base: {{ selectedKbName }}
+                          </v-chip>
+                          <v-select
+                            v-model="tempKbId"
+                            :items="knowledgeBases"
+                            item-title="kb_name"
+                            item-value="_id"
+                            label="Knowledge Base"
+                            placeholder="Select a knowledge base"
+                            required
+                            outlined
+                            dense
+                          ></v-select>
+                        </v-col>
+                      </v-row>
+                      <v-btn
+                        type="submit"
+                        color="primary"
+                        :disabled="!isFormValid"
+                        class="mt-2"
+                      >
+                        Select Knowledge Base
+                      </v-btn>
+                    </v-form>
+                  </v-card-text>
+                </v-card>
+              </v-col>
 
-      <div class="data-controls">
-        <button
-          v-if="selectedKbId && selectedTopicId"
-          @click="refreshData"
-          class="btn btn-primary"
-        >
-          Refresh Data
-        </button>
-        <button
-          v-if="selectedKbId && selectedTopicId"
-          @click="updateEditedItems"
-          class="btn btn-success"
-          :disabled="getEditedCount() === 0"
-        >
-          Update {{ getEditedCount() }} Edited Item(s)
-        </button>
-        <!-- <span v-if="Object.keys(cachedPages).length > 0" class="cache-info">
-          {{ getCacheStatus() }}
-        </span> -->
-      </div>
-    </div>
+              <v-col cols="12" md="6" v-if="selectedKbId">
+                <v-card variant="outlined" class="mb-4">
+                  <v-btn
+                    @click="openCreateTopicModal"
+                    color="primary"
+                    class="mt-2"
+                  >
+                    Add Topic
+                  </v-btn>
+                  <v-card-text>
+                    <v-form @submit.prevent="submitSelections">
+                      <v-row v-if="selectedKbId && topics.length > 0">
+                        <v-col cols="12">
+                          <v-chip
+                            v-if="selectedTopicId"
+                            color="success"
+                            variant="outlined"
+                            class="mb-2"
+                          >
+                            Selected Topic: {{ selectedTopicName }}
+                          </v-chip>
+                          <v-select
+                            v-model="tempTopicId"
+                            :items="topics"
+                            item-title="topic_name"
+                            item-value="_id"
+                            label="Select Topic"
+                            placeholder="Select a Topic from knowledge base"
+                            required
+                            outlined
+                            dense
+                          ></v-select>
+                        </v-col>
+                      </v-row>
+                      <v-btn
+                        v-if="topics.length > 0"
+                        type="submit"
+                        color="primary"
+                        :disabled="!isFormValid"
+                        class="mt-2"
+                      >
+                        Select Topic
+                      </v-btn>
+                      <v-chip v-else
+                        >No topics in {{ selectedKbName }}. Please add some
+                        topics to proceed</v-chip
+                      >
+                    </v-form>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+
+            <v-row>
+              <v-col cols="12">
+                <v-card-actions>
+                  <v-btn
+                    v-if="selectedKbId && selectedTopicId"
+                    @click="refreshData"
+                    color="primary"
+                    variant="outlined"
+                  >
+                    Refresh Data
+                  </v-btn>
+                  <v-btn
+                    v-if="selectedKbId && selectedTopicId"
+                    @click="updateEditedItems"
+                    color="success"
+                    :disabled="getEditedCount() === 0"
+                    class="ml-2"
+                  >
+                    Update {{ getEditedCount() }} Edited Item(s)
+                  </v-btn>
+                </v-card-actions>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Loading State -->
-    <div class="loading-container" v-if="loading">
-      <div class="loading-spinner"></div>
-      <p>Loading data...</p>
-    </div>
-    <div
-      class="excel-qa-manager p-6 max-w-4xl mx-auto"
-      v-if="selectedKbId && selectedTopicId"
-    >
-      <h2 class="text-2xl font-bold mb-6">Question & Answer Excel Upload</h2>
+    <v-row v-if="loading">
+      <v-col cols="12" class="text-center">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="64"
+          class="mb-4"
+        ></v-progress-circular>
+        <p class="text-h6">Loading data...</p>
+      </v-col>
+    </v-row>
 
-      <!-- Download Template Button -->
-      <div class="mb-6">
-        <button
-          @click="downloadTemplate"
-          class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg border"
-        >
-          Download Sample Template
-        </button>
-      </div>
-
-      <!-- Upload Excel File -->
-      <div class="mb-6">
-        <label class="block text-sm font-medium mb-2"
-          >Upload Excel File :
-        </label>
-        <input
-          type="file"
-          ref="fileInput"
-          @change="handleFileUpload"
-          accept=".xlsx,.xls"
-          class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-        />
-      </div>
-
-      <!-- Validation Messages -->
-      <div v-if="validationMessage" class="mb-4">
-        <div
-          :class="{
-            'bg-green-100 border-green-400 text-green-700': isValidFile,
-            'bg-red-100 border-red-400 text-red-700': !isValidFile,
-          }"
-          class="border px-4 py-3 rounded"
-        >
-          {{ validationMessage }}
-        </div>
-      </div>
-
-      <!-- Preview of Questions and Answers -->
-      <div v-if="ques.length > 0" class="mb-6">
-        <h3 class="text-lg font-semibold mb-3">
-          Preview ({{ ques.length }} items)
-        </h3>
-        <div class="max-h-60 overflow-y-auto border rounded-lg">
-          <!-- <table class="w-full">
-            <thead class="bg-gray-50 sticky top-0">
-              <tr>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-700"
+    <!-- Excel QA Manager -->
+    <v-row v-if="selectedKbId && selectedTopicId">
+      <v-col cols="12">
+        <v-card class="mb-4">
+          <v-card-title class="text-h5">
+            Question & Answer Excel Upload
+          </v-card-title>
+          <v-card-text>
+            <!-- Download Template Button -->
+            <v-row class="mb-4">
+              <v-col cols="12">
+                <v-btn
+                  @click="downloadTemplate"
+                  color="blue"
+                  variant="outlined"
                 >
-                  Question
-                </th>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-700"
+                  Download Sample Template
+                </v-btn>
+              </v-col>
+            </v-row>
+
+            <!-- Upload Excel File -->
+            <v-row class="mb-4">
+              <v-col cols="12">
+                <v-file-input
+                  ref="fileInput"
+                  @change="handleFileUpload"
+                  accept=".xlsx,.xls"
+                  label="Upload Excel File"
+                  outlined
+                  dense
+                  show-size
+                ></v-file-input>
+              </v-col>
+            </v-row>
+
+            <!-- Validation Messages -->
+            <v-row v-if="validationMessage" class="mb-4">
+              <v-col cols="12">
+                <v-alert
+                  :type="isValidFile ? 'success' : 'error'"
+                  variant="tonal"
                 >
-                  Answer
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in ques" :key="index" class="border-t">
-                <td class="px-4 py-2 text-sm">{{ item.que }}</td>
-                <td class="px-4 py-2 text-sm">{{ item.ans }}</td>
-              </tr>
-            </tbody>
-          </table> -->
-          <VDataTable
-            v-model:page="previewPage"
-            :headers="previewHeaders"
-            :items="ques"
-            :items-per-page="previewItemsPerPage"
-          >
-            <template v-slot:top>
-              <v-text-field
-                :model-value="previewItemsPerPage"
-                class="pa-2"
-                label="Items per page"
-                min="-1"
-                type="number"
-                hide-details
-                @update:model-value="previewItemsPerPage = parseInt($event, 10)"
-              ></v-text-field>
-            </template>
+                  {{ validationMessage }}
+                </v-alert>
+              </v-col>
+            </v-row>
 
-            <template v-slot:bottom>
-              <div class="text-center pt-2">
-                <VPagination
-                  v-model="previewPage"
-                  :length="previewPageCount"
-                ></VPagination>
-              </div>
-            </template>
-          </VDataTable>
-        </div>
-      </div>
+            <!-- Preview of Questions and Answers -->
+            <v-row v-if="ques.length > 0" class="mb-4">
+              <v-col cols="12">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">
+                    Preview ({{ ques.length }} items)
+                  </v-card-title>
+                  <v-card-text>
+                    <div class="max-h-60 overflow-y-auto">
+                      <VDataTable
+                        v-model:page="previewPage"
+                        :headers="previewHeaders"
+                        :items="ques"
+                        :items-per-page="previewItemsPerPage"
+                      >
+                        <template v-slot:top>
+                          <v-text-field
+                            :model-value="previewItemsPerPage"
+                            class="pa-2"
+                            label="Items per page"
+                            min="-1"
+                            type="number"
+                            hide-details
+                            @update:model-value="
+                              previewItemsPerPage = parseInt($event, 10)
+                            "
+                          ></v-text-field>
+                        </template>
 
-      <!-- Save Button -->
-      <div class="mb-6" v-if="ques.length > 0">
-        <button
-          @click="saveToBackend"
-          :class="{
-            'bg-green-500 hover:bg-green-600': ques.length > 0 && !isSaving,
-            'bg-gray-400 cursor-not-allowed': ques.length === 0 || isSaving,
-          }"
-          class="px-4 py-2 rounded-lg border"
-        >
-          {{ isSaving ? "Saving..." : "Save" }}
-        </button>
-      </div>
+                        <template v-slot:bottom>
+                          <div class="text-center pt-2">
+                            <VPagination
+                              v-model="previewPage"
+                              :length="previewPageCount"
+                            ></VPagination>
+                          </div>
+                        </template>
+                      </VDataTable>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
 
-      <!-- Save Status -->
-      <div v-if="saveMessage" class="mb-4">
-        <div
-          :class="{
-            'bg-green-100 border-green-400 text-green-700': saveSuccess,
-            'bg-red-100 border-red-400 text-red-700': !saveSuccess,
-          }"
-          class="border px-4 py-3 rounded"
-        >
-          {{ saveMessage }}
-        </div>
-      </div>
-    </div>
-    <!-- Actions Bar - Only show when items are loaded and selections are possible -->
-    <div
+            <!-- Save Button -->
+            <v-row v-if="ques.length > 0" class="mb-4">
+              <v-col cols="12">
+                <v-btn
+                  @click="saveToBackend"
+                  :color="ques.length > 0 && !isSaving ? 'success' : 'grey'"
+                  :disabled="ques.length === 0 || isSaving"
+                  :loading="isSaving"
+                >
+                  {{ isSaving ? "Saving..." : "Save" }}
+                </v-btn>
+              </v-col>
+            </v-row>
+
+            <!-- Save Status -->
+            <v-row v-if="saveMessage" class="mb-4">
+              <v-col cols="12">
+                <v-alert
+                  :type="saveSuccess ? 'success' : 'error'"
+                  variant="tonal"
+                >
+                  {{ saveMessage }}
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Actions Bar -->
+    <v-row
       v-if="
         !loading &&
         tenantPartitionKey &&
@@ -1197,31 +1497,54 @@ const previewPageCount = computed(() => {
         selectedTopicId &&
         qaData.length > 0
       "
-      class="actions-bar"
     >
-      <div class="selection-info">
-        <span v-if="getSelectedCount() === 0">No items selected</span>
-        <span v-else>{{ getSelectedCount() }} item(s) selected</span>
-      </div>
-      <div class="bulk-actions">
-        <button
-          @click="confirmDeleteSelected"
-          class="btn btn-danger"
-          :disabled="getSelectedCount() === 0"
-        >
-          Delete Selected
-        </button>
-        <button @click="showDelKbModal" class="btn btn-danger">
-          Delete Entire Knowledge base
-        </button>
-        <button @click="toggleSelectAll" class="btn btn-secondary">
-          {{ allSelected ? "Unselect All" : "Select All" }}
-        </button>
-      </div>
-    </div>
+      <v-col cols="12">
+        <v-card class="mb-4">
+          <v-card-text>
+            <v-row align="center">
+              <v-col cols="12" md="6">
+                <v-chip
+                  :color="getSelectedCount() === 0 ? 'grey' : 'primary'"
+                  variant="outlined"
+                >
+                  <span v-if="getSelectedCount() === 0">No items selected</span>
+                  <span v-else>{{ getSelectedCount() }} item(s) selected</span>
+                </v-chip>
+              </v-col>
+              <v-col cols="12" md="6" class="text-right">
+                <v-btn
+                  @click="confirmDeleteSelected"
+                  color="error"
+                  variant="outlined"
+                  :disabled="getSelectedCount() === 0"
+                  class="mr-2"
+                >
+                  Delete Selected
+                </v-btn>
+                <v-btn
+                  @click="showDelKbModal"
+                  color="error"
+                  variant="outlined"
+                  class="mr-2"
+                >
+                  Delete Entire Knowledge base
+                </v-btn>
+                <v-btn
+                  @click="toggleSelectAll"
+                  color="secondary"
+                  variant="outlined"
+                >
+                  {{ allSelected ? "Unselect All" : "Select All" }}
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Data Table -->
-    <div
+    <v-row
       v-if="
         !loading &&
         tenantPartitionKey &&
@@ -1229,292 +1552,250 @@ const previewPageCount = computed(() => {
         selectedTopicId &&
         qaData.length > 0
       "
-      class="table-wrapper"
     >
-      <div class="table-header">
-        <h2>QA Pairs Data</h2>
-        <span class="data-info"
-          >Showing {{ qaData.length }} of {{ totalItems }} items</span
-        >
-      </div>
-
-      <div class="table-responsive">
-        <!-- <table class="qa-table">
-          <thead>
-            <tr>
-              <th class="checkbox-col">
-                <input
-                  type="checkbox"
+      <v-col cols="12">
+        <v-card>
+          <v-card-text>
+            <v-row class="mb-4">
+              <v-col cols="12" class="d-flex align-center">
+                <h2 class="text-h6 mr-4">Select all in this page</h2>
+                <v-checkbox
                   id="selectAll"
-                  :checked="allSelected"
-                  @change="toggleSelectAll"
-                  class="checkbox"
-                />
-              </th>
-              <th>Question</th>
-              <th>Answer</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in qaData"
-              :key="item._id"
-              :class="{ 'edited-row': isItemEdited(item._id) }"
-            >
-              <td class="checkbox-col">
-                <input
-                  type="checkbox"
-                  :id="`item-${item._id}`"
-                  :value="item._id"
-                  v-model="selectedIdsByPage[currentPage]"
-                  class="checkbox"
-                />
-              </td>
-              <td
-                @click="startEditing(item._id, 'question')"
-                :class="{ editing: isEditingCell(item._id, 'question') }"
-              >
-                <div
-                  v-if="isEditingCell(item._id, 'question')"
-                  class="edit-container"
-                >
-                  <textarea
-                    v-model="editingContent.text"
-                    class="edit-input"
-                    @blur="finishEditing(item._id, 'question')"
-                    @keydown.enter.prevent="finishEditing(item._id, 'question')"
-                    ref="editTextarea"
-                  ></textarea>
-                </div>
-                <div v-else>{{ item.question }}</div>
-              </td>
-              <td
-                @click="startEditing(item._id, 'answer')"
-                :class="{ editing: isEditingCell(item._id, 'answer') }"
-              >
-                <div
-                  v-if="isEditingCell(item._id, 'answer')"
-                  class="edit-container"
-                >
-                  <textarea
-                    v-model="editingContent.text"
-                    class="edit-input"
-                    @blur="finishEditing(item._id, 'answer')"
-                    @keydown.enter.prevent="finishEditing(item._id, 'answer')"
-                    ref="editTextarea"
-                  ></textarea>
-                </div>
-                <div v-else>{{ item.answer }}</div>
-              </td>
-            </tr>
-          </tbody>
-        </table> -->
-        <VDataTable
-          v-model="selectedItems"
-          :headers="qaTableHeaders"
-          :items="qaData"
-          :items-per-page="qaTableItemsPerPage"
-          :page="currentPage"
-          show-select
-          item-value="_id"
-          class="qa-table"
-        >
-          <!-- Custom header for select all -->
-          <template v-slot:header.data-table-select="{ props, on }">
-            <v-checkbox
-              v-bind="props"
-              v-on="on"
-              :indeterminate="someSelected && !allSelected"
-              :input-value="allSelected"
-              @change="toggleSelectAll"
-            ></v-checkbox>
-          </template>
+                  :model-value="allSelected"
+                  @update:model-value="toggleSelectAll"
+                  hide-details
+                ></v-checkbox>
+              </v-col>
+            </v-row>
 
-          <!-- Custom item select -->
-          <template
-            v-slot:item.data-table-select="{ item, isSelected, select }"
-          >
-            <v-checkbox
-              :input-value="isSelected"
-              @change="select($event)"
-            ></v-checkbox>
-          </template>
-
-          <!-- Question column with inline editing -->
-          <template v-slot:item.question="{ item }">
-            <div
-              @click="startEditing(item._id, 'question')"
-              :class="{ editing: isEditingCell(item._id, 'question') }"
-              class="editable-cell"
+            <VDataTable
+              :headers="qaTableHeaders"
+              :items="qaData"
+              :items-per-page="qaTableItemsPerPage"
             >
-              <div
-                v-if="isEditingCell(item._id, 'question')"
-                class="edit-container"
-              >
+              <template #item.question="{ item }">
                 <v-textarea
-                  v-model="editingContent.text"
-                  auto-grow
-                  rows="1"
-                  dense
-                  outlined
-                  @blur="finishEditing(item._id, 'question')"
-                  @keydown.enter.prevent="finishEditing(item._id, 'question')"
-                  ref="editTextarea"
-                  class="edit-input"
+                  v-model="editedItem.question"
+                  :auto-grow="true"
+                  v-if="item.raw._id === editedItem._id"
                 ></v-textarea>
-              </div>
-              <div v-else>{{ item.question }}</div>
-            </div>
-          </template>
-
-          <!-- Answer column with inline editing -->
-          <template v-slot:item.answer="{ item }">
-            <div
-              @click="startEditing(item._id, 'answer')"
-              :class="{ editing: isEditingCell(item._id, 'answer') }"
-              class="editable-cell"
-            >
-              <div
-                v-if="isEditingCell(item._id, 'answer')"
-                class="edit-container"
-              >
+                <span v-else>{{ item.raw.question }}</span>
+              </template>
+              <template #item.answer="{ item }">
                 <v-textarea
-                  v-model="editingContent.text"
-                  auto-grow
-                  rows="1"
-                  dense
-                  outlined
-                  @blur="finishEditing(item._id, 'answer')"
-                  @keydown.enter.prevent="finishEditing(item._id, 'answer')"
-                  ref="editTextarea"
-                  class="edit-input"
+                  v-model="editedItem.answer"
+                  :auto-grow="true"
+                  v-if="item.raw._id === editedItem._id"
                 ></v-textarea>
-              </div>
-              <div v-else>{{ item.answer }}</div>
-            </div>
-          </template>
-
-          <!-- Custom row styling for edited items -->
-          <template v-slot:item="{ item, props }">
-            <tr :class="{ 'edited-row': isItemEdited(item._id) }">
-              <td v-for="(header, index) in qaTableHeaders" :key="qaTableHeaders.value">
-                <slot
-                  :name="`item.${header.value}`"
-                  :item="item"
-                  :header="header"
-                  :props="props"
+                <span v-else>{{ item.raw.answer }}</span>
+              </template>
+              <template #item.actions="{ item }">
+                <div v-if="item.raw._id === editedItem._id">
+                  <v-icon
+                    icon="mdi-window-close"
+                    color="red"
+                    class="mr-3"
+                    @click="close"
+                  ></v-icon>
+                  <v-icon
+                    icon="mdi-content-save"
+                    color="green"
+                    @click="save"
+                  ></v-icon>
+                </div>
+                <div v-else>
+                  <v-icon
+                    icon="mdi-pencil"
+                    @click="editItem(item.raw)"
+                  ></v-icon>
+                  <td class="checkbox-col">
+                    <v-checkbox
+                      :id="`item-${item.raw._id}`"
+                      :value="item.raw._id"
+                      v-model="selectedIdsByPage[currentPage]"
+                      hide-details
+                    ></v-checkbox>
+                  </td>
+                </div>
+              </template>
+              <template #bottom>
+                <VDivider />
+                <div
+                  class="d-flex align-center justify-center justify-sm-space-between flex-wrap gap-3 pa-5 pt-3"
                 >
-                  {{ item[header.value] }}
-                </slot>
-              </td>
-            </tr>
-          </template>
-
-          <!-- Custom footer for pagination info -->
-          <template v-slot:footer>
-            <div class="pagination">
-              <div class="pagination-info">
-                Page {{ currentPage }} of {{ totalPages }}
-              </div>
-              <div class="pagination-controls">
-                <v-btn
-                  @click="previousPage"
-                  :disabled="currentPage === 1"
-                  class="btn-pagination"
-                  outlined
-                  small
-                >
-                  <v-icon left>mdi-chevron-left</v-icon>
-                  Previous
-                </v-btn>
-                <v-btn
-                  @click="nextPage"
-                  :disabled="currentPage === totalPages"
-                  class="btn-pagination"
-                  outlined
-                  small
-                >
-                  Next
-                  <v-icon right>mdi-chevron-right</v-icon>
-                </v-btn>
-              </div>
-            </div>
-          </template>
-        </VDataTable>
-      </div>
-
-      <!-- <div class="pagination">
-        <div class="pagination-info">
-          Page {{ currentPage }} of {{ totalPages }}
-        </div>
-        <div class="pagination-controls">
-          <button
-            @click="previousPage"
-            :disabled="currentPage === 1"
-            class="btn btn-pagination"
-          >
-            <span>←</span> Previous
-          </button>
-          <button
-            @click="nextPage"
-            :disabled="currentPage === totalPages"
-            class="btn btn-pagination"
-          >
-            Next <span>→</span>
-          </button>
-        </div>
-      </div> -->
-    </div>
+                  <p class="text-sm text-disabled mb-0">
+                    {{ paginationMeta(qaTableOptions, totalItems) }}
+                  </p>
+                  <div class="d-flex align-center justify-center gap-3">
+                    <VBtn
+                      :disabled="qaTableOptions.page <= 1"
+                      variant="tonal"
+                      color="default"
+                      @click="previousPage"
+                    >
+                      Previous
+                    </VBtn>
+                    <VBtn
+                      :disabled="qaTableOptions.page >= Math.ceil(totalPages)"
+                      variant="tonal"
+                      color="default"
+                      @click="nextPage"
+                    >
+                      Next
+                    </VBtn>
+                  </div>
+                </div>
+              </template>
+            </VDataTable>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- No Data Message -->
-    <div
+    <v-row
       v-if="
         !loading && tenantPartitionKey && selectedKbId && qaData.length === 0
       "
-      class="no-data"
     >
-      <p>
-        No QA pairs data available. Please check your selections and try again.
-      </p>
-    </div>
+      <v-col cols="12" class="text-center">
+        <v-card>
+          <v-card-text>
+            <v-icon size="64" color="grey" class="mb-4"
+              >mdi-database-off</v-icon
+            >
+            <p class="text-h6">
+              No QA pairs data available. Please check your selections and try
+              again.
+            </p>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Confirm Delete</h3>
-        <p>
-          Are you sure you want to delete {{ getSelectedCount() }} selected
-          item(s)?
-        </p>
-        <p class="delete-warning">This action cannot be undone.</p>
-        <div class="modal-actions">
-          <button @click="deleteSelected" class="btn btn-danger">Delete</button>
-          <button @click="cancelDelete" class="btn btn-secondary">
+    <v-dialog v-model="showDeleteModal" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h5">Confirm Delete</v-card-title>
+        <v-card-text>
+          <p class="mb-4">
+            Are you sure you want to delete {{ getSelectedCount() }} selected
+            item(s)?
+          </p>
+          <v-alert type="warning" variant="tonal">
+            This action cannot be undone.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="cancelDelete">
             Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+          </v-btn>
+          <v-btn color="error" @click="deleteSelected"> Delete </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Delete Knowledgebase Confirmation Modal -->
-    <div v-if="showKbDeleteModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Confirm Delete</h3>
-        <p>
-          Are you sure you want to delete entirity of
-          {{ this.selectedKbName }} Knowlwdgebase
-        </p>
-        <p class="delete-warning">This action cannot be undone.</p>
-        <div class="modal-actions">
-          <button @click="deleteKnowledgeBase" class="btn btn-danger">
-            Delete
-          </button>
-          <button @click="cancelDeleteKb" class="btn btn-secondary">
+    <v-dialog v-model="showKbDeleteModal" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h5">Confirm Delete</v-card-title>
+        <v-card-text>
+          <p class="mb-4">
+            Are you sure you want to delete entirety of
+            {{ this.selectedKbName }} Knowledgebase
+          </p>
+          <v-alert type="warning" variant="tonal">
+            This action cannot be undone.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="cancelDeleteKb">
             Cancel
-          </button>
+          </v-btn>
+          <v-btn color="error" @click="deleteKnowledgeBase"> Delete </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- Create Knowledge Base Modal -->
+    <v-dialog v-model="showCreateKbModal" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h5">Create Knowledge Base</v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newCreateKbName"
+                  label="Knowledge Base Name"
+                  outlined
+                  dense
+                  required
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <div v-if="!isKbNameValid">
+          <p>invalid kb name error : {{ kbNameError }}</p>
         </div>
-      </div>
-    </div>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="closeKbModal">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="createKnowledgeBase"
+            :disabled="!newCreateKbName || newCreateKbName.trim().length === 0"
+          >
+            Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- Create Topic Modal -->
+    <v-dialog v-model="showCreateTopicModal" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h5"
+          >Create Topic in {{ selectedKbName }} knowledgebase</v-card-title
+        >
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newCreateTopicName"
+                  label="Topic Name"
+                  outlined
+                  dense
+                  required
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <div v-if="!isTopicNameValid">
+          <p>invalid kb name error : {{ topicNameError }}</p>
+        </div>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="closeTopicModal">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="createTopic"
+            :disabled="
+              !newCreateTopicName || newCreateTopicName.trim().length === 0
+            "
+          >
+            Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Status Messages -->
     <div
@@ -1524,9 +1805,8 @@ const previewPageCount = computed(() => {
       {{ statusMessage }}
       <button @click="clearStatus" class="status-close">&times;</button>
     </div>
-  </div>
+  </v-container>
 </template>
-
 <style lang="scss">
 .qa-table-container {
   max-width: 1200px;
