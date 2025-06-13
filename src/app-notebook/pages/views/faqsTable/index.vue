@@ -1,6 +1,7 @@
 <!-- src/components/QAPairsTable.vue -->
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from "vue";
+import axios from "@/app-notebook/plugins/axios";
 import { VDataTable } from "vuetify/labs/VDataTable";
 import { paginationMeta } from "@fake-db/utils";
 import * as XLSX from "xlsx";
