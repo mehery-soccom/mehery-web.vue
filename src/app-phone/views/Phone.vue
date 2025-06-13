@@ -219,11 +219,11 @@ const getSecrets = async () => {
     const response = await axios.get("/v1/register", {
       headers: {
         tnt: tenantPartitionKey.value,
-      },
+      }
     });
     const data = await response.data;
     // const response = await fetch(
-    //   // "http://localhost:8090/nexus/phone/v1/register",
+    //   "http://localhost:8090/nexus/phone/v1/register",
     //   "http://localhost:8090/scriptus/phone/v1/register",
     //   {
     //     method: "GET",

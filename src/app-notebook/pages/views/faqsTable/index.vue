@@ -649,22 +649,29 @@ const fetchKnowledgeBases = async () => {
   loading.value = true;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb?isDetailed=false",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb?isDetailed=false",
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // console.log(`response : ${JSON.stringify(response)}`);
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
+    // const data = await response.json();
+    const response = await axios.get("/notebook/api/qapairs/kb?isDetailed=false", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
       }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    });
+    const data = await response.data;
+    
     knowledgeBases.value = data.result || [];
 
     if (knowledgeBases.value.length === 0) {
@@ -672,6 +679,7 @@ const fetchKnowledgeBases = async () => {
     }
   } catch (error) {
     console.error("Error fetching knowledge bases:", error);
+    console.log(`response : ${JSON.stringify(response)}`);
     showStatus("Failed to load knowledge bases: " + error.message, "error");
     knowledgeBases.value = [];
   } finally {
