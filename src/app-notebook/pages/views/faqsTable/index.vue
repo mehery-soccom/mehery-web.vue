@@ -1,5 +1,6 @@
 <!-- src/components/QAPairsTable.vue -->
 <script setup>
+import { tenant_partition_key } from "@/app-notebook/plugins/tenantPartitionKey";
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import axios from "@/app-notebook/plugins/axios";
 import { VDataTable } from "vuetify/labs/VDataTable";
@@ -61,7 +62,7 @@ const totalItems = ref(0);
 const pageSize = ref(25);
 const knowledgeBases = ref([]); // List of knowledge bases
 const topics = ref([]);
-const tenantPartitionKey = ref("kedar");
+const tenantPartitionKey = ref(tenant_partition_key || "kedar");
 const tempTenantKey = ref("");
 const selectedKbId = ref(null); // Selected knowledge base ID
 const selectedKbName = ref(""); // Selected knowledge base name
@@ -315,7 +316,7 @@ const isFormValid = computed(() => {
 // Methods
 const submitSelections = () => {
   if (!tenantPartitionKey.value && tempTenantKey.value.trim()) {
-    tenantPartitionKey.value = tempTenantKey.value.trim();
+    tenantPartitionKey.value = tenant_partition_key || "kedar"
     // Don't reset tempTenantKey yet as we need it for the next step
   }
 
