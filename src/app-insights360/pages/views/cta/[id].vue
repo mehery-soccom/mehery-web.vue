@@ -29,16 +29,10 @@ const fetchCampaignData = async (id) => {
 
 const exportToExcel = () => {
   const formattedData = campTable.value.map(item => ({
-    'Campaign': item.name,
-    'Channel': item.channelId,
-    'Template': item.templateName,
-    'Status': item.status,
-    'Total': item.total,
-    'Sent': item.sent,
-    'Delivered': item.delivered,
-    'Read': item.read,
-    'Replied': item.responded,
-    'Failed': item.failed,
+    'Contact': item.contact.phone,
+    'Button Name': item.buttonName,
+    'Button Code': item.buttonCode,
+    'Recieved @': formatTimestamp(item.timestamp),
   }))
   
   const worksheet = XLSX.utils.json_to_sheet(formattedData)
