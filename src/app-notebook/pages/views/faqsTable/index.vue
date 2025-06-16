@@ -683,7 +683,7 @@ const fetchTopics = async () => {
   loading.value = true;
   try {
     // const response = await fetch(
-    //   `http://localhost:8090/scriptus/notebook/v1/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
+    //   `http://localhost:8090/scriptus/notebook/v1/api/qapairs/topic?kb_id=${selectedKbId.value}`,
     //   {
     //     method: "GET",
     //     headers: {
@@ -697,7 +697,7 @@ const fetchTopics = async () => {
     // }
 
     // const data = await response.json();
-    const response = await axios.get(`/v1/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`, {
+    const response = await axios.get(`/v1/api/qapairs/topic?kb_id=${selectedKbId.value}`, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
@@ -729,7 +729,7 @@ const fetchKnowledgeBases = async () => {
 
   try {
     // const response = await fetch(
-    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/kb?isDetailed=false",
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/kb",
     //   {
     //     method: "GET",
     //     headers: {
@@ -744,7 +744,7 @@ const fetchKnowledgeBases = async () => {
     // }
     // const data = await response.json();
 
-    const response = await axios.get("/v1/api/qapairs/kb?isDetailed=false", {
+    const response = await axios.get("/v1/api/qapairs/kb", {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
