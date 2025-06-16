@@ -143,17 +143,16 @@ const deleteTopic = async () => {
     //   }
     // );
     // const responseData = await response.json();
-    const response = await axios.delete("/v1/api/qapairs/topic", {
-      headers: {
-        "Content-Type": "application/json",
-        tnt: tenantPartitionKey.value,
-      },
-      data : {
+    const response = await axios.delete("/v1/api/qapairs/topic",{
           topic_id: selectedTopicId.value,
           topic_name: selectedTopicName.value,
           kb_id: selectedKbId.value,
           kb_name: selectedKbName.value,
-        }
+        } , {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      }
     });
     const data = await response.data;
     const kb = {
@@ -210,12 +209,11 @@ const createTopic = async () => {
     //   throw new Error(errorData.message || "Failed to create knowledge base");
     // }
     // const newTopicData = await response.json();
-    const response = await axios.post("/v1/api/qapairs/topic", {
+    const response = await axios.post("/v1/api/qapairs/topic",payload, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
-      },
-      data : payload
+      }
     });
     const newTopicData = await response.data;
     // Assuming backend returns the new KB object
@@ -280,12 +278,11 @@ const createKnowledgeBase = async () => {
     //   throw new Error(errorData.message || "Failed to create knowledge base");
     // }
     // const newKbData = await response.json();
-    const response = await axios.post("/v1/api/qapairs/kb", {
+    const response = await axios.post("/v1/api/qapairs/kb",{ kb_name: trimmedKbName }, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
-      },
-      data : { kb_name: trimmedKbName }
+      }
     });
     const newKbData = await response.data;
     // Assuming backend returns the new KB object
@@ -656,12 +653,11 @@ const saveToBackend = async () => {
     //     body: JSON.stringify(payload),
     //   }
     // );
-    const response = await axios.post("/v1/api/qapairs", {
+    const response = await axios.post("/v1/api/qapairs",payload, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
-      },
-      data : payload
+      }
     });
     // const newKbData = await response.data;
     let responseOK = response && response.status === 200 && response.statusText === 'OK';
@@ -934,15 +930,14 @@ const deleteKnowledgeBase = async () => {
     // }
 
     // const data = await response.json();
-    const response = await axios.delete("/v1/api/qapairs/kb", {
+    const response = await axios.delete("/v1/api/qapairs/kb",{
+        kb_id : selectedKbId.value,
+        kb_name : selectedKbName.value
+      }, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
       },
-      data : {
-        kb_id : selectedKbId.value,
-        kb_name : selectedKbName.value
-      }
     });
     const data = await response.data;
     console.log(`response del: ${JSON.stringify(data)}`);
@@ -991,15 +986,14 @@ const deleteSelected = async () => {
     // }
 
     // const data = await response.json();
-    const response = await axios.delete(url, {
-      headers: {
-        "Content-Type": "application/json",
-        tnt: tenantPartitionKey.value,
-      },
-      data : {
+    const response = await axios.delete(url,{
         kb_id: selectedKbId.value,
         topic_id: selectedTopicId.value,
         del_ids: selectedIds,
+      }, {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
       }
     });
     const data = await response.data;
@@ -1244,16 +1238,15 @@ const updateEditedItems = async () => {
     // }
 
     // const data = await response.json();
-    const response = await axios.patch("/v1/api/qapairs", {
-      headers: {
-        "Content-Type": "application/json",
-        tnt: tenantPartitionKey.value,
-      },
-      data : {
+    const response = await axios.patch("/v1/api/qapairs",{
           kb_id: selectedKbId.value,
           topic_id: selectedTopicId.value,
           updateDocs: editedItemsArray,
-        }
+        }, {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      }
     });
     const data = await response.data;
     console.log(`Update response: ${JSON.stringify(data)}`);
