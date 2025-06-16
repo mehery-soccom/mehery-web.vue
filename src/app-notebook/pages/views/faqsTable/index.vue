@@ -67,6 +67,7 @@ const selectedKbId = ref(null); // Selected knowledge base ID
 const selectedKbName = ref(""); // Selected knowledge base name
 const tempKbId = ref(""); // Temporary KB ID for form
 const showDeleteModal = ref(false);
+const showTopicDeleteModal = ref(false);
 const showKbDeleteModal = ref(false);
 const statusMessage = ref("");
 const statusType = ref("info"); // 'info', 'success', 'error'
@@ -121,6 +122,55 @@ const closeTopicModal = () => {
   topicNameError.value = "";
   isTopicNameValid.value = true;
 };
+const deleteTopic = async () => {
+  try {
+    // const response = await fetch(
+    //   `http://localhost:8090/scriptus/notebook/v1/api/qapairs/topic`,
+    //   {
+    //     // Replace with your actual API URL
+    //     method: "DELETE",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       topic_id: selectedTopicId.value,
+    //       topic_name: selectedTopicName.value,
+    //       kb_id: selectedKbId.value,
+    //       kb_name: selectedKbName.value,
+    //     }),
+    //   }
+    // );
+    // const responseData = await response.json();
+    const response = await axios.delete("/v1/api/qapairs/topic", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : {
+          topic_id: selectedTopicId.value,
+          topic_name: selectedTopicName.value,
+          kb_id: selectedKbId.value,
+          kb_name: selectedKbName.value,
+        }
+    });
+    const data = await response.data;
+    const kb = {
+      id : selectedKbId.value,
+      name : selectedKbName.value
+    }
+    resetStateComplete();
+    selectedKbId.value = kb.id;
+    selectedKbName.value = kb.name;
+    cancelDeleteTopic();
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create knowledge base");
+    }
+  } catch (error) {
+    console.error("Error deleting topic:", error);
+  }
+};
 const createTopic = async () => {
   const trimmedTopicName = newCreateTopicName.value.trim();
   if (!trimmedTopicName) {
@@ -143,22 +193,30 @@ const createTopic = async () => {
     kb_id: selectedKbId.value,
   };
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/topic",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create knowledge base");
-    }
-    const newTopicData = await response.json();
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/topic",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify(payload),
+    //   }
+    // );
+    // if (!response.ok) {
+    //   const errorData = await response.json();
+    //   throw new Error(errorData.message || "Failed to create knowledge base");
+    // }
+    // const newTopicData = await response.json();
+    const response = await axios.post("/v1/api/qapairs/topic", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : payload
+    });
+    const newTopicData = await response.data;
     // Assuming backend returns the new KB object
     newCreateTopicName.value = ""; // Clear input
     console.log(JSON.stringify(newTopicData));
@@ -172,7 +230,7 @@ const createTopic = async () => {
     }
     await fetchTopics(); // Refresh list from backend
   } catch (error) {
-    console.error("Error creating knowledge base:", error);
+    console.error("Error creating topic :", error);
   }
 };
 const openCreateKbModal = () => {
@@ -205,22 +263,30 @@ const createKnowledgeBase = async () => {
     kbNameError.value = "";
   }
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify({ kb_name: trimmedKbName }),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create knowledge base");
-    }
-    const newKbData = await response.json();
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/kb",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({ kb_name: trimmedKbName }),
+    //   }
+    // );
+    // if (!response.ok) {
+    //   const errorData = await response.json();
+    //   throw new Error(errorData.message || "Failed to create knowledge base");
+    // }
+    // const newKbData = await response.json();
+    const response = await axios.post("/v1/api/qapairs/kb", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : { kb_name: trimmedKbName }
+    });
+    const newKbData = await response.data;
     // Assuming backend returns the new KB object
     newCreateKbName.value = ""; // Clear input
     console.log(JSON.stringify(newKbData));
@@ -331,7 +397,6 @@ const resetStateComplete = () => {
   totalItems.value = 0;
   cacheTimestamp.value = null;
   selectedKbId.value = null;
-  tenantPartitionKey.value = null;
   selectedKbName.value = "";
   tempTopicId.value = "";
   selectedTopicId.value = null;
@@ -354,9 +419,10 @@ const resetStateComplete = () => {
     __v: 0,
   };
   editedIndex.value = "";
-  showCreateKbModal = false;
-  newCreateKbName = "";
+  showCreateKbModal.value = false;
+  newCreateKbName.value = "";
 };
+
 
 const resetState = () => {
   qaData.value = [];
@@ -578,19 +644,27 @@ const saveToBackend = async () => {
       })),
     };
     // Replace this URL with your actual backend endpoint
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (response.ok) {
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify(payload),
+    //   }
+    // );
+    const response = await axios.post("/v1/api/qapairs", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : payload
+    });
+    // const newKbData = await response.data;
+    let responseOK = response && response.status === 200 && response.statusText === 'OK';
+    if (responseOK) {
       saveMessage.value = `Successfully saved ${ques.value.length} question-answer pairs to the backend.`;
       saveSuccess.value = true;
       loading.value = true;
@@ -611,21 +685,28 @@ const fetchTopics = async () => {
   if (!selectedKbId.value) return;
   loading.value = true;
   try {
-    const response = await fetch(
-      `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-      }
-    );
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
+    // const response = await fetch(
+    //   `http://localhost:8090/scriptus/notebook/v1/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`,
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
 
-    const data = await response.json();
+    // const data = await response.json();
+    const response = await axios.get(`/v1/api/qapairs/topic?isDetailed=false&kb_id=${selectedKbId.value}`, {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      }
+    });
+    const data = await response.data;
     topics.value = data.result || [];
     console.log(topics.value);
 
@@ -651,7 +732,7 @@ const fetchKnowledgeBases = async () => {
 
   try {
     // const response = await fetch(
-    //   "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb?isDetailed=false",
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/kb?isDetailed=false",
     //   {
     //     method: "GET",
     //     headers: {
@@ -665,14 +746,15 @@ const fetchKnowledgeBases = async () => {
     //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
     // }
     // const data = await response.json();
-    const response = await axios.get("/notebook/api/qapairs/kb?isDetailed=false", {
+
+    const response = await axios.get("/v1/api/qapairs/kb?isDetailed=false", {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
       }
     });
     const data = await response.data;
-    
+
     knowledgeBases.value = data.result || [];
 
     if (knowledgeBases.value.length === 0) {
@@ -720,27 +802,33 @@ const fetchData = async (pageNum) => {
   loading.value = true;
 
   try {
-    let url = `http://localhost:8090/scriptus/nexus/notebook/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
-
+    // let url = `http://localhost:8090/scriptus/notebook/v1/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
+    let url = `/v1/api/qapairs/mongodb?page=${pageNum}&pageSize=${pageSize.value}&kb_id=${selectedKbId.value}&topic_id=${selectedTopicId.value}`;
     // Add lastSeenId parameter for pages beyond the first page
     if (pageNum > 1 && lastSeenIds.value[pageNum - 1]) {
       url += `&lastSeenId=${lastSeenIds.value[pageNum - 1]}`;
     }
 
-    const response = await fetch(url, {
-      method: "GET",
+    // const response = await fetch(url, {
+    //   method: "GET",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     tnt: tenantPartitionKey.value,
+    //   },
+    // });
+
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
+
+    // const data = await response.json();
+    const response = await axios.get(url, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
-      },
+      }
     });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
+    const data = await response.data;
     // Update the current data
     qaData.value = data.data;
     console.log(`qaData : `, qaData.value);
@@ -802,7 +890,12 @@ const cancelDeleteKb = () => {
 const cancelDelete = () => {
   showDeleteModal.value = false;
 };
-
+const showDelTopicModal = () => {
+  showTopicDeleteModal.value = true;
+};
+const cancelDeleteTopic = () => {
+  showTopicDeleteModal.value = false;
+};
 // Get all selected IDs across all pages
 const getAllSelectedIds = () => {
   let allSelectedIds = [];
@@ -818,28 +911,39 @@ const getSelectedCount = () => {
 };
 
 const deleteKnowledgeBase = async () => {
-  showDelKbModal.value = false;
+  
   loading.value = true;
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs/kb",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify({
-          kb_id: selectedKbId.value,
-          kb_name: selectedKbName.value,
-        }),
-      }
-    );
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs/kb",
+    //   {
+    //     method: "DELETE",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       kb_id: selectedKbId.value,
+    //       kb_name: selectedKbName.value,
+    //     }),
+    //   }
+    // );
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
 
-    const data = await response.json();
+    // const data = await response.json();
+    const response = await axios.delete("/v1/api/qapairs/kb", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : {
+        kb_id : selectedKbId.value,
+        kb_name : selectedKbName.value
+      }
+    });
+    const data = await response.data;
     console.log(`response del: ${JSON.stringify(data)}`);
 
     // Show success message
@@ -855,6 +959,7 @@ const deleteKnowledgeBase = async () => {
     console.error("Error deleting records:", error);
     showStatus("Failed to delete records: " + error.message, "error");
   } finally {
+    cancelDeleteKb();
     loading.value = false;
   }
 };
@@ -865,25 +970,38 @@ const deleteSelected = async () => {
   const selectedIds = getAllSelectedIds();
 
   try {
-    const url = `http://localhost:8090/scriptus/nexus/notebook/api/qapairs`;
-    const response = await fetch(url, {
-      method: "DELETE",
+    // const url = `http://localhost:8090/scriptus/notebook/v1/api/qapairs`;
+    const url = "/v1/api/qapairs";
+    // const response = await fetch(url, {
+    //   method: "DELETE",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     tnt: tenantPartitionKey.value,
+    //   },
+    //   body: JSON.stringify({
+    //     kb_id: selectedKbId.value,
+    //     topic_id: selectedTopicId.value,
+    //     del_ids: selectedIds,
+    //   }),
+    // });
+
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
+
+    // const data = await response.json();
+    const response = await axios.delete(url, {
       headers: {
         "Content-Type": "application/json",
         tnt: tenantPartitionKey.value,
       },
-      body: JSON.stringify({
+      data : {
         kb_id: selectedKbId.value,
         topic_id: selectedTopicId.value,
         del_ids: selectedIds,
-      }),
+      }
     });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const data = await response.data;
     console.log(`response del: ${JSON.stringify(data)}`);
 
     // Show success message
@@ -1104,27 +1222,39 @@ const updateEditedItems = async () => {
   const editedItemsArray = Object.values(editedItems.value);
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/api/qapairs",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify({
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/v1/api/qapairs",
+    //   {
+    //     method: "PATCH",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       kb_id: selectedKbId.value,
+    //       topic_id: selectedTopicId.value,
+    //       updateDocs: editedItemsArray,
+    //     }),
+    //   }
+    // );
+      
+    // if (!response.ok) {
+    //   throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    // }
+
+    // const data = await response.json();
+    const response = await axios.patch("/v1/api/qapairs", {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+      data : {
           kb_id: selectedKbId.value,
           topic_id: selectedTopicId.value,
           updateDocs: editedItemsArray,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
+        }
+    });
+    const data = await response.data;
     console.log(`Update response: ${JSON.stringify(data)}`);
 
     // Show success message
@@ -1235,13 +1365,22 @@ const previewPageCount = computed(() => {
               <v-col cols="12" md="6">
                 <v-card variant="outlined" class="mb-4">
                   <v-btn
-                      @click="openCreateKbModal"
-                      color="primary"
-                      class="mt-2"
-                    >
-                      Add Knowledge base
-                    </v-btn>
-                  <v-card-text>                    
+                    @click="openCreateKbModal"
+                    color="primary"
+                    class="my-2 mx-1"
+                  >
+                    Add Knowledge base
+                  </v-btn>
+                  <v-btn
+                    @click="showDelKbModal"
+                    color="error"
+                    variant="outlined"
+                    class="my-2 mx-1"
+                    v-if="selectedKbId"
+                  >
+                    Delete Knowledge base
+                  </v-btn>
+                  <v-card-text>
                     <v-form @submit.prevent="submitSelections">
                       <v-row
                         v-if="tenantPartitionKey && knowledgeBases.length > 0"
@@ -1286,9 +1425,18 @@ const previewPageCount = computed(() => {
                   <v-btn
                     @click="openCreateTopicModal"
                     color="primary"
-                    class="mt-2"
+                    class="my-2 mx-1"
                   >
                     Add Topic
+                  </v-btn>
+                  <v-btn
+                    @click="showDelTopicModal"
+                    color="error"
+                    variant="outlined"
+                    class="my-2 mx-1"
+                    v-if="selectedTopicId"
+                  >
+                    Delete Topic
                   </v-btn>
                   <v-card-text>
                     <v-form @submit.prevent="submitSelections">
@@ -1531,14 +1679,6 @@ const previewPageCount = computed(() => {
                   Delete Selected
                 </v-btn>
                 <v-btn
-                  @click="showDelKbModal"
-                  color="error"
-                  variant="outlined"
-                  class="mr-2"
-                >
-                  Delete Entire Knowledge base
-                </v-btn>
-                <v-btn
                   @click="toggleSelectAll"
                   color="secondary"
                   variant="outlined"
@@ -1712,7 +1852,7 @@ const previewPageCount = computed(() => {
         <v-card-text>
           <p class="mb-4">
             Are you sure you want to delete entirety of
-            {{ this.selectedKbName }} Knowledgebase
+            {{ selectedKbName }} Knowledge base
           </p>
           <v-alert type="warning" variant="tonal">
             This action cannot be undone.
@@ -1724,6 +1864,28 @@ const previewPageCount = computed(() => {
             Cancel
           </v-btn>
           <v-btn color="error" @click="deleteKnowledgeBase"> Delete </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- Delete Topic Confirmation Modal -->
+    <v-dialog v-model="showTopicDeleteModal" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h5">Confirm Delete</v-card-title>
+        <v-card-text>
+          <p class="mb-4">
+            Are you sure you want to delete entirety of
+            {{ selectedTopicName }} topic
+          </p>
+          <v-alert type="warning" variant="tonal">
+            This action cannot be undone.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="cancelDeleteTopic">
+            Cancel
+          </v-btn>
+          <v-btn color="error" @click="deleteTopic"> Delete </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
