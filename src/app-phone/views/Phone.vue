@@ -54,7 +54,10 @@ const registrationStatus = ref("Disconnected");
 // Call history
 const callHistory = ref([]);
 const callTimer = ref(null);
-
+const sendPostMessage = (event_type,data) => {
+  const phoneEvent = JSON.stringify({ event : event_type , event_data : data });
+  window.parent.postMessage(phoneEvent,"*");
+}
 // Computed properties
 const canUseKeypad = computed(() => {
   return callState.value === "idle" || callState.value === "talking";
@@ -223,7 +226,7 @@ const getSecrets = async () => {
     });
     const data = await response.data;
     // const response = await fetch(
-    //   "http://localhost:8090/nexus/phone/v1/register",
+    //   // "http://localhost:8090/nexus/phone/v1/register",
     //   "http://localhost:8090/scriptus/phone/v1/register",
     //   {
     //     method: "GET",
@@ -293,7 +296,10 @@ const handleIncomingCall = (data) => {
     timestamp: data.timestamp,
     sessionId: data.sessionId,
   };
-
+  sendPostMessage("incomming-call",{ remoteNumber: data.remoteNumber,
+    timestamp: data.timestamp,
+    sessionId: data.sessionId,
+  });
   // Add to call history
   addToCallHistory(data.remoteNumber, "incoming", data.timestamp);
 };
@@ -347,11 +353,12 @@ const handleCallTerminated = (data) => {
 const handleConnectionStatus = (data) => {
   console.log("Connection status:", data);
   registrationStatus.value = data.connected;
+  sendPostMessage("connection-status", { connection : data.connected });
 };
 
 const handleRegistrationAttempt = (data) => {
   console.log("Registration attempt:", data);
-  registrationStatus.value = "Connecting...";
+  registrationStatus.value = "connecting...";
 };
 
 // === CALL ACTIONS ===
@@ -636,6 +643,7 @@ onUnmounted(() => {
 });
 // Lifecycle hooks
 onMounted(async () => {
+  sendPostMessage("connection-status",{ connection : registrationStatus.value })
   console.log("windows const app context : ", window.CONST.APP_CONTEXT);
   console.log("window const cdn url : ", window.CONST.CDN_URL);
   console.log("window dynamic base : ", window.__dynamic_base__);
