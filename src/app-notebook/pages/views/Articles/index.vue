@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { isThisSecond } from "date-fns";
-
+import axios from "@/app-notebook/plugins/axios";
+import { tenant_partition_key } from "@/app-notebook/plugins/tenantPartitionKey";
 // Reactive data
-const tenantPartitionKey = ref("kedar");
+// const tenantPartitionKey = ref("kedar");
+const tenantPartitionKey = ref(tenant_partition_key || "kedar");
 const type = ref("");
 const category = ref("");
 const title = ref("");
@@ -83,7 +85,6 @@ const truncateContent = (content) => {
   return content.length > 50 ? content.substring(0, 50) + "..." : content;
 };
 
-
 const submitEdit = async () => {
   const { _id, title: editTitle, content } = editPage.value;
 
@@ -110,18 +111,25 @@ const submitEdit = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/pages",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-    const data = await response.json();
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/pages",
+    //   {
+    //     method: "PATCH",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify(payload),
+    //   }
+    // );
+    // const data = await response.json();
+    const response = await axios.patch("/article/api/pages", payload, {
+      headers: {
+        "Content-Type": "application/json",
+        tnt: tenantPartitionKey.value,
+      },
+    });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     } else {
@@ -144,21 +152,33 @@ const deletePage = async (id) => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/pages",
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/pages",
+    //   {
+    //     method: "DELETE",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       kb_id: parentId.value,
+    //       del_ids: [id],
+    //     }),
+    //   }
+    // );
+    // const data = await response.json();
+    const response = await axios.delete("/article/api/pages",
       {
-        method: "DELETE",
+        kb_id: parentId.value,
+        del_ids: [id],
+      },
+      {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-        body: JSON.stringify({
-          kb_id: parentId.value,
-          del_ids: [id],
-        }),
-      }
-    );
-    const data = await response.json();
+      });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     }
@@ -177,20 +197,31 @@ const deleteKB = async (id) => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/kb",
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/kb",
+    //   {
+    //     method: "DELETE",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       kb_id: id,
+    //     }),
+    //   }
+    // );
+    // const data = await response.json();
+    const response = await axios.delete("/article/api/kb",
       {
-        method: "DELETE",
+          kb_id: id,
+      },
+      {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-        body: JSON.stringify({
-          kb_id: id,
-        }),
-      }
-    );
-    const data = await response.json();
+      });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     }
@@ -212,24 +243,39 @@ const submitPage = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/pages",
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/pages",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       kb_id: parentId.value,
+    //       code: parentCode.value,
+    //       category: parentCategory.value,
+    //       type: parentType.value,
+    //       docs: [{ title: pageTitle.value, document: document.value }],
+    //     }),
+    //   }
+    // );
+    // const data = await response.json();
+    const response = await axios.post("/article/api/pages",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-        body: JSON.stringify({
           kb_id: parentId.value,
           code: parentCode.value,
           category: parentCategory.value,
           type: parentType.value,
           docs: [{ title: pageTitle.value, document: document.value }],
-        }),
-      }
-    );
-    const data = await response.json();
+        },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     } else {
@@ -248,17 +294,25 @@ const fetchPages = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      `http://localhost:8090/scriptus/nexus/notebook/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${parentId.value}`,
+    // const response = await fetch(
+    //   `http://localhost:8090/scriptus/notebook/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${parentId.value}`,
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // const pagesData = await response.json();
+    const response = await axios.get(`/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${parentId.value}`,
       {
-        method: "GET",
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      }
-    );
-    const pagesData = await response.json();
+      });
+    const pagesData = await response.data;
     if (!pagesData.success) {
       error.value = pagesData.message;
     } else {
@@ -292,22 +346,35 @@ const submitForm = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/kb",
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/kb",
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //     body: JSON.stringify({
+    //       type: type.value,
+    //       category: category.value.trim(),
+    //       title: title.value.trim() || null,
+    //     }),
+    //   }
+    // );
+    // const data = await response.json();
+    const response = await axios.post(`/article/api/kb`,
+    {
+          type: type.value,
+          category: category.value.trim(),
+          title: title.value.trim() || null,
+        },
       {
-        method: "POST",
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-        body: JSON.stringify({
-          type: type.value,
-          category: category.value.trim(),
-          title: title.value.trim() || null,
-        }),
-      }
-    );
-    const data = await response.json();
+      });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     } else {
@@ -334,17 +401,26 @@ const fetchknowledgebases = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      "http://localhost:8090/scriptus/nexus/notebook/article/api/kb",
+    // const response = await fetch(
+    //   "http://localhost:8090/scriptus/notebook/article/api/kb",
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // const data = await response.json();
+
+    const response = await axios.get(`/article/api/kb`,
       {
-        method: "GET",
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      }
-    );
-    const data = await response.json();
+      });
+    const data = await response.data;
     if (!data.success) {
       error.value = data.message;
     } else {
@@ -370,18 +446,25 @@ const loadKnowledgebasePages = async (kb) => {
   error.value = null;
 
   try {
-    const response = await fetch(
-      `http://localhost:8090/scriptus/nexus/notebook/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${kb._id}`,
+    // const response = await fetch(
+    //   `http://localhost:8090/scriptus/notebook/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${kb._id}`,
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // const pagesData = await response.json();
+    const response = await axios.get(`/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${kb._id}`,
       {
-        method: "GET",
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      }
-    );
-    const pagesData = await response.json();
-
+      });
+    const pagesData = await response.data;
     if (!pagesData.success) {
       error.value = pagesData.message;
     } else {

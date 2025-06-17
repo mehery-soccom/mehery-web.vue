@@ -9,7 +9,7 @@ export default [
       { title: "faqs", to: "views-faqsTable" },
       { title: "knowledge base", to: "views-knowledgebase" },
       { title: "topic", to: "views-topic" },
-      { title: "view 2160 create Kb" , to : "views-createKbArticle"},
+      { title: "Articles for rag" , to : "views-Articles"},
       { title: "view faqs2" , to : "views-faqs2"}
     ],
   },

@@ -219,24 +219,24 @@ function areJsonEqual(obj1, obj2, path = '') {
 
 const getSecrets = async () => {
   try {
-    const response = await axios.get("/v1/register", {
-      headers: {
-        tnt: tenantPartitionKey.value,
-      }
-    });
-    const data = await response.data;
-    // const response = await fetch(
-    //   // "http://localhost:8090/nexus/phone/v1/register",
-    //   "http://localhost:8090/scriptus/phone/v1/register",
-    //   {
-    //     method: "GET",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       tnt: tenantPartitionKey.value,
-    //     },
+    // const response = await axios.get("/v1/register", {
+    //   headers: {
+    //     tnt: tenantPartitionKey.value,
     //   }
-    // );
-    // const data = await response.json();
+    // });
+    // const data = await response.data;
+    const response = await fetch(
+      // "http://localhost:8090/nexus/phone/v1/register",
+      "http://localhost:8090/scriptus/phone/v1/register",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      }
+    );
+    const data = await response.json();
     bullforcePstn.value = {
       ...data.bullforcePstn,
       FS_DISPLAY: "kedar"
@@ -685,9 +685,11 @@ onMounted(async () => {
                     if(data.event === "response-to-call"){
                       console.log("response to call event : ",data.event_data);
                       if(data.event_data){
-
+                        console.log("Phone app call answered ");
+                        answerCall();
                       } else {
-
+                        console.log("Phone app call rejected ");
+                        rejectCall();
                       }
                     }
                     // if (data.event === "incomming-call") {
