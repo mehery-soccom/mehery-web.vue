@@ -250,7 +250,7 @@ const getSecrets = async () => {
     console.error(error);
     bullforcePstn.value = {};
   } finally {
-    console.log(`bullforcePstn : `, bullforcePstn.value);
+    
     // converting number to string
     bullforcePstn.value.FS_IMPI = bullforcePstn.value.FS_IMPI.toString();
     bullforcePstn.value.FS_SECRET = bullforcePstn.value.FS_SECRET.toString();
@@ -260,6 +260,7 @@ const getSecrets = async () => {
     //   "(" + bullforcePstn.value.FS_ICE_SERVERS + ")"
     // );
     console.log(`Sip register to be called`);
+    // console.log(`bullforcePstn final : `, bullforcePstn.value);
     callSipRegister();
   }
 };
@@ -677,6 +678,33 @@ onMounted(async () => {
   updateDateTime(); // Initial update
   intervalId = setInterval(updateDateTime, 60000); // Update every minute
   console.log("Phone component mounted.");
+  window.addEventListener("message", (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log("event from agent panel :", data);
+                    if(data.event === "response-to-call"){
+                      console.log("response to call event : ",data.event_data);
+                      if(data.event_data){
+
+                      } else {
+
+                      }
+                    }
+                    // if (data.event === "incomming-call") {
+                    //     console.log("event calling iframe", data)
+                    //     const el = document.querySelector('.profile-tooltip-content-call');
+                    //     if (el) el.style.display = 'block'; el.style.opacity = 1; el.style.pointerEvents = 'auto';
+                    // } else if(data.event === "call-terminated") {
+                    //     const el = document.querySelector('.profile-tooltip-content-call');
+                    //     if (el && el.style.display === 'block') el.style.display = 'none'; el.style.opacity = 0; el.style.pointerEvents = 'none';
+                    //     console.log("event hanging up iframe", data)
+                    // } else {
+                    //     console.log("event other iframe", data)
+                    // }
+                } catch (err) {
+                    console.warn("event from Non-JSON message received:", e.data);
+                }
+            });
 });
 
 onBeforeUnmount(() => {
