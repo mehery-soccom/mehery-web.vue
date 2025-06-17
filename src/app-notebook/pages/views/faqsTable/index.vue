@@ -660,7 +660,7 @@ const saveToBackend = async () => {
       }
     });
     // const newKbData = await response.data;
-    let responseOK = response && response.status === 200 && response.statusText === 'OK';
+    let responseOK = response.status === 200;
     if (responseOK) {
       saveMessage.value = `Successfully saved ${ques.value.length} question-answer pairs to the backend.`;
       saveSuccess.value = true;
