@@ -219,24 +219,24 @@ function areJsonEqual(obj1, obj2, path = '') {
 
 const getSecrets = async () => {
   try {
-    const response = await axios.get("/v1/register", {
-      headers: {
-        tnt: tenantPartitionKey.value,
-      }
-    });
-    const data = await response.data;
-    // const response = await fetch(
-    //   // "http://localhost:8090/nexus/phone/v1/register",
-    //   "http://localhost:8090/scriptus/phone/v1/register",
-    //   {
-    //     method: "GET",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       tnt: tenantPartitionKey.value,
-    //     },
+    // const response = await axios.get("/v1/register", {
+    //   headers: {
+    //     tnt: tenantPartitionKey.value,
     //   }
-    // );
-    // const data = await response.json();
+    // });
+    // const data = await response.data;
+    const response = await fetch(
+      // "http://localhost:8090/nexus/phone/v1/register",
+      "http://localhost:8090/scriptus/phone/v1/register",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      }
+    );
+    const data = await response.json();
     bullforcePstn.value = {
       ...data.bullforcePstn,
       FS_DISPLAY: "kedar"
@@ -449,8 +449,8 @@ const makeCall = () => {
     callState.value = "ringing";
     try {
       if (typeof window.sipCall === "function") {
-        window.sipCall("call-audio", dialedNumber.value);
-        addToCallHistory(dialedNumber.value, "outgoing", data.timestamp);
+        window.sipCall("call-audio", dialedNumber.value , Date.now());
+        addToCallHistory(dialedNumber.value, "outgoing");
       } else {
         console.warn("sipCall function is not available");
       }
