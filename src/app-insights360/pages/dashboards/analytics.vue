@@ -554,7 +554,9 @@ const allAnalytics = (start, end, chan, agent, type) => {
   fetchChartData(start, end, chan, agent, type);
 }
 
+onBeforeMount(()=>{ console.log("started before mount") })
 onMounted( async () => {
+  console.log("started mounting")
   await fetchChannelType();
   await fetchAgent();
   await fetchTeam();
