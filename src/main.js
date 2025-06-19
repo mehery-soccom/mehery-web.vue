@@ -22,8 +22,11 @@ if (!window.__VUE_APP_MOUNTED__) {
     }
 
     let c = cmap[cname];
+    console.log("app c val", c, cmap);
     const { app } = await createVueApp(c);
+    console.log("app initiate", app);
     app.mount("#app");
+    console.log("app mount", app);
   })(
     {
       pushapp: {

@@ -1,4 +1,5 @@
 <script setup>
+console.log("before import app")
 import "@core/scss/template/index.scss";
 
 import "@app-insights360/styles/styles.scss";
@@ -27,6 +28,7 @@ const { global } = useTheme();
 syncInitialLoaderTheme();
 syncConfigThemeWithVuetifyTheme();
 handleSkinChanges();
+console.log("after import app")
 </script>
 
 <template>

@@ -97,6 +97,7 @@ const router = createRouter({
 
 // Docs: https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards
 router.beforeEach((to) => {
+  console.log("routing called")
   // const isLoggedIn = isUserLoggedIn();
 
   /*
