@@ -167,7 +167,8 @@ const deletePage = async (id) => {
     //   }
     // );
     // const data = await response.json();
-    const response = await axios.delete("/article/api/pages",
+    const response = await axios.delete(
+      "/article/api/pages",
       {
         kb_id: parentId.value,
         del_ids: [id],
@@ -177,7 +178,8 @@ const deletePage = async (id) => {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const data = await response.data;
     if (!data.success) {
       error.value = data.message;
@@ -192,10 +194,10 @@ const deletePage = async (id) => {
   }
 };
 
-const deleteKB = async (id) => {
+const deleteKb = async (id) => {
   isLoading.value = true;
   error.value = null;
-
+  
   try {
     // const response = await fetch(
     //   "http://localhost:8090/scriptus/notebook/article/api/kb",
@@ -211,16 +213,19 @@ const deleteKB = async (id) => {
     //   }
     // );
     // const data = await response.json();
-    const response = await axios.delete("/article/api/kb",
+    console.log(`response : ${JSON.stringify(data)}`);
+    const response = await axios.delete(
+      "/article/api/kb",
       {
-          kb_id: id,
+        kb_id: id,
       },
       {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const data = await response.data;
     if (!data.success) {
       error.value = data.message;
@@ -261,20 +266,22 @@ const submitPage = async () => {
     //   }
     // );
     // const data = await response.json();
-    const response = await axios.post("/article/api/pages",
+    const response = await axios.post(
+      "/article/api/pages",
       {
-          kb_id: parentId.value,
-          code: parentCode.value,
-          category: parentCategory.value,
-          type: parentType.value,
-          docs: [{ title: pageTitle.value, document: document.value }],
-        },
+        kb_id: parentId.value,
+        code: parentCode.value,
+        category: parentCategory.value,
+        type: parentType.value,
+        docs: [{ title: pageTitle.value, document: document.value }],
+      },
       {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const data = await response.data;
     if (!data.success) {
       error.value = data.message;
@@ -305,13 +312,15 @@ const fetchPages = async () => {
     //   }
     // );
     // const pagesData = await response.json();
-    const response = await axios.get(`/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${parentId.value}`,
+    const response = await axios.get(
+      `/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${parentId.value}`,
       {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const pagesData = await response.data;
     if (!pagesData.success) {
       error.value = pagesData.message;
@@ -362,18 +371,20 @@ const submitForm = async () => {
     //   }
     // );
     // const data = await response.json();
-    const response = await axios.post(`/article/api/kb`,
-    {
-          type: type.value,
-          category: category.value.trim(),
-          title: title.value.trim() || null,
-        },
+    const response = await axios.post(
+      `/article/api/kb`,
+      {
+        type: type.value,
+        category: category.value.trim(),
+        title: title.value.trim() || null,
+      },
       {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const data = await response.data;
     if (!data.success) {
       error.value = data.message;
@@ -413,7 +424,7 @@ const fetchknowledgebases = async () => {
     // );
     // const data = await response.json();
 
-    const response = await axios.get(`/article/api/kb`,
+    const response = await axios.get(`/article/api/kb`, 
       {
         headers: {
           "Content-Type": "application/json",
@@ -457,13 +468,15 @@ const loadKnowledgebasePages = async (kb) => {
     //   }
     // );
     // const pagesData = await response.json();
-    const response = await axios.get(`/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${kb._id}`,
+    const response = await axios.get(
+      `/article/api/pages/mongodb?page=1&pageSize=100&kb_id=${kb._id}`,
       {
         headers: {
           "Content-Type": "application/json",
           tnt: tenantPartitionKey.value,
         },
-      });
+      }
+    );
     const pagesData = await response.data;
     if (!pagesData.success) {
       error.value = pagesData.message;
@@ -563,16 +576,20 @@ onMounted(async () => {
               :value="kb._id"
             >
               <template v-slot:activator="{ props }">
-                <v-list-item
+                <div class="d-flex align-center">
+                  <v-list-item
                   v-bind="props"
                   :title="kb.title || kb.category"
                   :subtitle="`${kb.type} • ${kb.category}`"
                   prepend-icon="mdi-folder"
                   @click="
                     loadPages(kb._id, kb.title, kb.code, kb.category, kb.type)
-                  "
+                  "                  
                 >
                 </v-list-item>
+                <v-icon icon="mdi-delete" @click="deleteKb(kb._id)"></v-icon>
+                </div>
+                
               </template>
 
               <div
