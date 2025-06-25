@@ -20,8 +20,8 @@ const hideTitleAndBadge = isVerticalNavMini(windowWidth)
 </script>
 
 <template>
+  <!-- v-if="can(item.action, item.subject)" -->
   <li
-    v-if="can(item.action, item.subject)"
     class="nav-link"
     :class="{ disabled: item.disable }"
   >

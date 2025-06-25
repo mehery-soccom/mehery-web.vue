@@ -23,8 +23,8 @@ const { dynamicI18nProps } = useLayouts()
 </script>
 
 <template>
+  <!-- v-if="can(item.action, item.subject)" -->
   <li
-    v-if="can(item.action, item.subject)"
     class="nav-link"
     :class="[{
       'sub-item': props.isSubItem,

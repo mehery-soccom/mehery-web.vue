@@ -11,8 +11,8 @@
         </VCardText>
       </VCard>
     </VCol>
+    <!-- v-if="$can('read', 'Admin')" -->
     <VCol
-      v-if="$can('read', 'Admin')"
       cols="12"
       md="6"
     >

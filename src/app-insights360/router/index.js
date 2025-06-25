@@ -121,12 +121,12 @@ router.beforeEach((to) => {
     return next()
   
     */
-  if (canNavigate(to)) {
-      console.log("routing can")
-      if (to.meta.redirectIfLoggedIn) return "/dashboard/analytics";
-  } else { 
-      console.log("routing cannot")
-      return { name: "not-authorized" };
+  // if (canNavigate(to)) {
+  //     console.log("routing can")
+  //     if (to.meta.redirectIfLoggedIn) return "/dashboard/analytics";
+  // } else { 
+  //     console.log("routing cannot")
+  //     return { name: "not-authorized" };
     // else
       // // return {
       // //   name: "login",
@@ -134,6 +134,6 @@ router.beforeEach((to) => {
       // // };
       // window.location.href = `${window.location.origin}/front/auth/login`;
       // return false;
-  }
+  // }
 });
 export default router;
