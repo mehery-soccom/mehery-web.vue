@@ -109,6 +109,7 @@ onMounted( async () => {
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
+  color: black;
 }
 .flatpickr-custom-btn:hover {
   background-color: #ddd;
@@ -118,6 +119,7 @@ onMounted( async () => {
   border-bottom: 2px solid #ccc;
   width: 300px;
   margin-right: 20px;
+  background-color: #eee;
 }
 
 .tab {
