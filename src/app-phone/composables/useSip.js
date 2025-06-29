@@ -8,20 +8,28 @@ export function useSip() {
   const isConnecting = ref(false);
   const registrationStatus = ref("disconnected"); // 'disconnected', 'connecting', 'connected', 'registered', 'error'
   const errorMessage = ref("");
+  const callDuration = ref("00:00");
   let ua = null;
   let session = null;
+  let request = null;
+  const callTimer = ref(null);
   const currentPeerNumber = ref("");
+  const iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.counterpath.net:3478" },
+    { urls: "stun:numb.viagenie.ca:3478" },
+  ];
   // Call state
   const activeCall = ref({
     show: false,
     remoteNumber: "",
     startTime: null,
   });
+
   const incomingCall = ref({
     show: false,
     remoteNumber: "",
     timestamp: null,
-    sessionId: null,
   });
   const callState = ref("idle"); // 'idle', 'calling', 'ringing', 'talking', 'ended'
   let peerConnectionTime = null;
@@ -37,15 +45,6 @@ export function useSip() {
     ha1: null,
   });
 
-  // Event handlers
-  const eventHandlers = reactive({
-    onRegistered: null,
-    onUnregistered: null,
-    onRegistrationFailed: null,
-    onNewRTCSession: null,
-    onConnected: null,
-    onDisconnected: null,
-  });
   // Audio control functions
   const playRingtone = () => {
     const ringtone = document.getElementById("ringtone");
@@ -84,6 +83,20 @@ export function useSip() {
     if (remoteAudio && stream) {
       remoteAudio.srcObject = stream;
     }
+  };
+  const startCallTimer = () => {
+    callTimer.value = setInterval(() => {
+      if (activeCall.value.startTime) {
+        const duration = Math.floor(
+          (new Date() - activeCall.value.startTime) / 1000
+        );
+        const minutes = Math.floor(duration / 60)
+          .toString()
+          .padStart(2, "0");
+        const seconds = (duration % 60).toString().padStart(2, "0");
+        callDuration.value = `${minutes}:${seconds}`;
+      }
+    }, 1000);
   };
 
   /**
@@ -140,12 +153,6 @@ export function useSip() {
         uaConfig.authorization_user =
           config.value.authorization_user || config.value.impi;
       }
-
-      console.log("JsSIP UA Config:", {
-        ...uaConfig,
-        password: "[HIDDEN]", // Don't log password
-      });
-
       // Create User Agent
       ua = new JsSIP.UA(uaConfig);
 
@@ -173,7 +180,6 @@ export function useSip() {
       console.log("SIP connected");
       registrationStatus.value = "connected";
       isConnecting.value = false;
-      eventHandlers.onConnected?.();
     });
 
     ua.on("disconnected", () => {
@@ -181,7 +187,6 @@ export function useSip() {
       registrationStatus.value = "disconnected";
       isRegistered.value = false;
       isConnecting.value = false;
-      eventHandlers.onDisconnected?.();
     });
 
     // Registration events
@@ -189,14 +194,12 @@ export function useSip() {
       console.log("SIP registered");
       isRegistered.value = true;
       registrationStatus.value = "registered";
-      eventHandlers.onRegistered?.();
     });
 
     ua.on("unregistered", () => {
       console.log("SIP unregistered");
       isRegistered.value = false;
       registrationStatus.value = "connected";
-      eventHandlers.onUnregistered?.();
     });
 
     ua.on("registrationFailed", (e) => {
@@ -204,24 +207,29 @@ export function useSip() {
       isRegistered.value = false;
       registrationStatus.value = "error";
       errorMessage.value = `Registration failed: ${e.cause}`;
-      eventHandlers.onRegistrationFailed?.(e);
     });
 
     // Call events
     ua.on("newRTCSession", (e) => {
       console.log("New RTC session:", e);
       session = e.session;
+      request = e.request;
       peerConnectionTime = Date.now();
       if (session.direction === "incoming") {
-        incomingCall.value = session;
+        incomingCall.value = {
+          show: true,
+          remoteNumber: request.from._uri._user || "unknown",
+          timestamp: new Date(),
+        };
+        currentPeerNumber.value =
+          request.from._uri._user || "unknown";
+        console.log("called Id : ", request.from._uri._user || "unknown");
         callState.value = "ringing";
         setupCallEventListeners(session);
       } else {
         callState.value = "calling";
         setupCallEventListeners(session);
       }
-
-      eventHandlers.onNewRTCSession?.(e);
     });
   };
 
@@ -266,17 +274,26 @@ export function useSip() {
           remoteNumber: currentPeerNumber.value,
           startTime: new Date(),
         };
-        incomingCall.value = null;
+        incomingCall.value = {
+          show: false,
+          remoteNumber: "",
+          timestamp: null,
+        };
       } else {
         activeCall.value = {
           show: true,
           remoteNumber: currentPeerNumber.value,
           startTime: new Date(),
         };
-        incomingCall.value = null;
+        incomingCall.value = {
+          show: false,
+          remoteNumber: "",
+          timestamp: null,
+        };
+        startCallTimer();
       }
       stopRingtone();
-
+      console.log(`active call accepted : `, activeCall.value);
       // Setup remote audio
       const remoteStream = session.connection.getRemoteStreams()[0];
       if (remoteStream) {
@@ -292,11 +309,19 @@ export function useSip() {
         remoteNumber: "",
         startTime: null,
       };
-      incomingCall.value = null;
+      incomingCall.value = {
+        show: false,
+        remoteNumber: "",
+        timestamp: null,
+      };
       currentPeerNumber.value = "";
 
       stopRingtone();
-
+      if (callTimer.value) {
+        clearInterval(callTimer.value);
+        callTimer.value = null;
+      }
+      console.log(`active call ended from peer: `, activeCall.value);
       // Clear remote audio
       const remoteAudio = document.getElementById("audio-remote");
       if (remoteAudio) {
@@ -304,6 +329,7 @@ export function useSip() {
       }
       callState.value = "idle";
       session = null;
+      request = null;
     });
 
     session.on("failed", (e) => {
@@ -314,10 +340,16 @@ export function useSip() {
         remoteNumber: "",
         startTime: null,
       };
-      incomingCall.value = null;
+      incomingCall.value = {
+        show: false,
+        remoteNumber: "",
+        timestamp: null,
+      };
       setTimeout(() => {
         callState.value = "idle";
       }, 1000);
+      session = null;
+      request = null;
     });
   };
 
@@ -339,11 +371,7 @@ export function useSip() {
     const callOptions = {
       mediaConstraints: { audio: true, video: false },
       pcConfig: {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun.counterpath.net:3478" },
-          { urls: "stun:numb.viagenie.ca:3478" },
-        ],
+        iceServers: iceServers,
       },
       ...options,
     };
@@ -367,14 +395,19 @@ export function useSip() {
     if (!incomingCall.value) {
       throw new Error("No incoming call to answer");
     }
-
-    const callOptions = {
-      mediaConstraints: { audio: true, video: false },
-      ...options,
-    };
-
     try {
-      incomingCall.value.answer(callOptions);
+      // incomingCall.value.answer(callOptions);
+      
+      session.answer({
+        mediaConstraints: { audio: true, video: false },
+        pcConfig: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            // TURN servers if needed
+          ],
+        },
+      });
+      stopRingtone();
     } catch (error) {
       console.error("Failed to answer call:", error);
       throw error;
@@ -388,10 +421,14 @@ export function useSip() {
     if (!incomingCall.value) {
       throw new Error("No incoming call to reject");
     }
-
     try {
-      incomingCall.value.terminate();
-      incomingCall.value = null;
+      // incomingCall.value.terminate();
+      session.terminate();
+      incomingCall.value = {
+        show: false,
+        remoteNumber: "",
+        timestamp: null,
+      };
       callState.value = "idle";
     } catch (error) {
       console.error("Failed to reject call:", error);
@@ -407,13 +444,13 @@ export function useSip() {
       show: false,
       remoteNumber: "",
       timestamp: null,
-      sessionId: null,
     };
     activeCall.value = {
       show: false,
       remoteNumber: "",
       startTime: null,
     };
+    console.log(`active call ended from jssip: `, activeCall.value);
     callState.value = "idle";
     if (!session) {
       throw new Error("No active call to end");
@@ -462,19 +499,13 @@ export function useSip() {
       remoteNumber: "",
       startTime: null,
     };
-    incomingCall.value = null;
+    incomingCall.value = {
+      show: false,
+      remoteNumber: "",
+      timestamp: null,
+    };
     callState.value = "idle";
   };
-
-  /**
-   * Set event handler
-   */
-  const setEventHandler = (event, handler) => {
-    if (eventHandlers.hasOwnProperty(event)) {
-      eventHandlers[event] = handler;
-    }
-  };
-
   // Cleanup on component unmount
   onUnmounted(() => {
     disconnect();
@@ -490,6 +521,7 @@ export function useSip() {
     incomingCall,
     callState,
     config,
+    callDuration,
 
     // Methods
     initSip,
@@ -500,6 +532,5 @@ export function useSip() {
     answerCall,
     rejectCall,
     endCall,
-    setEventHandler,
   };
 }

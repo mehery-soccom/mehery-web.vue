@@ -8,10 +8,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- <Dailer></Dailer> -->
-  <!-- <br /> -->
-  <!-- <Home /> -->
-  <!-- <br /> -->
   <!-- <PhoneJssip /> -->
    <Phone />
 </template>

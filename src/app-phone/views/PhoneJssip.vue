@@ -20,14 +20,14 @@ const {
   activeCall,
   incomingCall,
   callState,
+  callDuration,
   initSip,
   register,
   disconnect,
   makeCall,
   answerCall,
   rejectCall,
-  endCall,
-  setEventHandler,
+  endCall
 } = useSip();
 // Component state
 const dialedNumber = ref("");
@@ -41,7 +41,6 @@ const currentDateTime = ref("");
 const callProcessing = ref(false);
 const isMuted = ref(false);
 const isOnHold = ref(false);
-const callDuration = ref("00:00");
 
 // Registration state
 
@@ -56,6 +55,11 @@ const sendPostMessage = (event_type,data) => {
 const canUseKeypad = computed(() => {
   return callState.value === "idle" || callState.value === "talking";
 });
+const formatCallTime = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
+};
 const updateDateTime = () => {
   const now = new Date();
 
@@ -239,22 +243,6 @@ const autoConnect = async () => {
   }
 };
 
-// Alternative: Load from backend API
-const loadConfigFromBackend = async () => {
-  try {
-    // Replace with your actual API endpoint
-    const response = await fetch("/api/sip-config");
-    const backendConfig = await response.json();
-
-    console.log("Loaded config from backend, connecting...");
-    initSip(backendConfig);
-  } catch (error) {
-    console.error("Failed to load config from backend:", error);
-    // Fallback to hardcoded config
-    autoConnect();
-  }
-};
-
 const handleCall = async () => {
   if (!dialedNumber.value) return;
 
@@ -264,76 +252,6 @@ const handleCall = async () => {
   } catch (error) {
     console.error("Call failed:", error);
     alert("Failed to make call: " + error.message);
-  }
-};
-
-const handleAnswer = async () => {
-  try {
-    await answerCall();
-    console.log("Call answered");
-  } catch (error) {
-    console.error("Failed to answer call:", error);
-  }
-};
-
-const handleReject = async () => {
-  try {
-    await rejectCall();
-    console.log("Call rejected");
-  } catch (error) {
-    console.error("Failed to reject call:", error);
-  }
-};
-
-const handleEndCall = async () => {
-  try {
-    await endCall();
-    console.log("Call ended");
-  } catch (error) {
-    console.error("Failed to end call:", error);
-  }
-};
-
-const handleDisconnect = () => {
-  disconnect();
-};
-
-const handleReconnect = () => {
-  disconnect();
-  setTimeout(() => {
-    autoConnect();
-  }, 1000);
-};
-
-const getStatusText = () => {
-  switch (connectionStatus.value) {
-    case "disconnected":
-      return "Disconnected";
-    case "connecting":
-      return "Connecting...";
-    case "connected":
-      return "Connected";
-    case "registered":
-      return "Registered";
-    case "error":
-      return "Error";
-    default:
-      return "Unknown";
-  }
-};
-
-const getCallStatusText = () => {
-  switch (callStatus.value) {
-    case "calling":
-      return "Calling...";
-    case "ringing":
-      return "Incoming Call";
-    case "talking":
-      return "In Call";
-    case "ended":
-      return "Call Ended";
-    default:
-      return "";
   }
 };
 const audioElements = [
@@ -452,21 +370,6 @@ onMounted(async () => {
     );
     // Handle errors appropriately, e.g., show an error message to the user
   }
-  setEventHandler("onRegistered", () => {
-    console.log("Successfully registered!");
-  });
-
-  setEventHandler("onRegistrationFailed", (error) => {
-    console.error("Registration failed:", error);
-  });
-
-  setEventHandler("onNewRTCSession", (session) => {
-    console.log("New call session:", session);
-  });
-
-  setEventHandler("onDisconnected", () => {
-    console.log("Disconnected from SIP server");
-  });
   window.addEventListener("keydown", handleKeydown);
   // Auto-connect on mount
   // Comment out the next line if you want to load from backend instead
@@ -538,7 +441,7 @@ onUnmounted(async () => {
         <p>Duration: {{ callDuration }}</p>
 
         <div class="call-controls">
-          <button @click="hangupCall" class="btn btn-danger">❌ Hang Up</button>
+          <button @click="endCall" class="btn btn-danger">❌ Hang Up</button>
           <!-- <button @click="toggleMute" class="btn btn-secondary">
             {{ isMuted ? "🔊 Unmute" : "🔇 Mute" }}
           </button>
