@@ -6,7 +6,7 @@ export function useSip() {
   // Reactive state
   const isRegistered = ref(false);
   const isConnecting = ref(false);
-  const registrationStatus = ref("disconnected"); // 'disconnected', 'connecting', 'connected', 'registered', 'error'
+  const registrationStatus = ref("Disconnected"); // 'disconnected', 'connecting', 'connected', 'registered', 'error'
   const errorMessage = ref("");
   const callDuration = ref("00:00");
   let ua = null;
@@ -31,6 +31,7 @@ export function useSip() {
     remoteNumber: "",
     timestamp: null,
   });
+  const callHistory = ref([]);
   const callState = ref("idle"); // 'idle', 'calling', 'ringing', 'talking', 'ended'
   let peerConnectionTime = null;
   // Configuration
@@ -44,7 +45,28 @@ export function useSip() {
     ice_servers: [],
     ha1: null,
   });
+  const sendPostMessage = (event_type, data) => {
+    const phoneEvent = JSON.stringify({ event: event_type, event_data: data });
+    window.parent.postMessage(phoneEvent, "*");
+  };
+  const addToCallHistory = (remoteNumber, status, timestamp) => {
+    callHistory.value.unshift({
+      id: Date.now(),
+      remoteNumber,
+      status,
+      timestamp,
+    });
 
+    // Keep only last 10 calls
+    if (callHistory.value.length > 10) {
+      callHistory.value = callHistory.value.slice(0, 10);
+    }
+  };
+  const updateCallHistory = (newStatus) => {
+    if (callHistory.value.length > 0) {
+      callHistory.value[0].status = newStatus;
+    }
+  };
   // Audio control functions
   const playRingtone = () => {
     const ringtone = document.getElementById("ringtone");
@@ -107,8 +129,8 @@ export function useSip() {
     try {
       // Update config
       config.value = sipConfig.value;
-      console.log(sipConfig.value);
-      console.log(config.value);
+      // console.log(sipConfig.value);
+      // console.log(config.value);
       // Validate required config
       if (!config.value.uri || !config.value.websocket_servers?.length) {
         throw new Error("URI and websocket servers are required");
@@ -194,6 +216,7 @@ export function useSip() {
       console.log("SIP registered");
       isRegistered.value = true;
       registrationStatus.value = "registered";
+      sendPostMessage("connection-status", { connection : "connected" });
     });
 
     ua.on("unregistered", () => {
@@ -221,11 +244,19 @@ export function useSip() {
           remoteNumber: request.from._uri._user || "unknown",
           timestamp: new Date(),
         };
-        currentPeerNumber.value =
-          request.from._uri._user || "unknown";
+        currentPeerNumber.value = request.from._uri._user || "unknown";
         console.log("called Id : ", request.from._uri._user || "unknown");
         callState.value = "ringing";
         setupCallEventListeners(session);
+        addToCallHistory(
+          request.from._uri._user || "unknown",
+          "incoming",
+          new Date()
+        );
+        sendPostMessage("incomming-call", {
+          remoteNumber: currentPeerNumber.value,
+          timestamp: incomingCall.value.timestamp,
+        });
       } else {
         callState.value = "calling";
         setupCallEventListeners(session);
@@ -330,6 +361,11 @@ export function useSip() {
       callState.value = "idle";
       session = null;
       request = null;
+      updateCallHistory("terminated");
+      sendPostMessage("call-terminated",{
+        description: "HANGUP",
+        timestamp: new Date().toISOString(),
+      });
     });
 
     session.on("failed", (e) => {
@@ -381,6 +417,7 @@ export function useSip() {
       callState.value = "calling";
       setupCallEventListeners(session);
       currentPeerNumber.value = target;
+      addToCallHistory(currentPeerNumber.value, "outgoing");
       return session;
     } catch (error) {
       console.error("Failed to make call:", error);
@@ -397,7 +434,7 @@ export function useSip() {
     }
     try {
       // incomingCall.value.answer(callOptions);
-      
+
       session.answer({
         mediaConstraints: { audio: true, video: false },
         pcConfig: {
@@ -408,6 +445,7 @@ export function useSip() {
         },
       });
       stopRingtone();
+      updateCallHistory("answered");
     } catch (error) {
       console.error("Failed to answer call:", error);
       throw error;
@@ -430,6 +468,7 @@ export function useSip() {
         timestamp: null,
       };
       callState.value = "idle";
+      updateCallHistory("rejected");
     } catch (error) {
       console.error("Failed to reject call:", error);
       throw error;
@@ -522,7 +561,7 @@ export function useSip() {
     callState,
     config,
     callDuration,
-
+    callHistory,
     // Methods
     initSip,
     register,

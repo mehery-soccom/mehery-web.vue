@@ -21,13 +21,14 @@ const {
   incomingCall,
   callState,
   callDuration,
+  callHistory,
   initSip,
   register,
   disconnect,
   makeCall,
   answerCall,
   rejectCall,
-  endCall
+  endCall,
 } = useSip();
 // Component state
 const dialedNumber = ref("");
@@ -41,16 +42,18 @@ const currentDateTime = ref("");
 const callProcessing = ref(false);
 const isMuted = ref(false);
 const isOnHold = ref(false);
-
-// Registration state
-
-// Call history
-const callHistory = ref([]);
-const callTimer = ref(null);
-const sendPostMessage = (event_type,data) => {
-  const phoneEvent = JSON.stringify({ event : event_type , event_data : data });
-  window.parent.postMessage(phoneEvent,"*");
-}
+const openRecents = async () => {
+  isCallHistory.value = true;
+  isDialer.value = false;
+};
+const openDialer = async () => {
+  isCallHistory.value = false;
+  isDialer.value = true;
+};
+const sendPostMessage = (event_type, data) => {
+    const phoneEvent = JSON.stringify({ event: event_type, event_data: data });
+    window.parent.postMessage(phoneEvent, "*");
+  };
 // Computed properties
 const canUseKeypad = computed(() => {
   return callState.value === "idle" || callState.value === "talking";
@@ -80,20 +83,8 @@ const updateDateTime = () => {
   currentDateTime.value = `${day}-${month}-${year}, ${formattedHours}:${minutes} ${ampm}`;
 };
 // Hardcoded SIP configuration - replace with backend call or environment variables
-const sipConfig = ref({
-  uri: "sip:90099@bullforce", // IMPU
-  password: "1234", // SECRET
-  display_name: "kedar", // DISPLAY_NAME
-  websocket_servers: ["wss://fs-bullforce.fortiddns.com:7443"], // WEBSOCKET
-  realm: "bullforce", // REALM
-  authorization_user: "90099", // IMPI
-  ice_servers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun.counterpath.net:3478" },
-            { urls: "stun:numb.viagenie.ca:3478" },
-          ],
-})
-function areJsonEqual(obj1, obj2, path = '') {
+const sipConfig = ref(null);
+function areJsonEqual(obj1, obj2, path = "") {
   // If they're the same reference, return true
   if (obj1 === obj2) return { isEqual: true };
 
@@ -107,12 +98,14 @@ function areJsonEqual(obj1, obj2, path = '') {
     return {
       isEqual: false,
       mismatch: {
-        path: path || 'root',
-        type: 'type_mismatch',
+        path: path || "root",
+        type: "type_mismatch",
         value1: obj1,
         value2: obj2,
-        message: `Type mismatch at ${path || 'root'}: ${typeof obj1} vs ${typeof obj2}`
-      }
+        message: `Type mismatch at ${
+          path || "root"
+        }: ${typeof obj1} vs ${typeof obj2}`,
+      },
     };
   }
 
@@ -121,20 +114,22 @@ function areJsonEqual(obj1, obj2, path = '') {
 
   // Check if number of keys is different
   if (keys1.length !== keys2.length) {
-    const missingInObj2 = keys1.filter(key => !keys2.includes(key));
-    const missingInObj1 = keys2.filter(key => !keys1.includes(key));
-    
+    const missingInObj2 = keys1.filter((key) => !keys2.includes(key));
+    const missingInObj1 = keys2.filter((key) => !keys1.includes(key));
+
     return {
       isEqual: false,
       mismatch: {
-        path: path || 'root',
-        type: 'key_count_mismatch',
+        path: path || "root",
+        type: "key_count_mismatch",
         keysInObj1: keys1,
         keysInObj2: keys2,
         missingInObj2: missingInObj2,
         missingInObj1: missingInObj1,
-        message: `Different number of keys at ${path || 'root'}. Obj1 has ${keys1.length} keys, Obj2 has ${keys2.length} keys`
-      }
+        message: `Different number of keys at ${path || "root"}. Obj1 has ${
+          keys1.length
+        } keys, Obj2 has ${keys2.length} keys`,
+      },
     };
   }
 
@@ -145,16 +140,18 @@ function areJsonEqual(obj1, obj2, path = '') {
         isEqual: false,
         mismatch: {
           path: path ? `${path}.${key}` : key,
-          type: 'missing_key',
+          type: "missing_key",
           missingKey: key,
-          message: `Key '${key}' exists in obj1 but not in obj2 at path ${path ? `${path}.${key}` : key}`
-        }
+          message: `Key '${key}' exists in obj1 but not in obj2 at path ${
+            path ? `${path}.${key}` : key
+          }`,
+        },
       };
     }
 
     const currentPath = path ? `${path}.${key}` : key;
     const result = areJsonEqual(obj1[key], obj2[key], currentPath);
-    
+
     if (!result.isEqual) {
       return result; // Return the first mismatch found
     }
@@ -162,52 +159,49 @@ function areJsonEqual(obj1, obj2, path = '') {
 
   return { isEqual: true };
 }
+// Auto-connect when component mounts
+const autoConnect = async () => {
+  try {
+    console.log("Auto-connecting with SIP config...");
+    initSip(sipConfig);
+  } catch (error) {
+    console.error("Auto-connection failed:", error);
+  }
+};
 const getSecrets = async () => {
   try {
-    // const response = await axios.get("/v1/register", {
-    //   headers: {
-    //     tnt: tenantPartitionKey.value,
-    //   },
-    // });
-    // const data = await response.data;
-    const response = await fetch(
-      // "http://localhost:8090/nexus/phone/v1/register",
-      "http://localhost:8090/scriptus/phone/v1/register",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          tnt: tenantPartitionKey.value,
-        },
-      }
-    );
-    const data = await response.json();
-    bullforcePstn.value = {
-      ...data.bullforcePstn,
-      FS_DISPLAY: "kedar",
-    };
-    bullforcePstn.value.FS_ICE_SERVERS = [];
-    //switch tcp to udp outbound proxy url
-    bullforcePstn.value.FS_OUTBOUND_PROXY_URL = `udp${bullforcePstn.value.FS_OUTBOUND_PROXY_URL.slice(
-      3
-    )}`;
-    // console.log(`bulllforce creds : ${JSON.stringify(bullforceCreds)}`);
-    // console.log("are equivalent : ",areJsonEqual(bullforcePstn.value,correctValue));
+    const response = await axios.get("/v1/register", {
+      headers: {
+        tnt: tenantPartitionKey.value,
+      },
+    });
+    const data = await response.data;
+    // const response = await fetch(
+    //   // "http://localhost:8090/nexus/phone/v1/register",
+    //   "http://localhost:8090/scriptus/phone/v1/register",
+    //   {
+    //     method: "GET",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       tnt: tenantPartitionKey.value,
+    //     },
+    //   }
+    // );
+    // const data = await response.json();
+    sipConfig.value = {
+      uri : data.bullforcePstn.FS_IMPU,
+      password : data.bullforcePstn.FS_SECRET.toString(),
+      display_name : "kedar",
+      websocket_servers : [data.bullforcePstn.FS_WS_PROXY_URL_INT],
+      realm : data.bullforcePstn.FS_REALM,
+      authorization_user : data.bullforcePstn.FS_IMPI.toString()
+    }
+    // console.log("auth config equal : ",areJsonEqual(correctSipConfig,sipConfig.value));
   } catch (error) {
     console.error(error);
-    bullforcePstn.value = {};
   } finally {
-    // converting number to string
-    bullforcePstn.value.FS_IMPI = bullforcePstn.value.FS_IMPI.toString();
-    bullforcePstn.value.FS_SECRET = bullforcePstn.value.FS_SECRET.toString();
-    // converting string of list of JSON objects to a list of JSON objects according to
-    // these docs : https://www.doubango.org/sipml5/docgen/symbols/SIPml.Stack.html
-    // bullforcePstn.value.FS_ICE_SERVERS = eval(
-    //   "(" + bullforcePstn.value.FS_ICE_SERVERS + ")"
-    // );
     console.log(`Sip register to be called`);
-    // console.log(`bullforcePstn final : `, bullforcePstn.value);
-    // callSipRegister();
+    autoConnect();
   }
 };
 const addDigit = (digit) => {
@@ -233,15 +227,6 @@ function handleKeydown(event) {
     removeDigit();
   }
 }
-// Auto-connect when component mounts
-const autoConnect = async () => {
-  try {
-    console.log("Auto-connecting with SIP config...");
-    initSip(sipConfig);
-  } catch (error) {
-    console.error("Auto-connection failed:", error);
-  }
-};
 
 const handleCall = async () => {
   if (!dialedNumber.value) return;
@@ -352,6 +337,7 @@ const loadElements = async (elements) => {
 };
 // Set up event handlers and auto-connect
 onMounted(async () => {
+  sendPostMessage("connection-status", { connection : "connected" });
   try {
     // Create and load audio elements
     await loadElements(audioElements);
@@ -371,32 +357,81 @@ onMounted(async () => {
     // Handle errors appropriately, e.g., show an error message to the user
   }
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("message", (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log("event from agent panel :", data);
+                    if(data.event === "response-to-call"){
+                      console.log("response to call event : ",data.event_data);
+                      if(data.event_data){
+                        console.log("Phone app call answered ");
+                        answerCall();
+                      } else {
+                        console.log("Phone app call rejected ");
+                        rejectCall();
+                      }
+                    }
+                    // if (data.event === "incomming-call") {
+                    //     console.log("event calling iframe", data)
+                    //     const el = document.querySelector('.profile-tooltip-content-call');
+                    //     if (el) el.style.display = 'block'; el.style.opacity = 1; el.style.pointerEvents = 'auto';
+                    // } else if(data.event === "call-terminated") {
+                    //     const el = document.querySelector('.profile-tooltip-content-call');
+                    //     if (el && el.style.display === 'block') el.style.display = 'none'; el.style.opacity = 0; el.style.pointerEvents = 'none';
+                    //     console.log("event hanging up iframe", data)
+                    // } else {
+                    //     console.log("event other iframe", data)
+                    // }
+                } catch (err) {
+                    console.warn("event from Non-JSON message received:", e.data);
+                }
+            });
   // Auto-connect on mount
   // Comment out the next line if you want to load from backend instead
-  autoConnect();
+  // autoConnect();
+  await getSecrets();
 
   // Uncomment the next line to load config from backend API
   // loadConfigFromBackend()
 });
 onUnmounted(async () => {
-    window.removeEventListener("keydown", handleKeydown);
-})
+  window.removeEventListener("keydown", handleKeydown);
+});
 </script>
 <template>
   <div class="container">
     <!-- Status Bar -->
     <div class="sip-client">
       <div class="status-bar">
-        <div class="status-left">
-        </div>
+        <div class="status-left"></div>
         <div class="status-right">
           <div class="registration-status">
             <!-- Connected Icon -->
-            <div v-if="registrationStatus === 'disconnected'">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M22 16v-.5a2.5 2.5 0 0 0-5 0v.5c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5zM18 5.83v5.43c.47-.16.97-.26 1.5-.26c.17 0 .33.03.5.05V1L1 20h13v-2H5.83z"/></svg>
+            <div v-if="registrationStatus === 'Disconnected'">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M22 16v-.5a2.5 2.5 0 0 0-5 0v.5c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5zM18 5.83v5.43c.47-.16.97-.26 1.5-.26c.17 0 .33.03.5.05V1L1 20h13v-2H5.83z"
+                />
+              </svg>
             </div>
             <div v-else-if="registrationStatus === 'registered'">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.5 10c.17 0 .33.03.5.05V1L1 20h13v-3c0-.89.39-1.68 1-2.23v-.27c0-2.48 2.02-4.5 4.5-4.5m2.5 6v-1.5a2.5 2.5 0 0 0-5 0V16c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M19.5 10c.17 0 .33.03.5.05V1L1 20h13v-3c0-.89.39-1.68 1-2.23v-.27c0-2.48 2.02-4.5 4.5-4.5m2.5 6v-1.5a2.5 2.5 0 0 0-5 0V16c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1m-1 0h-3v-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"
+                />
+              </svg>
             </div>
             <span class="status-text">{{ registrationStatus }}</span>
           </div>
