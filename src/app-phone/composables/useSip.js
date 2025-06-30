@@ -371,6 +371,7 @@ export function useSip() {
     session.on("failed", (e) => {
       console.error("Call failed:", e);
       callState.value = "ended";
+      stopRingtone();
       activeCall.value = {
         show: false,
         remoteNumber: "",
