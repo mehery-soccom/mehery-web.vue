@@ -1,5 +1,4 @@
 import { CDN_CONTEXT, WEBAPP } from "@core/constants";
-import { canNavigate } from "@layouts/plugins/casl";
 import { createRouter, createWebHistory } from "vue-router";
 
 import routes from "~pages";
@@ -11,12 +10,11 @@ function setupLayouts(routes) {
       meta: route.meta,
       component: () =>
         import(`../layouts/${route.meta?.layout || "default"}.vue`),
-      children: route.path === "/" ? [route] : [{ ...route, path: "" }],
+      children: route.path === "/views/faqsTable" ? [route] : [{ ...route, path: "" }],
     };
   });
 }
 
-import { isUserLoggedIn } from "./utils";
 
 const _routes = routes
   .map((r) => {
@@ -70,12 +68,12 @@ const router = createRouter({
     {
       path: "/",
       redirect: (to) => {
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-        const userRole = userData && userData.role ? userData.role : null;
-        if (userRole === "admin") return { name: "dashboards-analytics" };
-        if (userRole === "client") return { name: "access-control" };
+        // const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        // const userRole = userData && userData.role ? userData.role : null;
+        // if (userRole === "admin") return { name: "dashboards-analytics" };
+        // if (userRole === "client") return { name: "access-control" };
 
-        return { name: "login", query: to.query };
+        return { name: "views-faqsTable" };
       },
     },
     {
@@ -98,7 +96,8 @@ const router = createRouter({
 
 // Docs: https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards
 router.beforeEach((to) => {
-  const isLoggedIn = isUserLoggedIn();
+  console.log("routing called")
+  // const isLoggedIn = isUserLoggedIn();
 
   /*
   
@@ -121,15 +120,19 @@ router.beforeEach((to) => {
     return next()
   
     */
-  if (canNavigate(to)) {
-    if (to.meta.redirectIfLoggedIn && isLoggedIn) return "/";
-  } else {
-    if (isLoggedIn) return { name: "not-authorized" };
-    else
-      return {
-        name: "login",
-        query: { to: to.name !== "index" ? to.fullPath : undefined },
-      };
-  }
+  // if (canNavigate(to)) {
+  //     console.log("routing can")
+  //     if (to.meta.redirectIfLoggedIn) return "/dashboard/analytics";
+  // } else { 
+  //     console.log("routing cannot")
+  //     return { name: "not-authorized" };
+    // else
+      // // return {
+      // //   name: "login",
+      // //   query: { to: to.name !== "index" ? to.fullPath : undefined },
+      // // };
+      // window.location.href = `${window.location.origin}/front/auth/login`;
+      // return false;
+  // }
 });
 export default router;

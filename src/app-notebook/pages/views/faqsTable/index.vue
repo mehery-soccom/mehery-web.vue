@@ -1,10 +1,10 @@
 <!-- src/components/QAPairsTable.vue -->
 <script setup>
-import { tenant_partition_key } from "@/app-notebook/plugins/tenantPartitionKey";
-import { ref, reactive, computed, watch, nextTick } from "vue";
 import axios from "@/app-notebook/plugins/axios";
-import { VDataTable } from "vuetify/labs/VDataTable";
+import { tenant_partition_key } from "@/app-notebook/plugins/tenantPartitionKey";
 import { paginationMeta } from "@fake-db/utils";
+import { computed, nextTick, reactive, ref, watch } from "vue";
+import { VDataTable } from "vuetify/labs/VDataTable";
 import * as XLSX from "xlsx";
 import zipcelx from "zipcelx";
 const qaTableItemsPerPage = 25;
@@ -1308,13 +1308,13 @@ const previewPageCount = computed(() => {
     <v-row>
       <v-col cols="12">
         <v-card elevation="0">
-          <v-card-title class="text-h4 pa-4"> FQA's </v-card-title>
+          <v-card-title class="text-h4 pa-4"> FAQ's </v-card-title>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- Selection Status Messages -->
-    <v-row v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId">
+    <!-- <v-row v-if="!tenantPartitionKey || !selectedKbId || !selectedTopicId">
       <v-col cols="12">
         <v-alert
           v-if="!tenantPartitionKey"
@@ -1341,7 +1341,7 @@ const previewPageCount = computed(() => {
           Topic is not selected
         </v-alert>
       </v-col>
-    </v-row>
+    </v-row> -->
 
     <!-- Tenant and KB Display & Change Option -->
     <v-row v-if="tenantPartitionKey">
