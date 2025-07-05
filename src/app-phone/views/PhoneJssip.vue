@@ -370,6 +370,8 @@ onMounted(async () => {
                         console.log("Phone app call rejected ");
                         rejectCall();
                       }
+                    } else if(data.event === "make-call"){
+                      console.log("Outbound number : ",data.dialedNumber);
                     }
                     // if (data.event === "incomming-call") {
                     //     console.log("event calling iframe", data)
