@@ -371,7 +371,7 @@ onMounted(async () => {
                         rejectCall();
                       }
                     } else if(data.event === "make-call"){
-                      console.log("Outbound number : ",data.dialedNumber);
+                      console.log("Outbound number : ",data.event_data.dialed_number);
                     }
                     // if (data.event === "incomming-call") {
                     //     console.log("event calling iframe", data)
