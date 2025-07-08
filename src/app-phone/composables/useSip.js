@@ -190,7 +190,26 @@ export function useSip() {
       isConnecting.value = false;
     }
   };
+  function formatPhoneNumber(phone) {
+    // Remove all non-digit characters
+    console.log("incoming phone number : ", phone);
+    const digits = phone.replace(/\D/g, "");
 
+    // If it starts with 0 and followed by 10 digits, strip the 0
+    if (digits.length === 11 && digits.startsWith("0")) {
+      currentPeerNumber.value = "91" + digits.slice(1);
+      return;
+    }
+
+    // If it's exactly 10 digits, add 91
+    if (digits.length === 10) {
+      currentPeerNumber.value = "91" + digits;
+      return;
+    }
+
+    // If it's already in correct format or invalid, return as is or throw
+    throw new Error("Invalid phone number format");
+  }
   /**
    * Set up JsSIP event listeners
    */
@@ -216,7 +235,7 @@ export function useSip() {
       console.log("SIP registered");
       isRegistered.value = true;
       registrationStatus.value = "registered";
-      sendPostMessage("connection-status", { connection : "connected" });
+      sendPostMessage("connection-status", { connection: "connected" });
     });
 
     ua.on("unregistered", () => {
@@ -245,6 +264,7 @@ export function useSip() {
           timestamp: new Date(),
         };
         currentPeerNumber.value = request.from._uri._user || "unknown";
+        formatPhoneNumber(currentPeerNumber.value);
         console.log("called Id : ", request.from._uri._user || "unknown");
         callState.value = "ringing";
         setupCallEventListeners(session);
@@ -268,8 +288,16 @@ export function useSip() {
    * Set up call-specific event listeners
    */
   const setupCallEventListeners = (session) => {
-    session.on("peerconnection", () => {
-      console.log("peer connection event");
+    session.on("peerconnection", (data) => {
+      console.log("peer connection event", data);
+      const peerConnection = data.peerconnection;
+      peerConnection.addEventListener("addstream", (e) => {
+        // Get the stream from the event
+        const stream = e.stream;
+        if (stream) {
+          setupRemoteAudio(stream);
+        }
+      });
     });
 
     session.on("progress", () => {
@@ -282,9 +310,19 @@ export function useSip() {
       } else {
         console.warn("peerConnectionTime not set before progress event");
       }
-
+      if (session.direction === "incoming") {
+        playRingtone();
+      } else {
+        sendPostMessage("outbound-call-ringing", {
+          dialedNumber: currentPeerNumber.value,
+        });
+        const remoteStream = session.connection.getRemoteStreams()[0];
+        if (remoteStream) {
+          setupRemoteAudio(remoteStream);
+        }
+      }
       callState.value = "calling";
-      playRingtone();
+      // playRingtone();
     });
     session.on("icecandidate", function (event) {
       if (
@@ -310,6 +348,7 @@ export function useSip() {
           remoteNumber: "",
           timestamp: null,
         };
+        stopRingtone();
       } else {
         activeCall.value = {
           show: true,
@@ -323,13 +362,9 @@ export function useSip() {
         };
         startCallTimer();
       }
-      stopRingtone();
+      // stopRingtone();
       console.log(`active call accepted : `, activeCall.value);
       // Setup remote audio
-      const remoteStream = session.connection.getRemoteStreams()[0];
-      if (remoteStream) {
-        setupRemoteAudio(remoteStream);
-      }
     });
 
     session.on("ended", () => {
@@ -347,7 +382,7 @@ export function useSip() {
       };
       currentPeerNumber.value = "";
 
-      stopRingtone();
+      // stopRingtone();
       if (callTimer.value) {
         clearInterval(callTimer.value);
         callTimer.value = null;
@@ -362,16 +397,22 @@ export function useSip() {
       session = null;
       request = null;
       updateCallHistory("terminated");
-      sendPostMessage("call-terminated",{
+      sendPostMessage("call-terminated", {
         description: "HANGUP",
         timestamp: new Date().toISOString(),
       });
     });
 
     session.on("failed", (e) => {
-      console.error("Call failed:", e);
+      console.log("Call failed:", e);
+      if (e.message && e.message.status_code === 480) {
+        sendPostMessage("call-failed", {
+          message: "unavailable",
+          status_code: e.message.status_code,
+        });
+      }
       callState.value = "ended";
-      stopRingtone();
+      // stopRingtone();
       activeCall.value = {
         show: false,
         remoteNumber: "",

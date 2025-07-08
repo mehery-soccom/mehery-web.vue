@@ -170,24 +170,24 @@ const autoConnect = async () => {
 };
 const getSecrets = async () => {
   try {
-    const response = await axios.get("/v1/register", {
-      headers: {
-        tnt: tenantPartitionKey.value,
-      },
-    });
-    const data = await response.data;
-    // const response = await fetch(
-    //   // "http://localhost:8090/nexus/phone/v1/register",
-    //   "http://localhost:8090/scriptus/phone/v1/register",
-    //   {
-    //     method: "GET",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       tnt: tenantPartitionKey.value,
-    //     },
-    //   }
-    // );
-    // const data = await response.json();
+    // const response = await axios.get("/v1/register", {
+    //   headers: {
+    //     tnt: tenantPartitionKey.value,
+    //   },
+    // });
+    // const data = await response.data;
+    const response = await fetch(
+      // "http://localhost:8090/nexus/phone/v1/register",
+      "http://localhost:8090/scriptus/phone/v1/register",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          tnt: tenantPartitionKey.value,
+        },
+      }
+    );
+    const data = await response.json();
     sipConfig.value = {
       uri : data.bullforcePstn.FS_IMPU,
       password : data.bullforcePstn.FS_SECRET.toString(),
@@ -372,18 +372,8 @@ onMounted(async () => {
                       }
                     } else if(data.event === "make-call"){
                       console.log("Outbound number : ",data.event_data.dialed_number);
+                      makeCall(data.event_data.dialed_number);
                     }
-                    // if (data.event === "incomming-call") {
-                    //     console.log("event calling iframe", data)
-                    //     const el = document.querySelector('.profile-tooltip-content-call');
-                    //     if (el) el.style.display = 'block'; el.style.opacity = 1; el.style.pointerEvents = 'auto';
-                    // } else if(data.event === "call-terminated") {
-                    //     const el = document.querySelector('.profile-tooltip-content-call');
-                    //     if (el && el.style.display === 'block') el.style.display = 'none'; el.style.opacity = 0; el.style.pointerEvents = 'none';
-                    //     console.log("event hanging up iframe", data)
-                    // } else {
-                    //     console.log("event other iframe", data)
-                    // }
                 } catch (err) {
                     console.warn("event from Non-JSON message received:", e.data);
                 }
@@ -435,7 +425,7 @@ onUnmounted(async () => {
                 />
               </svg>
             </div>
-            <span class="status-text">{{ registrationStatus }}</span>
+            <!-- <span class="status-text">{{ registrationStatus }}</span> -->
           </div>
         </div>
       </div>
