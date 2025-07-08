@@ -360,6 +360,7 @@ export function useSip() {
           remoteNumber: "",
           timestamp: null,
         };
+        stopRingtone();
         startCallTimer();
       }
       // stopRingtone();
@@ -410,6 +411,12 @@ export function useSip() {
           message: "unavailable",
           status_code: e.message.status_code,
         });
+      } else {
+        sendPostMessage("call-terminated", {
+          description: "HANGUP",
+          timestamp: new Date().toISOString(),
+        });
+        stopRingtone();
       }
       callState.value = "ended";
       // stopRingtone();
