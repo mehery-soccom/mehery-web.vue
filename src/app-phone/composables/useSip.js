@@ -303,7 +303,11 @@ export function useSip() {
     session.on("progress", () => {
       console.log("Call progress");
       const current = Date.now();
-
+      activeCall.value = {
+          show: true,
+          remoteNumber: currentPeerNumber.value,
+          startTime: null,
+        };
       if (peerConnectionTime !== null) {
         const timeDiff = ((current - peerConnectionTime) / 1000).toFixed(2);
         console.log(`Peer connection formation time: ${timeDiff} seconds`);
@@ -349,6 +353,7 @@ export function useSip() {
           timestamp: null,
         };
         stopRingtone();
+        startCallTimer();
       } else {
         activeCall.value = {
           show: true,

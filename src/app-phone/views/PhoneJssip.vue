@@ -465,7 +465,7 @@ onUnmounted(async () => {
         <h4>Call Active</h4>
 
         <p>Connected to: {{ activeCall.remoteNumber }}</p>
-        <p>Duration: {{ callDuration }}</p>
+        <p v-if="activeCall.startTime">Duration: {{ callDuration }}</p>
 
         <div class="call-controls">
           <button @click="endCall" class="btn btn-danger">❌ Hang Up</button>
