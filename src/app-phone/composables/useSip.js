@@ -444,6 +444,7 @@ export function useSip() {
    * @param {Object} options - Call options
    */
   const makeCall = (target, options = {}) => {
+    if(target.length === 10) target = `91${target}`;
     const sipTargetUri = `sip:${target}@bullforce`;
     console.log(`sipTargetUri : ${sipTargetUri}`);
     if (!ua || !isRegistered.value) {
